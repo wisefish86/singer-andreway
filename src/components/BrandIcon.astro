@@ -8,10 +8,7 @@ const paths = {
 };
 ---
 {name === 'max' ? (
-  <svg class="brand-svg max-brand" width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-    <rect x="1" y="1" width="22" height="22" rx="6" fill="#471AFF"/>
-    <text x="12" y="15.2" text-anchor="middle" fill="#fff" font-size="6.7" font-family="Arial, sans-serif" font-weight="700">MAX</text>
-  </svg>
+  <img class="brand-svg max-brand-official" src="https://max.ru/s/img/big-logo.png" width={size} height={size} alt="" />
 ) : (
   <svg class="brand-svg" width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={paths[name] || paths.telegram} /></svg>
 )}
