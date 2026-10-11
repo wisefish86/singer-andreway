@@ -1,0 +1,15 @@
+{
+  "name": "ANDREY-SPOET",
+  "short_name": "ANDREY-SPOET",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#06101a",
+  "background_color": "#06101a",
+  "display": "standalone"
+}
