@@ -1,0 +1,131 @@
+---
+import '../styles/global.css';
+const phoneDisplay = '+7 918 114-26-93';
+const phoneLink = 'tel:+79181142693';
+const telegram = 'https://t.me/andrey_spoet';
+const whatsapp = 'https://wa.me/79181142693';
+---
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#070809" />
+  <meta name="description" content="Андрей Шевцов — певец. Живые выступления на частных и корпоративных мероприятиях." />
+  <title>Андрей Шевцов — певец</title>
+</head>
+<body>
+  <header class="hero" id="top">
+    <div class="hero-nav">
+      <div class="container nav-row">
+        <a class="brand" href="#top">Andrey / live</a>
+        <nav class="nav-links" aria-label="Основная навигация">
+          <a href="#video">Видео</a>
+          <a href="#repertoire">Репертуар</a>
+          <a href="#formats">Форматы</a>
+          <a href="#contact">Контакты</a>
+        </nav>
+      </div>
+    </div>
+
+    <div class="container hero-content">
+      <div class="hero-kicker">живой вокал · события · Краснодарский край</div>
+      <h1>Андрей<br/>Шевцов</h1>
+      <div class="hero-sub">
+        <p>Современные и вечные хиты — живьём. Рестораны, частные события, свадьбы и корпоративы.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#contact">Заказать выступление</a>
+          <a class="button" href="#video">Смотреть видео ↓</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <section class="stats" aria-label="Ключевые факты">
+    <div class="stat"><strong>300+</strong><span>песен в репертуаре</span></div>
+    <div class="stat"><strong>Live</strong><span>живой вокал</span></div>
+    <div class="stat"><strong>RU / EN</strong><span>русские и зарубежные хиты</span></div>
+    <div class="stat"><strong>Full set</strong><span>своё оборудование</span></div>
+  </section>
+
+  <main>
+    <section class="section" id="video">
+      <div class="container reveal">
+        <div class="eyebrow">Как это звучит</div>
+        <h2 class="section-title">Сначала — услышать.</h2>
+        <p class="section-copy">Главное доказательство — не описание, а сцена. Здесь будут лучшие живые фрагменты, собранные как короткий showreel.</p>
+
+        <div class="showcase">
+          <article class="video-card">
+            <div class="video-meta"><span>Showreel 2026</span><span>01:20</span></div>
+            <div>
+              <div class="eyebrow">live selection</div>
+              <div class="video-title">Энергия вечера в нескольких минутах.</div>
+            </div>
+          </article>
+
+          <div class="side-stack">
+            <article class="event-card">
+              <div>
+                <div class="eyebrow">Ближайшее выступление</div>
+                <div class="event-date">Soon</div>
+                <div class="card-title">Следующая открытая дата появится здесь</div>
+              </div>
+              <div class="card-foot"><span>афиша и напоминания</span><span>↗</span></div>
+            </article>
+
+            <article class="repertoire-card" id="repertoire">
+              <div>
+                <div class="eyebrow">Репертуар</div>
+                <div class="card-title">От лёгкой поп-музыки до рока — под конкретную аудиторию.</div>
+              </div>
+              <div class="card-foot"><span>полный каталог — следующим этапом</span><span>300+ ↗</span></div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="formats">
+      <div class="container reveal">
+        <div class="eyebrow">Форматы</div>
+        <h2 class="section-title">Не «номер».<br/>Часть вашего вечера.</h2>
+        <p class="section-copy">Сет строится под площадку, гостей и динамику события — от фонового старта до финального драйва.</p>
+
+        <div class="formats">
+          <article class="format-card"><span class="format-number">01</span><div class="format-name">Свадьбы<br/>и частные события</div></article>
+          <article class="format-card"><span class="format-number">02</span><div class="format-name">Корпоративы</div></article>
+          <article class="format-card"><span class="format-number">03</span><div class="format-name">Рестораны<br/>и бары</div></article>
+          <article class="format-card"><span class="format-number">04</span><div class="format-name">Интерактив,<br/>караоке и песни гостей</div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta-band" id="contact">
+      <div class="container cta-grid reveal">
+        <h2>Давайте<br/>обсудим<br/>ваш вечер.</h2>
+        <div class="cta-links">
+          <a href={phoneLink}><span>{phoneDisplay}</span><span>Позвонить ↗</span></a>
+          <a href={telegram} target="_blank" rel="noreferrer"><span>Telegram</span><span>@andrey_spoet ↗</span></a>
+          <a href={whatsapp} target="_blank" rel="noreferrer"><span>WhatsApp</span><span>Написать ↗</span></a>
+          <a href="#top"><span>Сохранить контакт</span><span>скоро ↗</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-row">
+      <span>© {new Date().getFullYear()} Андрей Шевцов</span>
+      <span>singer.andreway.ru</span>
+    </div>
+  </footer>
+
+  <script is:inline>
+    const observer = new IntersectionObserver((entries)=>{
+      entries.forEach((entry)=>entry.isIntersecting && entry.target.classList.add('visible'))
+    },{threshold:.12});
+    document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+  </script>
+</body>
+</html>
