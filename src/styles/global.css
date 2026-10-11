@@ -30,7 +30,7 @@ img{display:block;max-width:100%}
 .brand-icon{width:19px;height:19px;display:block;object-fit:contain}
 .contact-brand{width:22px;height:22px}
 .ui-icon{display:block;flex:0 0 auto}
-.hero{position:relative;overflow:hidden;min-height:500px;padding:28px 0 24px;display:flex;align-items:flex-end;background-image:url('/images/hero-main.webp');background-size:cover;background-position:68% center;background-repeat:no-repeat}
+.hero{position:relative;overflow:hidden;min-height:500px;padding:28px 0 24px;display:flex;align-items:flex-end;background-image:url('/images/hero-main-1920.webp');background-size:cover;background-position:68% center;background-repeat:no-repeat}
 .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,11,17,.10) 0%,rgba(4,11,17,.22) 45%,rgba(4,11,17,.78) 82%,#06101a 100%),linear-gradient(90deg,rgba(5,13,20,.88) 0%,rgba(5,13,20,.58) 43%,rgba(5,13,20,.10) 76%,rgba(5,13,20,.02) 100%)}
 .hero-content{position:relative;z-index:2;padding-top:88px;max-width:610px}
 .kicker{display:flex;align-items:center;gap:10px;color:var(--accent2);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.16em}
