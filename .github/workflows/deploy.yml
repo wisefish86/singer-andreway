@@ -1,16 +1,32 @@
-name: Deploy test site to FTP
+name: Build and deploy Astro site
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: singer-andreway-production
+  cancel-in-progress: true
+
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Astro
+        run: npm run build
 
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
@@ -20,5 +36,5 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftp
           port: 21
-          local-dir: ./test-site/
+          local-dir: ./dist/
           server-dir: /www/singer.andreway.ru/
