@@ -111,12 +111,6 @@ linear-gradient(145deg,#17334a,#08121b 72%)}
 .contact-phone,.contact-save{width:100%;min-height:58px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,.025);font-size:.9rem;font-weight:700;text-align:center}
 .contact-phone span{white-space:nowrap}
 .contact-save{border-color:rgba(229,184,95,.34);background:rgba(229,184,95,.07)}
-.contact-save-tests{display:grid;grid-template-columns:1fr 1fr;gap:9px}
-.contact-save-tests .contact-save{min-height:66px;justify-content:flex-start;text-align:left}
-.contact-save-tests .contact-save span{display:grid;gap:2px}
-.contact-save-tests .contact-save strong{font-size:.82rem}
-.contact-save-tests .contact-save small{font-size:.67rem;color:var(--muted);font-weight:500}
-.contact-save.secondary{border-color:var(--line);background:rgba(255,255,255,.025)}
 .contact-write{display:grid;gap:8px;padding:12px 0;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08)}
 .contact-group-label{font-size:.72rem;line-height:1;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
 .contact-socials{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
