@@ -159,3 +159,28 @@ linear-gradient(145deg,#17334a,#08121b 72%)}
 }
 
 .max-brand-official{object-fit:contain;filter:grayscale(1) brightness(0) invert(1);border-radius:0}
+
+button.action-wide,button.after-action{font:inherit;color:inherit;cursor:pointer}
+.after-live{margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,.08)}
+.after-live-label{margin-bottom:9px;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.12em}
+.after-live-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.after-action{min-height:54px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:flex-start;gap:9px;background:rgba(255,255,255,.025);text-align:left}
+.contact-sheet{width:min(100% - 16px,520px);max-height:min(82vh,680px);margin:auto auto 8px;border:1px solid rgba(255,255,255,.13);border-radius:24px 24px 18px 18px;padding:12px 14px 16px;background:#0b1824;color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.55)}
+.contact-sheet::backdrop{background:rgba(1,7,12,.72);backdrop-filter:blur(6px)}
+.sheet-handle{width:42px;height:4px;border-radius:99px;background:rgba(255,255,255,.22);margin:0 auto 13px}
+.sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.sheet-head h3{margin:0;font-size:1.28rem;letter-spacing:-.02em}
+.sheet-head p{margin:5px 0 0;color:var(--muted);font-size:.84rem}
+.sheet-close{width:38px;height:38px;flex:0 0 auto;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.03);color:var(--text)}
+.sheet-repertoire{margin-top:14px;min-height:66px;padding:11px 13px;border:1px solid rgba(229,184,95,.28);border-radius:15px;display:grid;grid-template-columns:24px minmax(0,1fr) 18px;gap:10px;align-items:center;background:rgba(229,184,95,.07)}
+.sheet-repertoire[hidden]{display:none}
+.sheet-repertoire span{display:grid;gap:2px}
+.sheet-repertoire strong{font-size:.86rem}
+.sheet-repertoire small{color:var(--muted);font-size:.7rem}
+.sheet-messengers{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}
+.sheet-messengers a{min-height:58px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.025);font-size:.82rem;font-weight:700}
+.sheet-note{margin-top:11px;color:var(--muted);font-size:.72rem;text-align:center}
+@media(min-width:760px){
+  .contact-sheet{margin:auto;border-radius:22px;padding:18px 20px 20px}
+  .sheet-handle{display:none}
+}
