@@ -16,6 +16,7 @@ const max = 'https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKa
 const seoTitle = 'Певец на мероприятие в Краснодаре — Андрей Шевцов';
 const seoDescription = 'Живой вокал на свадьбы, корпоративы, юбилеи, рестораны и частные мероприятия в Краснодаре и Краснодарском крае. Репертуар 300+ песен.';
 const canonical = 'https://singer.andreway.ru/';
+const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
 ---
 <!doctype html>
 <html lang="ru">
@@ -155,9 +156,37 @@ const canonical = 'https://singer.andreway.ru/';
           <div><h2>Здесь и сейчас</h2><p class="lead">Во время выступления можно</p></div>
         </div>
         <div class="live-actions">
-          <a class="action-wide" href="#"><div class="action-icon"><Icon name="music" size={24} /></div><div class="action-copy"><strong>Заказать песню</strong><small>если есть в репертуаре</small></div><Icon name="arrow" size={20} /></a>
-          <a class="action-wide" href="#"><div class="action-icon"><Icon name="message" size={24} /></div><div class="action-copy"><strong>Сказать пару слов</strong><small>текстом, голосом или видео</small></div><Icon name="arrow" size={20} /></a>
+          <button class="action-wide js-contact-sheet" type="button"
+            data-title="Заказать песню"
+            data-copy="Выберите мессенджер. Можно сначала посмотреть репертуар и выбрать песню."
+            data-template="Хочу заказать песню:%0AНазвание / исполнитель —%0AДля кого и от кого (по желанию) —"
+            data-repertoire="true">
+            <div class="action-icon"><Icon name="music" size={24} /></div><div class="action-copy"><strong>Заказать песню</strong><small>выбрать и отправить</small></div><Icon name="arrow" size={20} />
+          </button>
+          <button class="action-wide js-contact-sheet" type="button"
+            data-title="Сказать пару слов"
+            data-copy="Выберите удобный мессенджер и отправьте текст, голосовое или видео."
+            data-template="Хочу передать пару слов:">
+            <div class="action-icon"><Icon name="message" size={24} /></div><div class="action-copy"><strong>Сказать пару слов</strong><small>текстом, голосом или видео</small></div><Icon name="arrow" size={20} />
+          </button>
           <a class="action-wide tip-action" href="#"><div class="action-icon"><Icon name="heart" size={24} /></div><div class="action-copy"><strong>Поблагодарить</strong><small>чаевыми / переводом</small></div><Icon name="arrow" size={20} /></a>
+        </div>
+        <div class="after-live">
+          <div class="after-live-label">После выступления</div>
+          <div class="after-live-grid">
+            <button class="after-action js-contact-sheet" type="button"
+              data-title="Поделиться видео"
+              data-copy="Выберите удобный мессенджер. Видео прикрепите уже в открывшемся чате."
+              data-template="Здравствуйте, Андрей! Делюсь видео с Вашего выступления ❤️">
+              <Icon name="share" size={20} /><span>Поделиться видео</span>
+            </button>
+            <button class="after-action js-contact-sheet" type="button"
+              data-title="Оставить отзыв"
+              data-copy="Спасибо! Выберите, куда удобнее отправить отзыв."
+              data-template="Здравствуйте, Андрей! Хочу оставить отзыв о выступлении:">
+              <Icon name="star" size={20} /><span>Оставить отзыв</span>
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -217,9 +246,70 @@ const canonical = 'https://singer.andreway.ru/';
     </section>
   </main>
 
+  <dialog class="contact-sheet" id="contact-sheet">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-head">
+      <div>
+        <h3 id="sheet-title">Написать Андрею</h3>
+        <p id="sheet-copy">Выберите удобный способ связи.</p>
+      </div>
+      <button class="sheet-close" type="button" aria-label="Закрыть"><Icon name="close" size={20} /></button>
+    </div>
+    <a class="sheet-repertoire" id="sheet-repertoire" href={repertoireUrl} target="_blank" rel="noreferrer">
+      <Icon name="music" size={20} /><span><strong>Выбрать песню из репертуара</strong><small>откроется список песен</small></span><Icon name="arrow" size={18} />
+    </a>
+    <div class="sheet-messengers">
+      <a data-messenger="telegram" href={telegram} target="_blank" rel="noreferrer"><BrandIcon name="telegram" size={23} /><span>Telegram</span></a>
+      <a data-messenger="whatsapp" href={whatsapp} target="_blank" rel="noreferrer"><BrandIcon name="whatsapp" size={23} /><span>WhatsApp</span></a>
+      <a data-messenger="max" href={max} target="_blank" rel="noreferrer"><BrandIcon name="max" size={23} /><span>MAX</span></a>
+      <a data-messenger="vk" href={vk} target="_blank" rel="noreferrer"><BrandIcon name="vk" size={23} /><span>ВКонтакте</span></a>
+    </div>
+    <div class="sheet-note" id="sheet-note">Текст сообщения подготовим автоматически.</div>
+  </dialog>
+
   <footer class="footer">
     <div class="container">© {new Date().getFullYear()} Андрей Шевцов · singer.andreway.ru</div>
   </footer>
+  <script is:inline data-contact-sheet-script>
+    const sheet = document.getElementById('contact-sheet');
+    const sheetTitle = document.getElementById('sheet-title');
+    const sheetCopy = document.getElementById('sheet-copy');
+    const sheetNote = document.getElementById('sheet-note');
+    const sheetRepertoire = document.getElementById('sheet-repertoire');
+    let sheetTemplate = '';
+
+    document.querySelectorAll('.js-contact-sheet').forEach((trigger) => {
+      trigger.addEventListener('click', () => {
+        sheetTitle.textContent = trigger.dataset.title || 'Написать Андрею';
+        sheetCopy.textContent = trigger.dataset.copy || 'Выберите удобный способ связи.';
+        sheetTemplate = decodeURIComponent(trigger.dataset.template || '');
+        sheetRepertoire.hidden = trigger.dataset.repertoire !== 'true';
+        sheetNote.textContent = 'Текст сообщения подготовим автоматически.';
+        sheet.showModal();
+      });
+    });
+
+    document.querySelector('.sheet-close')?.addEventListener('click', () => sheet.close());
+    sheet?.addEventListener('click', (event) => {
+      if (event.target === sheet) sheet.close();
+    });
+
+    document.querySelectorAll('[data-messenger]').forEach((link) => {
+      link.addEventListener('click', async (event) => {
+        const messenger = link.dataset.messenger;
+        if (messenger === 'whatsapp' && sheetTemplate) {
+          link.href = 'https://wa.me/79181142693?text=' + encodeURIComponent(sheetTemplate);
+          return;
+        }
+        if (!sheetTemplate || !navigator.clipboard) return;
+        try {
+          await navigator.clipboard.writeText(sheetTemplate);
+          sheetNote.textContent = 'Текст скопирован — вставьте его в открывшийся чат.';
+        } catch {}
+      });
+    });
+  </script>
+
   <script is:inline data-contact-intent>
     const saveContactDirect = document.getElementById('save-contact-direct');
     if (saveContactDirect && /Android/i.test(navigator.userAgent)) {
