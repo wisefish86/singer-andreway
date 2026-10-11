@@ -264,7 +264,6 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
       <a data-messenger="max" href={max} target="_blank" rel="noreferrer"><BrandIcon name="max" size={23} /><span>MAX</span></a>
       <a data-messenger="vk" href={vk} target="_blank" rel="noreferrer"><BrandIcon name="vk" size={23} /><span>ВКонтакте</span></a>
     </div>
-    <div class="sheet-note" id="sheet-note">Текст сообщения подготовим автоматически.</div>
   </dialog>
 
   <footer class="footer">
@@ -274,7 +273,6 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
     const sheet = document.getElementById('contact-sheet');
     const sheetTitle = document.getElementById('sheet-title');
     const sheetCopy = document.getElementById('sheet-copy');
-    const sheetNote = document.getElementById('sheet-note');
     const sheetRepertoire = document.getElementById('sheet-repertoire');
     let sheetTemplate = '';
 
@@ -284,7 +282,6 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
         sheetCopy.textContent = trigger.dataset.copy || 'Выберите удобный способ связи.';
         sheetTemplate = decodeURIComponent(trigger.dataset.template || '');
         sheetRepertoire.hidden = trigger.dataset.repertoire !== 'true';
-        sheetNote.textContent = 'Текст сообщения подготовим автоматически.';
         sheet.showModal();
       });
     });
@@ -299,13 +296,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
         const messenger = link.dataset.messenger;
         if (messenger === 'whatsapp' && sheetTemplate) {
           link.href = 'https://wa.me/79181142693?text=' + encodeURIComponent(sheetTemplate);
-          return;
         }
-        if (!sheetTemplate || !navigator.clipboard) return;
-        try {
-          await navigator.clipboard.writeText(sheetTemplate);
-          sheetNote.textContent = 'Текст скопирован — вставьте его в открывшийся чат.';
-        } catch {}
       });
     });
   </script>
