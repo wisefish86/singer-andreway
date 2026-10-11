@@ -310,20 +310,5 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
     });
   </script>
 
-  <script is:inline data-contact-intent>
-    const saveContactDirect = document.getElementById('save-contact-direct');
-    if (saveContactDirect && /Android/i.test(navigator.userAgent)) {
-      const androidContact =
-        'intent:#Intent;' +
-        'action=android.intent.action.INSERT;' +
-        'type=vnd.android.cursor.dir/contact;' +
-        'S.name=%D0%90%D0%BD%D0%B4%D1%80%D0%B5%D0%B9%20%D0%A8%D0%B5%D0%B2%D1%86%D0%BE%D0%B2;' +
-        'S.phone=%2B79181142693;' +
-        'S.company=ANDREY-SPOET;' +
-        'end';
-      saveContactDirect.setAttribute('href', androidContact);
-      saveContactDirect.removeAttribute('type');
-    }
-  </script>
 </body>
 </html>
