@@ -182,14 +182,19 @@ const canonical = 'https://singer.andreway.ru/';
             <h2 class="contact-title">Давайте обсудим ваш вечер</h2>
             <p class="contact-copy">Оставьте заявку или свяжитесь удобным способом.</p><div class="trust-line">Работа по договору <span>•</span> своё оборудование <span>•</span> прозрачные условия</div>
             <div class="contact-actions">
-              <a class="contact-phone" href={phoneLink}><Icon name="smartphone" size={22} /><span>{phoneDisplay}</span></a>
-              <div class="contact-socials" aria-label="Мессенджеры и соцсети">
-                <a href={telegram} target="_blank" rel="noreferrer"><BrandIcon name="telegram" size={22} /><span>Telegram</span></a>
-                <a href={whatsapp} target="_blank" rel="noreferrer"><BrandIcon name="whatsapp" size={22} /><span>WhatsApp</span></a>
-                <a href={max} target="_blank" rel="noreferrer"><BrandIcon name="max" size={22} /><span>MAX</span></a>
-                <a href={instagram} target="_blank" rel="noreferrer"><BrandIcon name="instagram" size={22} /><span>Instagram</span></a>
-                <a href={vk} target="_blank" rel="noreferrer"><BrandIcon name="vk" size={22} /><span>ВКонтакте</span></a>
+              <a class="contact-phone" href={phoneLink}><Icon name="smartphone" size={22} /><span>Позвонить · {phoneDisplay}</span></a>
+
+              <div class="contact-write">
+                <div class="contact-group-label">Написать</div>
+                <div class="contact-socials" aria-label="Написать в мессенджере или соцсети">
+                  <a href={telegram} target="_blank" rel="noreferrer"><BrandIcon name="telegram" size={22} /><span>Telegram</span></a>
+                  <a href={whatsapp} target="_blank" rel="noreferrer"><BrandIcon name="whatsapp" size={22} /><span>WhatsApp</span></a>
+                  <a href={max} target="_blank" rel="noreferrer"><BrandIcon name="max" size={22} /><span>MAX</span></a>
+                  <a href={vk} target="_blank" rel="noreferrer"><BrandIcon name="vk" size={22} /><span>ВКонтакте</span></a>
+                  <a href={instagram} target="_blank" rel="noreferrer"><BrandIcon name="instagram" size={22} /><span>Instagram</span></a>
+                </div>
               </div>
+
               <a class="contact-save" id="save-contact" href="/andrey-shevtsov.vcf" type="text/vcard"><Icon name="contact" size={22} /><span>Сохранить контакт</span></a>
             </div>
           </div>
