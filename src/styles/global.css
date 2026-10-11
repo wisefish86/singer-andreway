@@ -90,7 +90,7 @@ linear-gradient(180deg,rgba(4,10,15,.08),rgba(4,10,15,.72)),
 url('https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1200&q=80') center/cover}
 .contact-body{padding:18px}
 .contact-title{font-size:1.8rem;line-height:1.05;margin:0 0 8px}
-.contact-copy{color:var(--muted);font-size:.9rem}
+.contact-copy{color:var(--muted);font-size:.9rem}\n.trust-line{margin-top:12px;color:#d7e1e8;font-size:.78rem;display:flex;gap:7px;flex-wrap:wrap;align-items:center}\n.trust-line span{color:var(--accent2)}
 .contact-links{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px}
 .contact-links a{min-height:58px;border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.025);font-size:.83rem}
 .footer{padding:28px 0 40px;color:#81909d;font-size:.76rem}
