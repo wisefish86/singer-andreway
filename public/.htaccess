@@ -1,0 +1,7 @@
+AddType text/vcard .vcf
+<IfModule mod_headers.c>
+  <FilesMatch "\.vcf$">
+    Header set Content-Disposition "inline"
+    Header set X-Content-Type-Options "nosniff"
+  </FilesMatch>
+</IfModule>
