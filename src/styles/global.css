@@ -35,7 +35,6 @@ linear-gradient(180deg,rgba(4,11,17,.08),rgba(4,11,17,.78) 68%,#06101a 100%)}
 .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,13,20,.94) 0%,rgba(5,13,20,.64) 45%,rgba(5,13,20,.1) 100%)}
 .hero-content{position:relative;z-index:2;padding-top:88px;max-width:610px}
 .kicker{display:flex;align-items:center;gap:10px;color:var(--accent2);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.16em}
-.kicker::before{content:"";width:26px;height:1px;background:var(--accent)}
 h1{font-size:clamp(2.7rem,11vw,6.5rem);line-height:.92;letter-spacing:-.045em;margin:16px 0 12px;font-weight:700;white-space:nowrap}
 .hero-role{font-size:1.35rem;font-weight:500;margin-bottom:18px}
 .hero-copy{color:#dde6ed;max-width:470px;font-size:1rem}
