@@ -209,7 +209,16 @@ const canonical = 'https://singer.andreway.ru/';
   <script is:inline data-contact-intent>
     const saveContact = document.getElementById('save-contact');
     if (saveContact && /Android/i.test(navigator.userAgent)) {
-      const androidContact = 'intent://contacts/people/#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=%D0%90%D0%BD%D0%B4%D1%80%D0%B5%D0%B9%20%D0%A8%D0%B5%D0%B2%D1%86%D0%BE%D0%B2;S.phone=%2B79181142693;S.company=ANDREY-SPOET;end';
+      const fallback = 'https%3A%2F%2Fsinger.andreway.ru%2Fandrey-shevtsov.vcf';
+      const androidContact =
+        'intent:#Intent;' +
+        'action=android.intent.action.INSERT;' +
+        'type=vnd.android.cursor.dir/contact;' +
+        'S.name=%D0%90%D0%BD%D0%B4%D1%80%D0%B5%D0%B9%20%D0%A8%D0%B5%D0%B2%D1%86%D0%BE%D0%B2;' +
+        'S.phone=%2B79181142693;' +
+        'S.company=ANDREY-SPOET;' +
+        'S.browser_fallback_url=' + fallback + ';' +
+        'end';
       saveContact.setAttribute('href', androidContact);
       saveContact.removeAttribute('type');
     }
