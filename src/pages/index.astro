@@ -9,6 +9,7 @@ const telegram = 'https://t.me/shevtsov_andrey';
 const whatsapp = 'https://wa.me/79181142693';
 const instagram = 'https://www.instagram.com/andrey_spoet/';
 const vk = 'https://vk.me/andrey_spoet';
+const max = 'https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHMK3ejGSQ';
 
 const seoTitle = 'Певец на мероприятие в Краснодаре — Андрей Шевцов';
 const seoDescription = 'Живой вокал на свадьбы, корпоративы, юбилеи, рестораны и частные мероприятия в Краснодаре и Краснодарском крае. Репертуар 300+ песен.';
@@ -42,7 +43,7 @@ const canonical = 'https://singer.andreway.ru/';
     "url":canonical,
     "telephone":"+79181142693",
     "areaServed":["Краснодар","Краснодарский край"],
-    "sameAs":[telegram,instagram,vk]
+    "sameAs":[telegram,instagram,vk,max]
   })}></script>
 </head>
 <body>
@@ -180,13 +181,16 @@ const canonical = 'https://singer.andreway.ru/';
           <div class="contact-body">
             <h2 class="contact-title">Давайте обсудим ваш вечер</h2>
             <p class="contact-copy">Оставьте заявку или свяжитесь удобным способом.</p><div class="trust-line">Работа по договору <span>•</span> своё оборудование <span>•</span> прозрачные условия</div>
-            <div class="contact-links">
-              <a href={phoneLink}><Icon name="smartphone" size={22} /><span>{phoneDisplay}</span></a>
-              <a href={telegram} target="_blank" rel="noreferrer"><BrandIcon name="telegram" size={22} /><span>Telegram</span></a>
-              <a href={whatsapp} target="_blank" rel="noreferrer"><BrandIcon name="whatsapp" size={22} /><span>WhatsApp</span></a>
-              <a href={instagram} target="_blank" rel="noreferrer"><BrandIcon name="instagram" size={22} /><span>Instagram</span></a>
-              <a href={vk} target="_blank" rel="noreferrer"><BrandIcon name="vk" size={22} /><span>ВКонтакте</span></a>
-              <a href="/andrey-shevtsov.vcf" type="text/vcard"><Icon name="contact" size={22} /><span>Сохранить контакт</span></a>
+            <div class="contact-actions">
+              <a class="contact-phone" href={phoneLink}><Icon name="smartphone" size={22} /><span>{phoneDisplay}</span></a>
+              <div class="contact-socials" aria-label="Мессенджеры и соцсети">
+                <a href={telegram} target="_blank" rel="noreferrer"><BrandIcon name="telegram" size={22} /><span>Telegram</span></a>
+                <a href={whatsapp} target="_blank" rel="noreferrer"><BrandIcon name="whatsapp" size={22} /><span>WhatsApp</span></a>
+                <a href={max} target="_blank" rel="noreferrer"><BrandIcon name="max" size={22} /><span>MAX</span></a>
+                <a href={instagram} target="_blank" rel="noreferrer"><BrandIcon name="instagram" size={22} /><span>Instagram</span></a>
+                <a href={vk} target="_blank" rel="noreferrer"><BrandIcon name="vk" size={22} /><span>ВКонтакте</span></a>
+              </div>
+              <a class="contact-save" id="save-contact" href="/andrey-shevtsov.vcf" type="text/vcard"><Icon name="contact" size={22} /><span>Сохранить контакт</span></a>
             </div>
           </div>
         </div>
@@ -197,5 +201,13 @@ const canonical = 'https://singer.andreway.ru/';
   <footer class="footer">
     <div class="container">© {new Date().getFullYear()} Андрей Шевцов · singer.andreway.ru</div>
   </footer>
+  <script is:inline data-contact-intent>
+    const saveContact = document.getElementById('save-contact');
+    if (saveContact && /Android/i.test(navigator.userAgent)) {
+      const androidContact = 'intent://contacts/people/#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=%D0%90%D0%BD%D0%B4%D1%80%D0%B5%D0%B9%20%D0%A8%D0%B5%D0%B2%D1%86%D0%BE%D0%B2;S.phone=%2B79181142693;S.company=ANDREY-SPOET;end';
+      saveContact.setAttribute('href', androidContact);
+      saveContact.removeAttribute('type');
+    }
+  </script>
 </body>
 </html>
