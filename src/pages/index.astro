@@ -5,11 +5,13 @@ import BrandIcon from '../components/BrandIcon.astro';
 
 const phoneDisplay = '+7 918 114-26-93';
 const phoneLink = 'tel:+79181142693';
-const telegram = 'https://t.me/shevtsov_andrey';
+const telegramWeb = 'https://t.me/shevtsov_andrey';
+const telegramApp = 'tg://resolve?domain=shevtsov_andrey';
 const whatsapp = 'https://wa.me/79181142693';
 const instagram = 'https://www.instagram.com/andrey_spoet/';
 const instagramDirect = 'https://ig.me/m/andrey_spoet';
-const telegramChannel = 'https://t.me/andrey_spoet';
+const telegramChannelWeb = 'https://t.me/andrey_spoet';
+const telegramChannelApp = 'tg://resolve?domain=andrey_spoet';
 const vk = 'https://vk.me/andrey_spoet';
 const max = 'https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHMK3ejGSQ';
 
@@ -46,7 +48,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
     "url":canonical,
     "telephone":"+79181142693",
     "areaServed":["Краснодар","Краснодарский край"],
-    "sameAs":[telegram,instagram,vk,max]
+    "sameAs":[telegramWeb,instagram,vk,max]
   })}></script>
 </head>
 <body>
@@ -60,7 +62,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
         <a href="#contact">Контакты</a>
       </nav>
       <div class="social-mini">
-        <a class="icon-btn" href={telegram} aria-label="Telegram" target="_blank" rel="noreferrer"><BrandIcon name="telegram" size={19} /></a>
+        <a class="icon-btn" href={telegramApp} aria-label="Telegram" target="_blank" rel="noreferrer"><BrandIcon name="telegram" size={19} /></a>
         <a class="icon-btn" href={instagram} aria-label="Instagram" target="_blank" rel="noreferrer"><BrandIcon name="instagram" size={19} /></a>
       </div>
     </div>
@@ -112,7 +114,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
             <div class="event-actions">
               <a class="btn primary" href="#">Подробнее →</a>
               <a class="btn" href="#">＋ В календарь</a>
-              <a class="btn" href={telegram}>◉ Напомнить в Telegram</a>
+              <a class="btn" href={telegramApp}>◉ Напомнить в Telegram</a>
             </div>
           </div>
         </article>
@@ -218,7 +220,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
               <div class="contact-write">
                 <div class="contact-group-label">Написать</div>
                 <div class="contact-socials" aria-label="Написать в мессенджере или соцсети">
-                  <a href={telegram} target="_blank" rel="noreferrer"><BrandIcon name="telegram" size={22} /><span>Telegram</span></a>
+                  <a href={telegramApp}><BrandIcon name="telegram" size={22} /><span>Telegram</span></a>
                   <a href={whatsapp} target="_blank" rel="noreferrer"><BrandIcon name="whatsapp" size={22} /><span>WhatsApp</span></a>
                   <a href={max} target="_blank" rel="noreferrer"><BrandIcon name="max" size={22} /><span>MAX</span></a>
                   <a href={vk} target="_blank" rel="noreferrer"><BrandIcon name="vk" size={22} /><span>ВКонтакте</span></a>
@@ -226,17 +228,14 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
                 </div>
               </div>
 
-              <div class="contact-save-tests">
-                <a class="contact-save" id="save-contact-direct" href="/andrey-shevtsov-fast.vcf" type="text/vcard"><Icon name="contact" size={22} /><span><strong>Сохранить контакт</strong><small>быстрый вариант без фото</small></span></a>
-                <a class="contact-save secondary" href="/andrey-shevtsov.vcf" type="text/vcard"><Icon name="image" size={22} /><span><strong>Контакт с фото</strong><small>полная карточка</small></span></a>
-              </div>
+              <a class="contact-save" href="/andrey-shevtsov.vcf" type="text/vcard"><Icon name="contact" size={22} /><span>Сохранить контакт</span></a>
             </div>
 
             <div class="stay-connected">
               <div class="stay-title">Останемся на связи</div>
               <div class="stay-copy">Афиши, новые видео и новости — подпишитесь там, где удобнее.</div>
               <div class="stay-links">
-                <a href={telegramChannel} target="_blank" rel="noreferrer"><BrandIcon name="telegram" size={22} /><span><strong>Telegram</strong><small>подписаться на канал</small></span></a>
+                <a href={telegramChannelApp}><BrandIcon name="telegram" size={22} /><span><strong>Telegram</strong><small>подписаться на канал</small></span></a>
                 <a href={instagram} target="_blank" rel="noreferrer"><BrandIcon name="instagram" size={22} /><span><strong>Instagram</strong><small>подписаться</small></span></a>
               </div>
             </div>
@@ -259,7 +258,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
       <Icon name="music" size={20} /><span><strong>Выбрать песню из репертуара</strong><small>откроется список песен</small></span><Icon name="arrow" size={18} />
     </a>
     <div class="sheet-messengers">
-      <a data-messenger="telegram" href={telegram} target="_blank" rel="noreferrer"><BrandIcon name="telegram" size={23} /><span>Telegram</span></a>
+      <a data-messenger="telegram" href={telegramApp}><BrandIcon name="telegram" size={23} /><span>Telegram</span></a>
       <a data-messenger="whatsapp" href={whatsapp} target="_blank" rel="noreferrer"><BrandIcon name="whatsapp" size={23} /><span>WhatsApp</span></a>
       <a data-messenger="max" href={max} target="_blank" rel="noreferrer"><BrandIcon name="max" size={23} /><span>MAX</span></a>
       <a data-messenger="vk" href={vk} target="_blank" rel="noreferrer"><BrandIcon name="vk" size={23} /><span>ВКонтакте</span></a>
