@@ -4,9 +4,10 @@ import Icon from '../components/Icon.astro';
 
 const phoneDisplay = '+7 918 114-26-93';
 const phoneLink = 'tel:+79181142693';
-const telegram = 'https://t.me/andrey_spoet';
+const telegram = 'https://t.me/shevtsov_andrey';
 const whatsapp = 'https://wa.me/79181142693';
-const instagram = 'https://instagram.com/andrey_spoet';
+const instagram = 'https://www.instagram.com/andrey_spoet/';
+const vk = 'https://vk.me/andrey_spoet';
 
 const seoTitle = 'Певец на мероприятие в Краснодаре — Андрей Шевцов';
 const seoDescription = 'Живой вокал на свадьбы, корпоративы, юбилеи, рестораны и частные мероприятия в Краснодаре и Краснодарском крае. Репертуар 300+ песен.';
@@ -35,7 +36,7 @@ const canonical = 'https://singer.andreway.ru/';
     "url":canonical,
     "telephone":"+79181142693",
     "areaServed":["Краснодар","Краснодарский край"],
-    "sameAs":[telegram,instagram]
+    "sameAs":[telegram,instagram,vk]
   })}></script>
 </head>
 <body>
@@ -69,7 +70,7 @@ const canonical = 'https://singer.andreway.ru/';
       <div class="hero-actions">
         <a class="btn primary full" href="#contact">Заказать выступление →</a>
         <a class="btn" href="#video"><Icon name="play" size={18} /> Смотреть видео</a>
-        <a class="btn" href="#contact"><Icon name="contact" size={18} /> Сохранить контакт</a>
+        <a class="btn" href="/andrey-shevtsov.vcf" download><Icon name="contact" size={18} /> Сохранить контакт</a>
       </div>
     </div>
   </section>
@@ -178,8 +179,8 @@ const canonical = 'https://singer.andreway.ru/';
               <a href={telegram} target="_blank" rel="noreferrer"><img class="brand-icon contact-brand" src="https://cdn.simpleicons.org/telegram/ffffff" alt="" /><span>Telegram</span></a>
               <a href={whatsapp} target="_blank" rel="noreferrer"><img class="brand-icon contact-brand" src="https://cdn.simpleicons.org/whatsapp/ffffff" alt="" /><span>WhatsApp</span></a>
               <a href={instagram} target="_blank" rel="noreferrer"><img class="brand-icon contact-brand" src="https://cdn.simpleicons.org/instagram/ffffff" alt="" /><span>Instagram</span></a>
-              <a href="#"><img class="brand-icon contact-brand" src="https://cdn.simpleicons.org/vk/ffffff" alt="" /><span>ВКонтакте</span></a>
-              <a href="#"><Icon name="contact" size={22} /><span>Сохранить контакт</span></a>
+              <a href={vk} target="_blank" rel="noreferrer"><img class="brand-icon contact-brand" src="https://cdn.simpleicons.org/vk/ffffff" alt="" /><span>ВКонтакте</span></a>
+              <a href="/andrey-shevtsov.vcf" download><Icon name="contact" size={22} /><span>Сохранить контакт</span></a>
             </div>
           </div>
         </div>
