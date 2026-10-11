@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Icon from '../components/Icon.astro';
 
 const phoneDisplay = '+7 918 114-26-93';
 const phoneLink = 'tel:+79181142693';
@@ -40,7 +41,7 @@ const canonical = 'https://singer.andreway.ru/';
 <body>
   <header class="topbar">
     <div class="container topbar-inner">
-      <a class="brand" href="#top">ANDREY / LIVE</a>
+      <a class="brand" href="#top">ANDREY-SPOET</a>
       <nav class="nav" aria-label="Навигация">
         <a href="#repertoire">Репертуар</a>
         <a href="#events">Афиша</a>
@@ -48,39 +49,39 @@ const canonical = 'https://singer.andreway.ru/';
         <a href="#contact">Контакты</a>
       </nav>
       <div class="social-mini">
-        <a class="icon-btn" href={telegram} aria-label="Telegram">TG</a>
-        <a class="icon-btn" href={instagram} aria-label="Instagram">IG</a>
+        <a class="icon-btn" href={telegram} aria-label="Telegram" target="_blank" rel="noreferrer"><img class="brand-icon" src="https://cdn.simpleicons.org/telegram/ffffff" alt="" /></a>
+        <a class="icon-btn" href={instagram} aria-label="Instagram" target="_blank" rel="noreferrer"><img class="brand-icon" src="https://cdn.simpleicons.org/instagram/ffffff" alt="" /></a>
       </div>
     </div>
   </header>
 
   <section class="hero" id="top">
     <div class="container hero-content">
-      <div class="kicker">живой вокал · Краснодар и край</div>
-      <h1>Андрей<br/>Шевцов</h1>
+      <div class="kicker">Живой вокал • Краснодар • Краснодарский край</div>
+      <h1>Андрей Шевцов</h1>
       <div class="hero-role">певец</div>
       <p class="hero-copy">Современные и вечные хиты в живом исполнении. Рестораны, частные события, свадьбы и корпоративы.</p>
       <div class="chips">
         <span class="chip">300+ песен</span>
-        <span class="chip">RU / EN</span>
+        <span class="chip">150+ зарубежных песен</span>
         <span class="chip">своё оборудование</span>
       </div>
       <div class="hero-actions">
         <a class="btn primary full" href="#contact">Заказать выступление →</a>
-        <a class="btn" href="#video">▶ Смотреть видео</a>
-        <a class="btn" href="#contact">＋ Сохранить контакт</a>
+        <a class="btn" href="#video"><Icon name="play" size={18} /> Смотреть видео</a>
+        <a class="btn" href="#contact"><Icon name="contact" size={18} /> Сохранить контакт</a>
       </div>
     </div>
   </section>
 
   <section class="quick">
     <div class="container quick-grid">
-      <a class="quick-card" href="#video"><div class="quick-icon">▶</div><div class="quick-title">Видео</div><div class="quick-sub">живые выступления</div></a>
-      <a class="quick-card" href="#repertoire"><div class="quick-icon">♫</div><div class="quick-title">Репертуар</div><div class="quick-sub">300+ песен</div></a>
-      <a class="quick-card" href="#photos"><div class="quick-icon">▣</div><div class="quick-title">Фото</div><div class="quick-sub">с выступлений</div></a>
-      <a class="quick-card" href="#events"><div class="quick-icon">□</div><div class="quick-title">Афиша</div><div class="quick-sub">ближайшие даты</div></a>
-      <a class="quick-card" href="#live"><div class="quick-icon">◉</div><div class="quick-title">Во время выступления</div><div class="quick-sub">песня, сообщение, благодарность</div></a>
-      <a class="quick-card" href="#contact"><div class="quick-icon">☎</div><div class="quick-title">Контакты</div><div class="quick-sub">Telegram, WhatsApp, звонок</div></a>
+      <a class="quick-card" href="#video"><div class="quick-icon"><Icon name="play" size={28} /></div><div class="quick-title">Видео</div><div class="quick-sub">живые выступления</div></a>
+      <a class="quick-card" href="#repertoire"><div class="quick-icon"><Icon name="music" size={28} /></div><div class="quick-title">Репертуар</div><div class="quick-sub">300+ песен</div></a>
+      <a class="quick-card" href="#photos"><div class="quick-icon"><Icon name="image" size={28} /></div><div class="quick-title">Фото</div><div class="quick-sub">с выступлений</div></a>
+      <a class="quick-card" href="#events"><div class="quick-icon"><Icon name="calendar" size={28} /></div><div class="quick-title">Афиша</div><div class="quick-sub">ближайшие даты</div></a>
+      <a class="quick-card" href="#live"><div class="quick-icon"><Icon name="mic" size={28} /></div><div class="quick-title">Во время выступления</div><div class="quick-sub">песня, сообщение, благодарность</div></a>
+      <a class="quick-card" href="#contact"><div class="quick-icon"><Icon name="smartphone" size={28} /></div><div class="quick-title">Контакты</div><div class="quick-sub">мессенджеры, звонок, соцсети</div></a>
     </div>
   </section>
 
@@ -144,9 +145,9 @@ const canonical = 'https://singer.andreway.ru/';
           <div><h2>Здесь и сейчас</h2><p class="lead">Во время выступления можно</p></div>
         </div>
         <div class="live-actions">
-          <a class="action-wide" href="#"><div><strong>Заказать песню</strong><small>если есть в репертуаре</small></div><span>→</span></a>
-          <a class="action-wide" href="#"><div><strong>Сказать пару слов</strong><small>текстом, голосом или видео</small></div><span>→</span></a>
-          <a class="action-wide" href="#"><div><strong>Поблагодарить</strong><small>если понравилось выступление</small></div><span>→</span></a>
+          <a class="action-wide" href="#"><div class="action-icon"><Icon name="music" size={24} /></div><div class="action-copy"><strong>Заказать песню</strong><small>если есть в репертуаре</small></div><Icon name="arrow" size={20} /></a>
+          <a class="action-wide" href="#"><div class="action-icon"><Icon name="message" size={24} /></div><div class="action-copy"><strong>Сказать пару слов</strong><small>текстом, голосом или видео</small></div><Icon name="arrow" size={20} /></a>
+          <a class="action-wide tip-action" href="#"><div class="action-icon"><Icon name="heart" size={24} /></div><div class="action-copy"><strong>Поблагодарить</strong><small>чаевыми / переводом</small></div><Icon name="arrow" size={20} /></a>
         </div>
       </div>
     </section>
@@ -173,12 +174,12 @@ const canonical = 'https://singer.andreway.ru/';
             <h2 class="contact-title">Давайте обсудим ваш вечер</h2>
             <p class="contact-copy">Оставьте заявку или свяжитесь удобным способом.</p>
             <div class="contact-links">
-              <a href={phoneLink}>☎ <span>{phoneDisplay}</span></a>
-              <a href={telegram}>✈ <span>Telegram</span></a>
-              <a href={whatsapp}>◉ <span>WhatsApp</span></a>
-              <a href={instagram}>◎ <span>Instagram</span></a>
-              <a href="#">VK <span>ВКонтакте</span></a>
-              <a href="#">＋ <span>Сохранить контакт</span></a>
+              <a href={phoneLink}><Icon name="smartphone" size={22} /><span>{phoneDisplay}</span></a>
+              <a href={telegram} target="_blank" rel="noreferrer"><img class="brand-icon contact-brand" src="https://cdn.simpleicons.org/telegram/ffffff" alt="" /><span>Telegram</span></a>
+              <a href={whatsapp} target="_blank" rel="noreferrer"><img class="brand-icon contact-brand" src="https://cdn.simpleicons.org/whatsapp/ffffff" alt="" /><span>WhatsApp</span></a>
+              <a href={instagram} target="_blank" rel="noreferrer"><img class="brand-icon contact-brand" src="https://cdn.simpleicons.org/instagram/ffffff" alt="" /><span>Instagram</span></a>
+              <a href="#"><img class="brand-icon contact-brand" src="https://cdn.simpleicons.org/vk/ffffff" alt="" /><span>ВКонтакте</span></a>
+              <a href="#"><Icon name="contact" size={22} /><span>Сохранить контакт</span></a>
             </div>
           </div>
         </div>
