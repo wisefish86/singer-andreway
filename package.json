@@ -6,13 +6,9 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "postbuild": "node .github/scripts/capture-preview.mjs",
     "preview": "astro preview"
   },
   "dependencies": {
     "astro": "^5.14.1"
-  },
-  "devDependencies": {
-    "puppeteer": "^24.26.1"
   }
 }
