@@ -1,131 +1,193 @@
 ---
 import '../styles/global.css';
+
 const phoneDisplay = '+7 918 114-26-93';
 const phoneLink = 'tel:+79181142693';
 const telegram = 'https://t.me/andrey_spoet';
 const whatsapp = 'https://wa.me/79181142693';
+const instagram = 'https://instagram.com/andrey_spoet';
+
+const seoTitle = 'Певец на мероприятие в Краснодаре — Андрей Шевцов';
+const seoDescription = 'Живой вокал на свадьбы, корпоративы, юбилеи, рестораны и частные мероприятия в Краснодаре и Краснодарском крае. Репертуар 300+ песен.';
+const canonical = 'https://singer.andreway.ru/';
 ---
 <!doctype html>
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#070809" />
-  <meta name="description" content="Андрей Шевцов — певец. Живые выступления на частных и корпоративных мероприятиях." />
-  <title>Андрей Шевцов — певец</title>
+  <meta name="theme-color" content="#06101a" />
+  <title>{seoTitle}</title>
+  <meta name="description" content={seoDescription} />
+  <link rel="canonical" href={canonical} />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={seoTitle} />
+  <meta property="og:description" content={seoDescription} />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:locale" content="ru_RU" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context":"https://schema.org",
+    "@type":"Person",
+    "name":"Андрей Шевцов",
+    "jobTitle":"Певец",
+    "url":canonical,
+    "telephone":"+79181142693",
+    "areaServed":["Краснодар","Краснодарский край"],
+    "sameAs":[telegram,instagram]
+  })}></script>
 </head>
 <body>
-  <header class="hero" id="top">
-    <div class="hero-nav">
-      <div class="container nav-row">
-        <a class="brand" href="#top">Andrey / live</a>
-        <nav class="nav-links" aria-label="Основная навигация">
-          <a href="#video">Видео</a>
-          <a href="#repertoire">Репертуар</a>
-          <a href="#formats">Форматы</a>
-          <a href="#contact">Контакты</a>
-        </nav>
-      </div>
-    </div>
-
-    <div class="container hero-content">
-      <div class="hero-kicker">живой вокал · события · Краснодарский край</div>
-      <h1>Андрей<br/>Шевцов</h1>
-      <div class="hero-sub">
-        <p>Современные и вечные хиты — живьём. Рестораны, частные события, свадьбы и корпоративы.</p>
-        <div class="hero-actions">
-          <a class="button primary" href="#contact">Заказать выступление</a>
-          <a class="button" href="#video">Смотреть видео ↓</a>
-        </div>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="#top">ANDREY / LIVE</a>
+      <nav class="nav" aria-label="Навигация">
+        <a href="#repertoire">Репертуар</a>
+        <a href="#events">Афиша</a>
+        <a href="#video">Видео</a>
+        <a href="#contact">Контакты</a>
+      </nav>
+      <div class="social-mini">
+        <a class="icon-btn" href={telegram} aria-label="Telegram">TG</a>
+        <a class="icon-btn" href={instagram} aria-label="Instagram">IG</a>
       </div>
     </div>
   </header>
 
-  <section class="stats" aria-label="Ключевые факты">
-    <div class="stat"><strong>300+</strong><span>песен в репертуаре</span></div>
-    <div class="stat"><strong>Live</strong><span>живой вокал</span></div>
-    <div class="stat"><strong>RU / EN</strong><span>русские и зарубежные хиты</span></div>
-    <div class="stat"><strong>Full set</strong><span>своё оборудование</span></div>
+  <section class="hero" id="top">
+    <div class="container hero-content">
+      <div class="kicker">живой вокал · Краснодар и край</div>
+      <h1>Андрей<br/>Шевцов</h1>
+      <div class="hero-role">певец</div>
+      <p class="hero-copy">Современные и вечные хиты в живом исполнении. Рестораны, частные события, свадьбы и корпоративы.</p>
+      <div class="chips">
+        <span class="chip">300+ песен</span>
+        <span class="chip">RU / EN</span>
+        <span class="chip">своё оборудование</span>
+      </div>
+      <div class="hero-actions">
+        <a class="btn primary full" href="#contact">Заказать выступление →</a>
+        <a class="btn" href="#video">▶ Смотреть видео</a>
+        <a class="btn" href="#contact">＋ Сохранить контакт</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="quick">
+    <div class="container quick-grid">
+      <a class="quick-card" href="#video"><div class="quick-icon">▶</div><div class="quick-title">Видео</div><div class="quick-sub">живые выступления</div></a>
+      <a class="quick-card" href="#repertoire"><div class="quick-icon">♫</div><div class="quick-title">Репертуар</div><div class="quick-sub">300+ песен</div></a>
+      <a class="quick-card" href="#photos"><div class="quick-icon">▣</div><div class="quick-title">Фото</div><div class="quick-sub">с выступлений</div></a>
+      <a class="quick-card" href="#events"><div class="quick-icon">□</div><div class="quick-title">Афиша</div><div class="quick-sub">ближайшие даты</div></a>
+      <a class="quick-card" href="#live"><div class="quick-icon">◉</div><div class="quick-title">Во время выступления</div><div class="quick-sub">песня, сообщение, благодарность</div></a>
+      <a class="quick-card" href="#contact"><div class="quick-icon">☎</div><div class="quick-title">Контакты</div><div class="quick-sub">Telegram, WhatsApp, звонок</div></a>
+    </div>
   </section>
 
   <main>
-    <section class="section" id="video">
-      <div class="container reveal">
-        <div class="eyebrow">Как это звучит</div>
-        <h2 class="section-title">Сначала — услышать.</h2>
-        <p class="section-copy">Главное доказательство — не описание, а сцена. Здесь будут лучшие живые фрагменты, собранные как короткий showreel.</p>
-
-        <div class="showcase">
-          <article class="video-card">
-            <div class="video-meta"><span>Showreel 2026</span><span>01:20</span></div>
-            <div>
-              <div class="eyebrow">live selection</div>
-              <div class="video-title">Энергия вечера в нескольких минутах.</div>
+    <section class="section" id="events">
+      <div class="container">
+        <div class="section-head">
+          <div><h2>Ближайшее выступление</h2><p class="lead">Открытые выступления и события</p></div>
+          <a class="link" href="#">Вся афиша →</a>
+        </div>
+        <article class="event-card">
+          <div class="event-media"></div>
+          <div class="event-body">
+            <div class="event-date"><strong>25</strong><span>октября</span></div>
+            <div class="event-title">Следующая открытая дата</div>
+            <div class="event-place">Краснодар · площадка уточняется</div>
+            <div class="event-actions">
+              <a class="btn primary" href="#">Подробнее →</a>
+              <a class="btn" href="#">＋ В календарь</a>
+              <a class="btn" href={telegram}>◉ Напомнить в Telegram</a>
             </div>
-          </article>
-
-          <div class="side-stack">
-            <article class="event-card">
-              <div>
-                <div class="eyebrow">Ближайшее выступление</div>
-                <div class="event-date">Soon</div>
-                <div class="card-title">Следующая открытая дата появится здесь</div>
-              </div>
-              <div class="card-foot"><span>афиша и напоминания</span><span>↗</span></div>
-            </article>
-
-            <article class="repertoire-card" id="repertoire">
-              <div>
-                <div class="eyebrow">Репертуар</div>
-                <div class="card-title">От лёгкой поп-музыки до рока — под конкретную аудиторию.</div>
-              </div>
-              <div class="card-foot"><span>полный каталог — следующим этапом</span><span>300+ ↗</span></div>
-            </article>
           </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="video">
+      <div class="container">
+        <div class="section-head">
+          <div><h2>Видео</h2><p class="lead">Энергия живых выступлений</p></div>
+          <a class="link" href="#">Все видео →</a>
+        </div>
+        <div class="media-row">
+          <article class="video-card"><div class="video-thumb" style="background-image:url('https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=900&q=80')"></div><div class="video-info"><div class="video-title">Лучшие моменты</div><div class="video-sub">живое выступление</div></div></article>
+          <article class="video-card"><div class="video-thumb" style="background-image:url('https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=900&q=80')"></div><div class="video-info"><div class="video-title">Поп-хиты</div><div class="video-sub">динамичный сет</div></div></article>
+          <article class="video-card"><div class="video-thumb" style="background-image:url('https://images.unsplash.com/photo-1501612780327-45045538702b?auto=format&fit=crop&w=900&q=80')"></div><div class="video-info"><div class="video-title">Вечные хиты</div><div class="video-sub">для особых событий</div></div></article>
+          <article class="video-card"><div class="video-thumb" style="background-image:url('https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=900&q=80')"></div><div class="video-info"><div class="video-title">Атмосфера вечера</div><div class="video-sub">ресторанный формат</div></div></article>
         </div>
       </div>
     </section>
 
-    <section class="section" id="formats">
-      <div class="container reveal">
-        <div class="eyebrow">Форматы</div>
-        <h2 class="section-title">Не «номер».<br/>Часть вашего вечера.</h2>
-        <p class="section-copy">Сет строится под площадку, гостей и динамику события — от фонового старта до финального драйва.</p>
-
-        <div class="formats">
-          <article class="format-card"><span class="format-number">01</span><div class="format-name">Свадьбы<br/>и частные события</div></article>
-          <article class="format-card"><span class="format-number">02</span><div class="format-name">Корпоративы</div></article>
-          <article class="format-card"><span class="format-number">03</span><div class="format-name">Рестораны<br/>и бары</div></article>
-          <article class="format-card"><span class="format-number">04</span><div class="format-name">Интерактив,<br/>караоке и песни гостей</div></article>
+    <section class="section" id="repertoire">
+      <div class="container">
+        <div class="section-head">
+          <div><h2>Репертуар</h2><p class="lead">От лёгкой поп-музыки до рока — под аудиторию и формат</p></div>
+          <a class="link" href="#">Весь репертуар →</a>
+        </div>
+        <div class="rep-grid">
+          <a class="rep-card" style="background-image:url('https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=600&q=80')" href="#"><strong>Поп-хиты</strong><span>узнаваемое и лёгкое</span></a>
+          <a class="rep-card" style="background-image:url('https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80')" href="#"><strong>Русские хиты</strong><span>для общего подпевания</span></a>
+          <a class="rep-card" style="background-image:url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=600&q=80')" href="#"><strong>Зарубежные</strong><span>EN repertoire</span></a>
+          <a class="rep-card" style="background-image:url('https://images.unsplash.com/photo-1496293455970-f8581aae0e3b?auto=format&fit=crop&w=600&q=80')" href="#"><strong>Романтические</strong><span>для красивых моментов</span></a>
+          <a class="rep-card" style="background-image:url('https://images.unsplash.com/photo-1527529482837-4698179dc6ce?auto=format&fit=crop&w=600&q=80')" href="#"><strong>Танцевальные</strong><span>для финального драйва</span></a>
         </div>
       </div>
     </section>
 
-    <section class="cta-band" id="contact">
-      <div class="container cta-grid reveal">
-        <h2>Давайте<br/>обсудим<br/>ваш вечер.</h2>
-        <div class="cta-links">
-          <a href={phoneLink}><span>{phoneDisplay}</span><span>Позвонить ↗</span></a>
-          <a href={telegram} target="_blank" rel="noreferrer"><span>Telegram</span><span>@andrey_spoet ↗</span></a>
-          <a href={whatsapp} target="_blank" rel="noreferrer"><span>WhatsApp</span><span>Написать ↗</span></a>
-          <a href="#top"><span>Сохранить контакт</span><span>скоро ↗</span></a>
+    <section class="section" id="live">
+      <div class="container">
+        <div class="section-head">
+          <div><h2>Здесь и сейчас</h2><p class="lead">Во время выступления можно</p></div>
+        </div>
+        <div class="live-actions">
+          <a class="action-wide" href="#"><div><strong>Заказать песню</strong><small>если есть в репертуаре</small></div><span>→</span></a>
+          <a class="action-wide" href="#"><div><strong>Сказать пару слов</strong><small>текстом, голосом или видео</small></div><span>→</span></a>
+          <a class="action-wide" href="#"><div><strong>Поблагодарить</strong><small>если понравилось выступление</small></div><span>→</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="photos">
+      <div class="container">
+        <div class="section-head">
+          <div><h2>Фото</h2><p class="lead">Сцена, публика, живые моменты</p></div>
+          <a class="link" href="#">Все фото →</a>
+        </div>
+        <div class="media-row">
+          <article class="video-card"><div class="video-thumb" style="background-image:url('https://images.unsplash.com/photo-1524650359799-842906ca1c06?auto=format&fit=crop&w=900&q=80')"></div></article>
+          <article class="video-card"><div class="video-thumb" style="background-image:url('https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=900&q=80')"></div></article>
+          <article class="video-card"><div class="video-thumb" style="background-image:url('https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?auto=format&fit=crop&w=900&q=80')"></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="contact">
+      <div class="container">
+        <div class="contact">
+          <div class="contact-media"></div>
+          <div class="contact-body">
+            <h2 class="contact-title">Давайте обсудим ваш вечер</h2>
+            <p class="contact-copy">Оставьте заявку или свяжитесь удобным способом.</p>
+            <div class="contact-links">
+              <a href={phoneLink}>☎ <span>{phoneDisplay}</span></a>
+              <a href={telegram}>✈ <span>Telegram</span></a>
+              <a href={whatsapp}>◉ <span>WhatsApp</span></a>
+              <a href={instagram}>◎ <span>Instagram</span></a>
+              <a href="#">VK <span>ВКонтакте</span></a>
+              <a href="#">＋ <span>Сохранить контакт</span></a>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <div class="container footer-row">
-      <span>© {new Date().getFullYear()} Андрей Шевцов</span>
-      <span>singer.andreway.ru</span>
-    </div>
+    <div class="container">© {new Date().getFullYear()} Андрей Шевцов · singer.andreway.ru</div>
   </footer>
-
-  <script is:inline>
-    const observer = new IntersectionObserver((entries)=>{
-      entries.forEach((entry)=>entry.isIntersecting && entry.target.classList.add('visible'))
-    },{threshold:.12});
-    document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
-  </script>
 </body>
 </html>
