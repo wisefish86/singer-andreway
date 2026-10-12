@@ -393,7 +393,7 @@ function doPost(e) {
     try {
       if (command === '/start') {
         updateSubscriber_(id, true);
-        reply = '🔔 Вы подписались на напоминания о моих открытых выступлениях! Вы получите сообщения накануне и в день выступления.\n\nОтключить: /stop';
+        reply = '🔔 Вы подписались на напоминания о моих открытых выступлениях! Вы получите сообщения за 48 и за 3 часа до выступления.\n\nОтключить: /stop';
       } else if (command === '/stop') {
         updateSubscriber_(id, false);
         reply = '🔕 Напоминания отключены. Чтобы включить их снова: /start';
@@ -434,7 +434,7 @@ function plusLocalDays_(day, days) {
 function notificationText_(event, kind) {
   const h = publicEventHeading_(event);
   const d = eventDetails_(event);
-  const prefix = kind === 'day_before' ? '🔔 Завтра выступаю!' : '🎤 Сегодня выступаю!';
+  const prefix = kind === 'hours_48' ? '🔔 Через два дня выступаю!' : '🎤 Через три часа выступаю!';
   const parts = [prefix, '', '📅 ' + h.date];
   if (h.time) parts.push('🕗 ' + h.time);
   if (d.venue) parts.push('🏛️ ' + d.venue);
@@ -460,56 +460,60 @@ function sendPerformanceReminders() {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return;
   try {
-    const now = new Date();
-    const nowLocal = moscowTime_(now);
-    const today = nowLocal.slice(0, 10);
-    const currentMinute = nowLocal.slice(11);
+    const now = Date.now();
     const events = publicEvents_();
     const subscribers = subscriberRows_();
-    const {sheet, keys} = sentNotifications_();
-    const due = [];
+    const sent = sentNotifications_();
+    const tasks = [];
     for (const event of events) {
       const show = publicShowStart_(event);
-      if (!show) continue; // No public showtime in the title: don't guess.
-      if (nowLocal >= show.timestamp) continue;
-      if (today === plusLocalDays_(show.day, -1) && currentMinute >= '12:00') {
-        due.push({event, kind:'day_before'});
-      } else if (today === show.day && currentMinute >= '09:00') {
-        due.push({event, kind:'day_of'});
+      if (!show) continue;
+      // Moscow is UTC+03 year-round. Do not use the private calendar clock time.
+      const showAt = Date.parse(show.day + 'T' + show.time + ':00+03:00');
+      if (!Number.isFinite(showAt) || now >= showAt) continue;
+      for (const item of [
+        {kind:'hours_48', before:48},
+        {kind:'hours_3', before:3}
+      ]) {
+        const target = showAt - item.before * 3600000;
+        // One-hour delivery window tolerates Apps Script trigger jitter;
+        // never send a reminder retroactively days after its target.
+        if (now >= target && now < target + 3600000) tasks.push({event, kind:item.kind});
       }
     }
-    for (const subscriber of subscribers.rows) {
-      if (subscriber.status !== 'active') continue;
-      for (const item of due) {
-        if (item.kind === 'day_before' && !subscriber.dayBefore) continue;
-        if (item.kind === 'day_of' && !subscriber.dayOf) continue;
-        const key = [item.event.id, item.kind, subscriber.chatId, item.event.start].join('|');
-        if (keys.has(key)) continue;
+    for (const sub of subscribers.rows) {
+      if (sub.status !== 'active') continue;
+      for (const item of tasks) {
+        if (item.kind === 'hours_48' && !sub.dayBefore) continue;
+        if (item.kind === 'hours_3' && !sub.dayOf) continue;
+        const key = [item.event.id, item.kind, sub.chatId, item.event.start].join('|');
+        if (sent.keys.has(key)) continue;
         try {
           const result = telegram_('sendMessage', {
-            chat_id: subscriber.chatId, text: notificationText_(item.event, item.kind),
-            disable_web_page_preview: true
+            chat_id: sub.chatId,
+            text: notificationText_(item.event, item.kind),
+            link_preview_options: {is_disabled:true}
           });
-          sheet.appendRow([item.event.id, item.kind, subscriber.chatId, item.event.start,
+          sent.sheet.appendRow([item.event.id, item.kind, sub.chatId, item.event.start,
             new Date().toISOString(), result.message_id, 'sent', '']);
-          keys.add(key);
-          Utilities.sleep(50); // Telegram burst-rate courtesy.
-        } catch (err) {
-          const reason = String(err).slice(0, 450);
-          sheet.appendRow([item.event.id, item.kind, subscriber.chatId, item.event.start,
+          sent.keys.add(key);
+        } catch (error) {
+          const reason = String(error).slice(0,450);
+          sent.sheet.appendRow([item.event.id, item.kind, sub.chatId, item.event.start,
             new Date().toISOString(), '', 'failed', reason]);
           if (/bot was blocked|user is deactivated|chat not found|forbidden/i.test(reason)) {
-            subscribers.sheet.getRange(subscriber.row, 2).setValue('blocked');
-            subscribers.sheet.getRange(subscriber.row, 7).setValue(reason);
-            subscriber.status = 'blocked';
+            subscribers.sheet.getRange(sub.row, 2).setValue('blocked');
+            subscribers.sheet.getRange(sub.row, 7).setValue(reason);
+            sub.status = 'blocked';
             break;
           }
-          // Network/rate failures retry next run; no false success log.
           console.error('Reminder failed: ' + reason);
         }
       }
     }
-  } finally {lock.releaseLock();}
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function installReminderTrigger() {
