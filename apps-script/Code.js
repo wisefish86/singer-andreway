@@ -147,7 +147,7 @@ function publicEventHeading_(event) {
 
 function renderChannel_(events) {
   const lines = ['<b>Ближайшие открытые выступления</b>', ''];
-  if (!events.length) lines.push('Новых дат пока нет. Следите за обновлениями!');
+  if (!events.length) lines.push('Пока нет ближайших открытых выступлений. Новые даты появятся здесь.');
   const footer = '🔔 <a href="https://t.me/andrey_spoet_bot">Напомнить мне о выступлении</a>';
   for (const e of events.slice(0, 6)) {
     const d = eventDetails_(e);
@@ -193,11 +193,8 @@ function syncChannel() {
         if (!String(err).includes('message is not modified')) throw err;
       }
     } else {
-      const sent = photoId
-        ? telegram_('sendPhoto', {chat_id: CFG.channel, photo: photoId, caption: text, parse_mode: 'HTML'})
-        : telegram_('sendMessage', {chat_id: CFG.channel, text, parse_mode: 'HTML', link_preview_options: {is_disabled: true}});
-      props.setProperty('CHANNEL_MESSAGE_ID', String(sent.message_id));
-      telegram_('pinChatMessage', {chat_id: CFG.channel, message_id: sent.message_id, disable_notification: true});
+      // New photo posts are created only by the explicit one-time setup function.
+      throw new Error('CHANNEL_MESSAGE_ID не задан. Автоматически создавать новую афишу нельзя.');
     }
     props.setProperty('CHANNEL_LAST_TEXT', text);
     props.setProperty('LAST_SUCCESS_AT', new Date().toISOString());
