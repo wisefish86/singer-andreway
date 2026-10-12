@@ -85,26 +85,49 @@ function eventDetails_(event) {
     const match = desc.match(pattern);
     return match ? match[1].trim() : '';
   };
-  const rawUrl = read('Сайт|Website|URL|Официальный сайт');
-  const htmlUrl = original.match(/href=["'](https?:\/\/[^"']+)["']/i);
-  const plainUrl = desc.match(/https?:\/\/[^\s<>]+/i);
-  const website = rawUrl || (htmlUrl && htmlUrl[1]) || (plainUrl && plainUrl[0]) || '';
+  // Supports plain URLs, Markdown links and HTML links in calendar descriptions.
+  const linkedUrl = (labels) => {
+    const line = read(labels);
+    if (!line) return '';
+    const md = line.match(/\]\((https?:\/\/[^)\s]+)\)/i);
+    if (md) return md[1];
+    const plain = line.match(/https?:\/\/[^\s<>)]+/i);
+    if (plain) return plain[0];
+    const escaped = labels.replace(/\|/g, '|');
+    const htmlLine = original.match(new RegExp('(?:' + escaped + ')[^\\n]*?<a\\b[^>]*href=["\\'](https?:\\/\\/[^"\\']+)', 'i'));
+    return htmlLine ? htmlLine[1] : '';
+  };
+  const unwrap = url => {
+    if (!url) return '';
+    url = url.replace(/&amp;/gi, '&').replace(/\\&/g, '&');
+    const redirect = url.match(/^https?:\/\/(?:www\.)?google\.com\/url\?(.*)$/i);
+    if (redirect) {
+      const q = redirect[1].match(/(?:^|&)q=([^&]+)/);
+      if (q) { try { return decodeURIComponent(q[1]); } catch (e) { return q[1]; } }
+    }
+    return url.replace(/[.,;]+$/, '');
+  };
+  const mapLink = unwrap(linkedUrl('Яндекс\\s*Карты|Яндекс\\.?Карты|Карта|Маршрут'));
+  const siteLine = read('Официальный сайт|Сайт|Website|URL');
+  let website = unwrap(linkedUrl('Официальный сайт|Сайт|Website|URL'));
+  if (!website && siteLine && /^(?:www\.)?[\w-]+\.[a-z]{2,}/i.test(siteLine)) website = 'https://' + siteLine;
   const phonePattern = /(?:\+7|8)[\s().-]*(?:\d[\s().-]*){10}(?!\d)/g;
   const phoneMatch = desc.match(phonePattern);
   return {
     venue: read('Заведение|Площадка|Место|Venue') || event.title,
     address: compactAddress_(read('Адрес|Address') || event.location),
-    website: website.replace(/[.,;]+$/, ''),
+    website,
+    mapLink: /^https?:\/\/(?:yandex\.ru|www\.yandex\.ru|yandex\.com|maps\.yandex\.[a-z]+)\//i.test(mapLink) ? mapLink : '',
     phone: read('Телефон|Тел\\.?|Phone') || (phoneMatch ? phoneMatch[0].trim() : ''),
   };
 }
 
-function routeLink_(address) {
-  return 'https://yandex.ru/maps/?text=' + encodeURIComponent(address);
+function routeLink_(address, mapLink) {
+  return mapLink || 'https://yandex.ru/maps/?text=' + encodeURIComponent(address);
 }
 
-function addressLine_(address) {
-  return '📍 ' + escapeHtml_(address) + ' · <a href="' + escapeHtml_(routeLink_(address)) + '">Построить маршрут</a>';
+function addressLine_(address, mapLink) {
+  return '📍 ' + escapeHtml_(address) + ' · <a href="' + escapeHtml_(routeLink_(address, mapLink)) + '">Построить маршрут</a>';
 }
 
 function renderChannel_(events) {
@@ -114,7 +137,7 @@ function renderChannel_(events) {
     const details = eventDetails_(e);
     lines.push('📅 ' + escapeHtml_(formatDate_(e.start)));
     if (details.venue) lines.push('🏛️ ' + escapeHtml_(details.venue));
-    if (details.address) lines.push(addressLine_(details.address));
+    if (details.address) lines.push(addressLine_(details.address, details.mapLink));
     if (details.website) {
       const url = /^https?:\/\//i.test(details.website) ? details.website : 'https://' + details.website;
       if (/^https?:\/\/[^\s<>"]+$/i.test(url)) lines.push('🌐 <a href="' + escapeHtml_(url) + '">Сайт заведения</a>');
@@ -132,7 +155,7 @@ function renderChannel_(events) {
     const d = eventDetails_(e);
     const block = ['📅 ' + escapeHtml_(formatDate_(e.start))];
     if (d.venue) block.push('🏛️ ' + escapeHtml_(d.venue));
-    if (d.address) block.push(addressLine_(d.address));
+    if (d.address) block.push(addressLine_(d.address, d.mapLink));
     if (d.website) {
       const url = /^https?:\/\//i.test(d.website) ? d.website : 'https://' + d.website;
       if (/^https?:\/\/[^\s<>"]+$/i.test(url)) block.push('🌐 <a href="' + escapeHtml_(url) + '">Сайт</a>');
