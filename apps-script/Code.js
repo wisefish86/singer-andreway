@@ -619,3 +619,35 @@ function activateSubscriberWebhook() {
     allowed_updates: ['message'], drop_pending_updates: false});
   console.log('Webhook activated: ' + JSON.stringify(result));
 }
+
+
+/**
+ * One-time safe cutover: validate the Supabase endpoint, register Telegram
+ * webhook with token-derived secret, then stop polling. No bot token logged.
+ */
+function activateSingerSupabaseWebhook() {
+  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
+  if (!token) throw new Error('TELEGRAM_BOT_TOKEN отсутствует в Script Properties');
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, 'singer-webhook:' + token, Utilities.Charset.UTF_8
+  );
+  const secret = digest.map(b => ('0' + ((b + 256) % 256).toString(16)).slice(-2)).join('');
+  const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-telegram-webhook';
+  const result = UrlFetchApp.fetch(endpoint, {
+    method: 'get', headers: {'X-Telegram-Bot-Api-Secret-Token': secret},
+    muteHttpExceptions: true
+  });
+  if (result.getResponseCode() !== 200 || result.getContentText().trim() !== 'ready') {
+    throw new Error('Supabase не готов (HTTP ' + result.getResponseCode() +
+      '). Telegram webhook НЕ изменён. Проверь секрет SINGER_TELEGRAM_BOT_TOKEN.');
+  }
+  telegram_('setWebhook', {
+    url: endpoint, secret_token: secret,
+    allowed_updates: ['message'], drop_pending_updates: false
+  });
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'pollSubscriberMessages')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  console.log('Готово: Telegram webhook подключён к Supabase; опрос отключён.');
+  console.log('Теперь отправь боту /start или /event, затем /status.');
+}
