@@ -128,7 +128,7 @@ linear-gradient(145deg,#17334a,#08121b 72%)}
 .footer{padding:28px 0 40px;color:#81909d;font-size:.76rem}
 .desktop-only{display:none}
 @media(max-width:759px){
-  .hero{background-position:73% center!important}
+  .hero{background-position:67% center!important}
 }
 @media(max-width:380px){h1{font-size:2.35rem}.chip{font-size:.72rem;padding:7px 9px}}
 @media(min-width:760px){
