@@ -34,6 +34,4 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          supabase functions deploy singer-telegram-webhook \\
-            --project-ref jjaunlbglskpddslwegp \\
-            --no-verify-jwt
+          supabase functions deploy singer-telegram-webhook --project-ref jjaunlbglskpddslwegp --no-verify-jwt
