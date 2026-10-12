@@ -94,7 +94,7 @@ function eventDetails_(event) {
     const plain = line.match(/https?:\/\/[^\s<>)]+/i);
     if (plain) return plain[0];
     const escaped = labels.replace(/\|/g, '|');
-    const htmlLine = original.match(new RegExp('(?:' + escaped + ')[^\\n]*?<a\\b[^>]*href=["\\'](https?:\\/\\/[^"\\']+)', 'i'));
+    const htmlLine = original.match(new RegExp("(?:(" + labels + "))[^\\n]*?<a\\b[^>]*href=[\\\"'](https?:\\/\\/[^\\\"']+)", "i"));
     return htmlLine ? htmlLine[1] : '';
   };
   const unwrap = url => {
