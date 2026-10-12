@@ -138,48 +138,35 @@ function publicEventHeading_(event) {
   return {
     venue: match ? match[1].trim() : event.title.trim(),
     time: match ? match[2].replace(/\s*[-–—]\s*/, '–') : '',
-    date: Utilities.formatDate(new Date(event.start), CFG.timezone, 'dd.MM.yyyy'),
+    date: Utilities.formatDate(new Date(event.start), CFG.timezone, 'd MMMM') + ' (' + ['вс','пн','вт','ср','чт','пт','сб'][Number(Utilities.formatDate(new Date(event.start), CFG.timezone, 'u')) % 7] + ')',
   };
 }
 
 function renderChannel_(events) {
   const lines = ['<b>Ближайшие открытые выступления</b>', ''];
   if (!events.length) lines.push('Новых дат пока нет. Следите за обновлениями!');
-  events.slice(0, 6).forEach(e => {
-    const details = eventDetails_(e);
-    const heading = publicEventHeading_(e);
-    lines.push('📅 ' + escapeHtml_(heading.date + (heading.time ? ' ' + heading.time : '')));
-    if (details.venue) lines.push('🏛️ ' + escapeHtml_(details.venue));
-    if (details.address) lines.push(addressLine_(details.address, details.mapLink));
-    if (details.website) {
-      const url = /^https?:\/\//i.test(details.website) ? details.website : 'https://' + details.website;
-      if (/^https?:\/\/[^\s<>"]+$/i.test(url)) lines.push('🌐 <a href="' + escapeHtml_(url) + '">Сайт заведения</a>');
-    }
-    if (details.phone) lines.push('📞 ' + escapeHtml_(details.phone));
-    lines.push('');
-  });
-  lines.push('🔔 Хотите получать напоминания о выступлениях? Подпишитесь на уведомления: https://t.me/andrey_spoet_bot');
-  // Photo captions are limited to 1024 characters after parsing entities.
-  const full = lines.join('\n');
-  if (full.length <= 950) return full;
   const footer = '🔔 Напоминания: https://t.me/andrey_spoet_bot';
-  const compact = ['<b>Ближайшие открытые выступления</b>', ''];
-  for (const e of events) {
+  for (const e of events.slice(0, 6)) {
     const d = eventDetails_(e);
-    const heading = publicEventHeading_(e);
-    const block = ['📅 ' + escapeHtml_(heading.date + (heading.time ? ' ' + heading.time : ''))];
-    if (d.venue) block.push('🏛️ ' + escapeHtml_(d.venue));
-    if (d.address) block.push(addressLine_(d.address, d.mapLink));
-    if (d.website) {
-      const url = /^https?:\/\//i.test(d.website) ? d.website : 'https://' + d.website;
-      if (/^https?:\/\/[^\s<>"]+$/i.test(url)) block.push('🌐 <a href="' + escapeHtml_(url) + '">Сайт</a>');
+    const h = publicEventHeading_(e);
+    const block = ['📅 ' + escapeHtml_(h.date)];
+    if (h.time) block.push('🕗 ' + escapeHtml_(h.time));
+    const site = /^https?:\/\/[^\s<>"]+$/i.test(d.website) ? d.website : '';
+    if (d.venue) block.push('🏛️ ' + (site
+      ? '<a href="' + escapeHtml_(site) + '">' + escapeHtml_(d.venue) + '</a> <i>(сайт)</i>'
+      : escapeHtml_(d.venue)));
+    if (d.address) block.push('📍 <a href="' + escapeHtml_(routeLink_(d.address, d.mapLink)) + '">' + escapeHtml_(d.address) + '</a>');
+    if (d.phone) {
+      const digits = d.phone.replace(/\D/g, '');
+      const dial = digits.length === 11 && digits[0] === '8' ? '+7' + digits.slice(1)
+        : digits.length === 11 && digits[0] === '7' ? '+' + digits : '';
+      block.push('📞 ' + (dial ? '<a href="tel:' + dial + '">' + escapeHtml_(d.phone) + '</a>' : escapeHtml_(d.phone)));
     }
-    if (d.phone) block.push('📞 ' + escapeHtml_(d.phone));
-    if ([...compact, ...block, '', footer].join('\n').length > 950) break;
-    compact.push(...block, '');
+    if ([...lines, ...block, '', footer].join('\n').length > 950) break;
+    lines.push(...block, '');
   }
-  compact.push(footer);
-  return compact.join('\n');
+  lines.push(footer);
+  return lines.join('\n');
 }
 
 function syncChannel() {
