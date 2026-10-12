@@ -6,7 +6,12 @@ const supabase = createClient(
   { auth: { persistSession: false } },
 );
 const token = Deno.env.get("SINGER_TELEGRAM_BOT_TOKEN");
-const secret = Deno.env.get("SINGER_TELEGRAM_WEBHOOK_SECRET");
+// Derive the Telegram verification secret from the shared bot token. No second secret to copy.
+async function telegramWebhookSecret(tokenValue: string): Promise<string> {
+  const bytes = new TextEncoder().encode("singer-webhook:" + tokenValue);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(hash), (v) => v.toString(16).padStart(2, "0")).join("");
+}
 const keyboard = {
   keyboard: [
     [{ text: "🔔 Получать уведомления" }, { text: "🔕 Отключить" }],
@@ -28,11 +33,24 @@ async function sendReply(chatId: number, text: string): Promise<void> {
 }
 
 Deno.serve(async (request: Request): Promise<Response> => {
-  if (request.method !== "POST") return new Response("Not found", { status: 404 });
-  if (!token || !secret) return new Response("Not configured", { status: 503 });
+  if (!token) return new Response("Not configured", { status: 503 });
+  const secret = await telegramWebhookSecret(token);
   if (request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== secret) {
     return new Response("Unauthorized", { status: 401 });
   }
+  if (request.method === "GET") {
+    try {
+      const [bot, database] = await Promise.all([
+        fetch(`https://api.telegram.org/bot${token}/getMe`).then((res) => res.json()),
+        supabase.from("singer_subscribers").select("chat_id", {head: true, count: "exact"}).limit(1),
+      ]);
+      if (!bot.ok || database.error) return new Response("Backend not ready", {status: 503});
+      return new Response("ready", {status: 200});
+    } catch {
+      return new Response("Backend not ready", {status: 503});
+    }
+  }
+  if (request.method !== "POST") return new Response("Not found", {status: 404});
 
   try {
     const update = await request.json();
