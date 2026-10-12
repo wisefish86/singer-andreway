@@ -115,7 +115,7 @@ function eventDetails_(event) {
   const phonePattern = /(?:\+7|8)[\s().-]*(?:\d[\s().-]*){10}(?!\d)/g;
   const phoneMatch = desc.match(phonePattern);
   return {
-    venue: read('Заведение|Площадка|Место|Venue') || event.title,
+    venue: read('Заведение|Площадка|Место|Venue') || publicEventHeading_(event).venue,
     address: compactAddress_(read('Адрес|Address') || event.location),
     website,
     mapLink: /^https?:\/\/(?:yandex\.ru|www\.yandex\.ru|yandex\.com|maps\.yandex\.[a-z]+)\//i.test(mapLink) ? mapLink : '',
@@ -131,12 +131,24 @@ function addressLine_(address, mapLink) {
   return '📍 ' + escapeHtml_(address) + ' · <a href="' + escapeHtml_(routeLink_(address, mapLink)) + '">Построить маршрут</a>';
 }
 
+function publicEventHeading_(event) {
+  // Calendar start/end are private logistics times; only the date is public.
+  // Public performance time is explicitly supplied at the end of the event title.
+  const match = event.title.match(/^(.*?),\s*(\d{1,2}:\d{2}\s*[-–—]\s*\d{1,2}:\d{2})\s*$/);
+  return {
+    venue: match ? match[1].trim() : event.title.trim(),
+    time: match ? match[2].replace(/\s*[-–—]\s*/, '–') : '',
+    date: Utilities.formatDate(new Date(event.start), CFG.timezone, 'dd.MM.yyyy'),
+  };
+}
+
 function renderChannel_(events) {
   const lines = ['<b>Ближайшие открытые выступления</b>', ''];
   if (!events.length) lines.push('Новых дат пока нет. Следите за обновлениями!');
   events.slice(0, 6).forEach(e => {
     const details = eventDetails_(e);
-    lines.push('📅 ' + escapeHtml_(formatDate_(e.start)));
+    const heading = publicEventHeading_(e);
+    lines.push('📅 ' + escapeHtml_(heading.date + (heading.time ? ' ' + heading.time : '')));
     if (details.venue) lines.push('🏛️ ' + escapeHtml_(details.venue));
     if (details.address) lines.push(addressLine_(details.address, details.mapLink));
     if (details.website) {
@@ -154,7 +166,8 @@ function renderChannel_(events) {
   const compact = ['<b>Ближайшие открытые выступления</b>', ''];
   for (const e of events) {
     const d = eventDetails_(e);
-    const block = ['📅 ' + escapeHtml_(formatDate_(e.start))];
+    const heading = publicEventHeading_(e);
+    const block = ['📅 ' + escapeHtml_(heading.date + (heading.time ? ' ' + heading.time : ''))];
     if (d.venue) block.push('🏛️ ' + escapeHtml_(d.venue));
     if (d.address) block.push(addressLine_(d.address, d.mapLink));
     if (d.website) {
