@@ -93,7 +93,7 @@ function installTriggers() {
   ScriptApp.getProjectTriggers()
     .filter(t => t.getHandlerFunction() === 'syncChannel')
     .forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('syncChannel').timeBased().everyMinutes(15).create();
+  ScriptApp.newTrigger('syncChannel').timeBased().everyHours(12).create();
 }
 
 // Public read-only endpoint for the website. Deployment is a separate one-time step.
