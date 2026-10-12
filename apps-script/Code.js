@@ -160,10 +160,12 @@ function renderChannel_(events) {
       : escapeHtml_(d.venue)));
     if (d.address) block.push('📍 <a href="' + escapeHtml_(routeLink_(d.address, d.mapLink)) + '">' + escapeHtml_(d.address) + '</a> <i>(маршрут)</i>');
     if (d.phone) {
+      // Telegram clients detect a plain international phone number more reliably
+      // than an HTML tel: link inside a photo caption.
       const digits = d.phone.replace(/\D/g, '');
       const dial = digits.length === 11 && digits[0] === '8' ? '+7' + digits.slice(1)
         : digits.length === 11 && digits[0] === '7' ? '+' + digits : '';
-      block.push('📞 ' + (dial ? '<a href="tel:' + dial + '">' + escapeHtml_(d.phone) + '</a>' : escapeHtml_(d.phone)));
+      block.push('📞 ' + (dial || escapeHtml_(d.phone)));
     }
     const separator = lines.length > 2 ? '──────────' : '';
     if ([...lines, separator, ...block, '', footer].join('\n').length > 950) break;
@@ -243,6 +245,56 @@ function setupChannelPhotoFromSite() {
       catch (err) { console.warn('Не удалось открепить прежнюю афишу: ' + err); }
     }
     console.log('Готово: при дальнейшей синхронизации будет изменяться только подпись.');
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * Explicitly replace the photo in the existing pinned post.
+ * Never sends a new channel message or changes its message_id/pin.
+ * Not scheduled: invoke only when the hosted photo has changed.
+ */
+function refreshChannelPhoto() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error('Другая синхронизация уже выполняется.');
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const token = props.getProperty('TELEGRAM_BOT_TOKEN');
+    const messageId = props.getProperty('CHANNEL_MESSAGE_ID');
+    if (!token) throw new Error('Не задан TELEGRAM_BOT_TOKEN');
+    if (!messageId) throw new Error('Нет CHANNEL_MESSAGE_ID: нечего обновлять.');
+    if (!props.getProperty('TELEGRAM_PHOTO_FILE_ID')) {
+      throw new Error('Закреплённое сообщение не отмечено как фото. Обновление отменено.');
+    }
+    const url = 'https://singer.andreway.ru/images/concert-announcement.webp';
+    const download = UrlFetchApp.fetch(url, {muteHttpExceptions:true, followRedirects:true});
+    if (download.getResponseCode() !== 200) {
+      throw new Error('Ошибка скачивания изображения: HTTP ' + download.getResponseCode());
+    }
+    const blob = download.getBlob().setName('concert-announcement.webp');
+    const caption = renderChannel_(publicEvents_());
+    const media = JSON.stringify({
+      type: 'photo', media: 'attach://replacement_photo', caption: caption, parse_mode: 'HTML'
+    });
+    // multipart/form-data: Apps Script constructs the boundary for a blob payload.
+    const response = UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/editMessageMedia', {
+      method: 'post',
+      payload: {
+        chat_id: CFG.channel,
+        message_id: String(messageId),
+        media: media,
+        replacement_photo: blob
+      },
+      muteHttpExceptions: true
+    });
+    const result = JSON.parse(response.getContentText());
+    if (!result.ok) throw new Error('Telegram editMessageMedia: ' + result.description);
+    const photos = (result.result && result.result.photo) || [];
+    if (photos.length) props.setProperty('TELEGRAM_PHOTO_FILE_ID', photos[photos.length - 1].file_id);
+    props.setProperty('CHANNEL_LAST_TEXT', caption);
+    props.setProperty('LAST_SUCCESS_AT', new Date().toISOString());
+    console.log('Фото заменено в том же сообщении, ID: ' + messageId);
   } finally {
     lock.releaseLock();
   }
