@@ -20,6 +20,60 @@ const keyboard = {
   resize_keyboard: true,
 };
 
+type Show = {
+  title: string; date: string; time: string; venue: string;
+  address: string; website: string; map_link: string; phone: string;
+};
+function html(value: string): string {
+  return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function validUrl(url: string): string {
+  try { const u = new URL(url); return ["https:", "http:"].includes(u.protocol) ? u.href : ""; }
+  catch { return ""; }
+}
+async function nearestShow(): Promise<Show | null> {
+  const {data, error} = await supabase.from("singer_next_show")
+    .select("show_at,details").eq("id",1).maybeSingle();
+  if (error) throw error;
+  if (!data?.show_at || Date.parse(data.show_at) <= Date.now()) return null;
+  return data.details as Show;
+}
+async function sendNearestShow(chatId: number): Promise<void> {
+  const show = await nearestShow();
+  if (!show) return;
+  const rows: { text:string; url:string }[][] = [];
+  const map = validUrl(show.map_link) || (show.address
+    ? "https://yandex.ru/maps/?text=" + encodeURIComponent(show.address) : "");
+  if (map) rows.push([{text:"🗺 Построить маршрут",url:map}]);
+  const website = validUrl(show.website);
+  if (website) rows.push([{text:"🌐 Сайт заведения",url:website}]);
+  rows.push([{text:"🎤 Все выступления",url:"https://t.me/andrey_spoet"}]);
+  const caption = [
+    "<b>🎤 Ближайшее выступление</b>",
+    "",
+    show.date ? "📅 " + html(show.date) : "",
+    show.time ? "🕗 " + html(show.time) : "",
+    show.venue ? "🏛️ <b>" + html(show.venue) + "</b>" : "",
+    show.address ? "📍 " + html(show.address) : "",
+    show.phone ? "📞 Бронирование: " + html(show.phone) : "",
+    "",
+    "Буду рад видеть вас! 🎶",
+  ].filter((x, i, a) => x || (i > 0 && a[i-1] !== "")).join("\n");
+  const response = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      chat_id:chatId,
+      photo:"https://singer.andreway.ru/images/concert-announcement.webp",
+      caption,parse_mode:"HTML",reply_markup:{inline_keyboard:rows}
+    })
+  });
+  const payload = await response.json();
+  if (!response.ok || !payload.ok) {
+    throw new Error("Telegram sendPhoto failed: HTTP " + response.status);
+  }
+}
+
 async function sendReply(chatId: number, text: string): Promise<void> {
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
@@ -37,6 +91,31 @@ Deno.serve(async (request: Request): Promise<Response> => {
   const secret = await telegramWebhookSecret(token);
   if (request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== secret) {
     return new Response("Unauthorized", { status: 401 });
+  }
+  if (request.method === "POST" && new URL(request.url).searchParams.get("sync_show") === "1") {
+    try {
+      const data = await request.json();
+      const input = data?.show;
+      if (input !== null && (!input || typeof input !== "object")) {
+        return new Response("Invalid show", {status:400});
+      }
+      const fields = ["title","date","time","venue","address","website","map_link","phone"];
+      const details: Record<string,string> = {};
+      for (const key of fields) {
+        if (input && typeof input[key] !== "string") return new Response("Invalid field", {status:400});
+        details[key] = input ? input[key].slice(0,1000) : "";
+      }
+      const showAt = input ? String(data.show_at || "") : null;
+      if (showAt && !Number.isFinite(Date.parse(showAt))) return new Response("Invalid show time",{status:400});
+      const { error } = await supabase.from("singer_next_show").upsert({
+        id:1,show_at:showAt,details,synced_at:new Date().toISOString()
+      }, {onConflict:"id"});
+      if (error) throw error;
+      return new Response("ok");
+    } catch (error) {
+      console.error("Show synchronization failed", error instanceof Error ? error.message : "unknown");
+      return new Response("Sync failed",{status:500});
+    }
   }
   if (request.method === "GET" && new URL(request.url).searchParams.get("subscribers") === "1") {
     const { data, error } = await supabase.from("singer_subscribers")
@@ -80,6 +159,7 @@ Deno.serve(async (request: Request): Promise<Response> => {
     const text = message.text.trim();
     const command = text.split(/\s+/)[0].split("@")[0].toLowerCase();
     let responseText = "Выберите действие на клавиатуре ниже.";
+    let showCard = false;
 
     if (command === "/start" || command === "/event" || text === "🔔 Получать уведомления") {
       const { error } = await supabase.from("singer_subscribers").upsert(
@@ -87,6 +167,7 @@ Deno.serve(async (request: Request): Promise<Response> => {
         { onConflict: "chat_id" },
       );
       if (error) throw error;
+      showCard = true;
       responseText = "✅ Вы подписаны на уведомления о выступлениях!\n\nЗа 2 дня и за 3 часа до выступления пришлю напоминание с адресом, маршрутом и контактами заведения для бронирования столика. Отключить уведомления можно кнопкой ниже.";
     } else if (command === "/stop" || text === "🔕 Отключить") {
       const { error } = await supabase.from("singer_subscribers")
@@ -100,11 +181,23 @@ Deno.serve(async (request: Request): Promise<Response> => {
       responseText = data?.is_active
         ? "✅ Вы подписаны. За 2 дня и за 3 часа до выступления пришлю напоминание с адресом, маршрутом и контактами заведения для бронирования столика."
         : "Уведомления сейчас выключены. Нажмите «🔔 Получать уведомления».";
+    } else if (command === "/preview") {
+      showCard = true;
+      responseText = "🎤 Вот карточка ближайшего открытого выступления:";
     } else if (command === "/help") {
       responseText = "Подписка на открытые выступления: /event — включить; /stop — отключить; /status — проверить.";
     }
 
     await sendReply(chatId, responseText);
+    if (showCard) {
+      try {
+        const show = await nearestShow();
+        if (show) await sendNearestShow(chatId);
+        else await sendReply(chatId, "Пока ближайших открытых выступлений нет. Как только появятся — сообщу!");
+      } catch (error) {
+        console.error("Nearest show card failed", error instanceof Error ? error.message : "unknown");
+      }
+    }
     const { error } = await supabase.from("singer_bot_updates")
       .upsert({ update_id: update.update_id, handled_at: new Date().toISOString() });
     if (error) throw error;
