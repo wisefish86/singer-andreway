@@ -85,21 +85,23 @@ function renderChannel_(events) {
   // Photo captions are limited to 1024 characters after parsing entities.
   const full = lines.join('\n');
   if (full.length <= 950) return full;
+  const footer = '🔔 Напоминания: https://t.me/andrey_spoet_bot';
   const compact = ['<b>Ближайшие открытые выступления</b>', ''];
-  events.slice(0, 3).forEach(e => {
+  for (const e of events) {
     const d = eventDetails_(e);
-    compact.push('📅 ' + escapeHtml_(formatDate_(e.start)));
-    if (d.venue) compact.push('🏛️ ' + escapeHtml_(d.venue));
-    if (d.address) compact.push('📍 ' + escapeHtml_(d.address));
+    const block = ['📅 ' + escapeHtml_(formatDate_(e.start))];
+    if (d.venue) block.push('🏛️ ' + escapeHtml_(d.venue));
+    if (d.address) block.push('📍 ' + escapeHtml_(d.address));
     if (d.website) {
       const url = /^https?:\/\//i.test(d.website) ? d.website : 'https://' + d.website;
-      if (/^https?:\/\/[^\s<>"]+$/i.test(url)) compact.push('🌐 <a href="' + escapeHtml_(url) + '">Сайт</a>');
+      if (/^https?:\/\/[^\s<>"]+$/i.test(url)) block.push('🌐 <a href="' + escapeHtml_(url) + '">Сайт</a>');
     }
-    if (d.phone) compact.push('📞 ' + escapeHtml_(d.phone));
-    compact.push('');
-  });
-  compact.push('🔔 Напоминания: https://t.me/andrey_spoet_bot');
-  return compact.join('\n').slice(0, 1000);
+    if (d.phone) block.push('📞 ' + escapeHtml_(d.phone));
+    if ([...compact, ...block, '', footer].join('\n').length > 950) break;
+    compact.push(...block, '');
+  }
+  compact.push(footer);
+  return compact.join('\n');
 }
 
 function syncChannel() {
