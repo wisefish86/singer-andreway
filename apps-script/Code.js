@@ -99,6 +99,14 @@ function eventDetails_(event) {
   };
 }
 
+function routeLink_(address) {
+  return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(address);
+}
+
+function addressLine_(address) {
+  return '📍 ' + escapeHtml_(address) + ' · <a href="' + escapeHtml_(routeLink_(address)) + '">Построить маршрут</a>';
+}
+
 function renderChannel_(events) {
   const lines = ['<b>Ближайшие открытые выступления</b>', ''];
   if (!events.length) lines.push('Новых дат пока нет. Следите за обновлениями!');
@@ -106,7 +114,7 @@ function renderChannel_(events) {
     const details = eventDetails_(e);
     lines.push('📅 ' + escapeHtml_(formatDate_(e.start)));
     if (details.venue) lines.push('🏛️ ' + escapeHtml_(details.venue));
-    if (details.address) lines.push('📍 ' + escapeHtml_(details.address));
+    if (details.address) lines.push(addressLine_(details.address));
     if (details.website) {
       const url = /^https?:\/\//i.test(details.website) ? details.website : 'https://' + details.website;
       if (/^https?:\/\/[^\s<>"]+$/i.test(url)) lines.push('🌐 <a href="' + escapeHtml_(url) + '">Сайт заведения</a>');
@@ -124,7 +132,7 @@ function renderChannel_(events) {
     const d = eventDetails_(e);
     const block = ['📅 ' + escapeHtml_(formatDate_(e.start))];
     if (d.venue) block.push('🏛️ ' + escapeHtml_(d.venue));
-    if (d.address) block.push('📍 ' + escapeHtml_(d.address));
+    if (d.address) block.push(addressLine_(d.address));
     if (d.website) {
       const url = /^https?:\/\//i.test(d.website) ? d.website : 'https://' + d.website;
       if (/^https?:\/\/[^\s<>"]+$/i.test(url)) block.push('🌐 <a href="' + escapeHtml_(url) + '">Сайт</a>');
