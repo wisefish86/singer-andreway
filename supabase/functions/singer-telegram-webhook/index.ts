@@ -38,6 +38,14 @@ Deno.serve(async (request: Request): Promise<Response> => {
   if (request.headers.get("X-Telegram-Bot-Api-Secret-Token") !== secret) {
     return new Response("Unauthorized", { status: 401 });
   }
+  if (request.method === "GET" && new URL(request.url).searchParams.get("subscribers") === "1") {
+    const { data, error } = await supabase.from("singer_subscribers")
+      .select("chat_id").eq("is_active", true).order("chat_id").limit(1000);
+    if (error) return new Response("Subscriber lookup unavailable", { status: 503 });
+    return new Response(JSON.stringify({ subscribers: (data ?? []).map(row => String(row.chat_id)) }), {
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }
+    });
+  }
   if (request.method === "GET") {
     try {
       const [bot, database] = await Promise.all([
