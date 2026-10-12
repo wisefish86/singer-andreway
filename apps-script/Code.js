@@ -499,16 +499,56 @@ function plusLocalDays_(day, days) {
   return Utilities.formatDate(d, 'UTC', 'yyyy-MM-dd');
 }
 
+function singerSubscribersFromSupabase_() {
+  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
+  if (!token) throw new Error('TELEGRAM_BOT_TOKEN отсутствует');
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, 'singer-webhook:' + token, Utilities.Charset.UTF_8
+  );
+  const secret = digest.map(b => ('0' + ((b + 256) % 256).toString(16)).slice(-2)).join('');
+  const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-telegram-webhook?subscribers=1';
+  const result = UrlFetchApp.fetch(endpoint, {
+    method: 'get', headers: {'X-Telegram-Bot-Api-Secret-Token': secret},
+    muteHttpExceptions: true
+  });
+  if (result.getResponseCode() !== 200) {
+    throw new Error('Не удалось получить подписчиков Supabase, HTTP ' + result.getResponseCode());
+  }
+  const parsed = JSON.parse(result.getContentText());
+  if (!Array.isArray(parsed.subscribers)) throw new Error('Некорректный ответ Supabase');
+  return parsed.subscribers.filter(id => /^\\d+$/.test(String(id))).map(id => ({
+    chatId: String(id), status: 'active', dayBefore: true, dayOf: true
+  }));
+}
+
+function reminderButtons_(event) {
+  const d = eventDetails_(event);
+  const rows = [];
+  if (d.address) rows.push([{text: '🗺 Построить маршрут', url: routeLink_(d.address, d.mapLink)}]);
+  if (d.website && /^https?:\\/\\//i.test(d.website)) {
+    rows.push([{text: '🍽 Сайт заведения / бронь', url: d.website}]);
+  }
+  rows.push([{text: '🎤 Все выступления', url: 'https://t.me/andrey_spoet'}]);
+  return {inline_keyboard: rows};
+}
+
 function notificationText_(event, kind) {
   const h = publicEventHeading_(event);
   const d = eventDetails_(event);
-  const prefix = kind === 'hours_48' ? '🔔 Через два дня выступаю!' : '🎤 Через три часа выступаю!';
-  const parts = [prefix, '', '📅 ' + h.date];
-  if (h.time) parts.push('🕗 ' + h.time);
-  if (d.venue) parts.push('🏛️ ' + d.venue);
-  if (d.address) parts.push('📍 ' + d.address);
-  parts.push('', 'Актуальная афиша: https://t.me/andrey_spoet');
-  return parts.join('\n');
+  const prefix = kind === 'hours_48' ? '🔔 До выступления два дня!' : '🎤 До выступления три часа!';
+  const parts = ['<b>' + prefix + '</b>', '', '📅 ' + escapeHtml_(h.date)];
+  if (h.time) parts.push('🕗 ' + escapeHtml_(h.time));
+  if (d.venue) parts.push('🏛️ <b>' + escapeHtml_(d.venue) + '</b>');
+  if (d.address) parts.push('📍 ' + escapeHtml_(d.address));
+  if (d.phone) {
+    const digits = d.phone.replace(/\\D/g, '');
+    const dial = digits.length === 11 && digits[0] === '8' ? '+7' + digits.slice(1)
+      : digits.length === 11 && digits[0] === '7' ? '+' + digits
+      : escapeHtml_(d.phone);
+    parts.push('📞 Бронирование: ' + dial);
+  }
+  parts.push('', 'Буду рад видеть вас! 🎶');
+  return parts.join('\\n');
 }
 
 function sentNotifications_() {
@@ -530,7 +570,7 @@ function sendPerformanceReminders() {
   try {
     const now = Date.now();
     const events = publicEvents_();
-    const subscribers = subscriberRows_();
+    const subscribers = singerSubscribersFromSupabase_();
     const sent = sentNotifications_();
     const tasks = [];
     for (const event of events) {
@@ -549,7 +589,7 @@ function sendPerformanceReminders() {
         if (now >= target && now < target + 3600000) tasks.push({event, kind:item.kind});
       }
     }
-    for (const sub of subscribers.rows) {
+    for (const sub of subscribers) {
       if (sub.status !== 'active') continue;
       for (const item of tasks) {
         if (item.kind === 'hours_48' && !sub.dayBefore) continue;
@@ -557,10 +597,12 @@ function sendPerformanceReminders() {
         const key = [item.event.id, item.kind, sub.chatId, item.event.start].join('|');
         if (sent.keys.has(key)) continue;
         try {
-          const result = telegram_('sendMessage', {
+          const result = telegram_('sendPhoto', {
             chat_id: sub.chatId,
-            text: notificationText_(item.event, item.kind),
-            link_preview_options: {is_disabled:true}
+            photo: 'https://singer.andreway.ru/images/concert-announcement.webp',
+            caption: notificationText_(item.event, item.kind),
+            parse_mode: 'HTML',
+            reply_markup: reminderButtons_(item.event)
           });
           sent.sheet.appendRow([item.event.id, item.kind, sub.chatId, item.event.start,
             new Date().toISOString(), result.message_id, 'sent', '']);
@@ -570,9 +612,7 @@ function sendPerformanceReminders() {
           sent.sheet.appendRow([item.event.id, item.kind, sub.chatId, item.event.start,
             new Date().toISOString(), '', 'failed', reason]);
           if (/bot was blocked|user is deactivated|chat not found|forbidden/i.test(reason)) {
-            subscribers.sheet.getRange(sub.row, 2).setValue('blocked');
-            subscribers.sheet.getRange(sub.row, 7).setValue(reason);
-            sub.status = 'blocked';
+            // Subscriber state belongs to Supabase. Do not mutate the old sheet.
             break;
           }
           console.error('Reminder failed: ' + reason);
