@@ -100,7 +100,7 @@ function eventDetails_(event) {
 }
 
 function routeLink_(address) {
-  return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(address);
+  return 'https://yandex.ru/maps/?text=' + encodeURIComponent(address);
 }
 
 function addressLine_(address) {
