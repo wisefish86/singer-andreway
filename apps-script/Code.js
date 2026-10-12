@@ -299,25 +299,50 @@ function setupChannelPhotoFromDrive() {
 
 
 function setupChannelPhotoFromSite() {
-  const imageUrl = 'https://singer.andreway.ru/images/concert-announcement.webp';
-  const props = PropertiesService.getScriptProperties();
-  const caption = renderChannel_(publicEvents_());
-  const oldId = props.getProperty('CHANNEL_MESSAGE_ID');
-  const sent = telegram_('sendPhoto', {
-    chat_id: CFG.channel, photo: imageUrl, caption: caption, parse_mode: 'HTML'
-  });
-  console.log('Новая фотография опубликована: ' + sent.message_id);
-  telegram_('pinChatMessage', {chat_id: CFG.channel, message_id: sent.message_id, disable_notification: true});
-  props.setProperties({
-    CHANNEL_MESSAGE_ID: String(sent.message_id),
-    TELEGRAM_PHOTO_FILE_ID: sent.photo[sent.photo.length - 1].file_id,
-    CHANNEL_LAST_TEXT: caption
-  });
-  if (oldId && Number(oldId) !== sent.message_id) {
-    try { telegram_('unpinChatMessage', {chat_id: CFG.channel, message_id: Number(oldId)}); }
-    catch (err) { console.warn(err); }
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error('Другая синхронизация уже выполняется.');
+  try {
+    const imageUrl = 'https://singer.andreway.ru/images/concert-announcement.webp';
+    const props = PropertiesService.getScriptProperties();
+    const token = props.getProperty('TELEGRAM_BOT_TOKEN');
+    if (!token) throw new Error('Не задан TELEGRAM_BOT_TOKEN');
+    console.log('Скачиваю изображение с сайта...');
+    const photoResponse = UrlFetchApp.fetch(imageUrl, {
+      muteHttpExceptions: true, followRedirects: true
+    });
+    const status = photoResponse.getResponseCode();
+    if (status !== 200) throw new Error('Сайт не отдал изображение: HTTP ' + status);
+    const blob = photoResponse.getBlob().setName('concert-announcement.webp');
+    console.log('Изображение скачано: ' + blob.getBytes().length + ' байт; MIME=' + blob.getContentType());
+    const caption = renderChannel_(publicEvents_());
+    const oldId = props.getProperty('CHANNEL_MESSAGE_ID');
+    console.log('Загружаю изображение в Telegram напрямую (multipart)...');
+    const response = UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/sendPhoto', {
+      method: 'post',
+      payload: {chat_id: CFG.channel, photo: blob, caption: caption, parse_mode: 'HTML'},
+      muteHttpExceptions: true
+    });
+    const parsed = JSON.parse(response.getContentText());
+    if (!parsed.ok) throw new Error('Telegram sendPhoto: ' + parsed.description +
+      '. Если WebP не поддерживается как фото, разместите JPG по тому же пути с расширением .jpg.');
+    const sent = parsed.result;
+    console.log('Фотография опубликована, ID: ' + sent.message_id);
+    telegram_('pinChatMessage', {chat_id: CFG.channel, message_id: sent.message_id, disable_notification: true});
+    const photos = sent.photo || [];
+    if (!photos.length) throw new Error('Telegram не вернул идентификатор фотографии');
+    props.setProperties({
+      CHANNEL_MESSAGE_ID: String(sent.message_id),
+      TELEGRAM_PHOTO_FILE_ID: photos[photos.length - 1].file_id,
+      CHANNEL_LAST_TEXT: caption
+    });
+    if (oldId && Number(oldId) !== sent.message_id) {
+      try { telegram_('unpinChatMessage', {chat_id: CFG.channel, message_id: Number(oldId)}); }
+      catch (err) { console.warn('Не удалось открепить прежнюю афишу: ' + err); }
+    }
+    console.log('Готово: при дальнейшей синхронизации будет изменяться только подпись.');
+  } finally {
+    lock.releaseLock();
   }
-  console.log('Фото закреплено; дальше изменяется только подпись.');
 }
 
 function installTriggers() {
