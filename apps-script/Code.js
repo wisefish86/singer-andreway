@@ -516,7 +516,7 @@ function singerSubscribersFromSupabase_() {
   }
   const parsed = JSON.parse(result.getContentText());
   if (!Array.isArray(parsed.subscribers)) throw new Error('Некорректный ответ Supabase');
-  return parsed.subscribers.filter(id => /^\\d+$/.test(String(id))).map(id => ({
+  return parsed.subscribers.filter(id => /^\d+$/.test(String(id))).map(id => ({
     chatId: String(id), status: 'active', dayBefore: true, dayOf: true
   }));
 }
@@ -525,7 +525,7 @@ function reminderButtons_(event) {
   const d = eventDetails_(event);
   const rows = [];
   if (d.address) rows.push([{text: '🗺 Построить маршрут', url: routeLink_(d.address, d.mapLink)}]);
-  if (d.website && /^https?:\\/\\//i.test(d.website)) {
+  if (d.website && /^https?:\/\//i.test(d.website)) {
     rows.push([{text: '🍽 Сайт заведения / бронь', url: d.website}]);
   }
   rows.push([{text: '🎤 Все выступления', url: 'https://t.me/andrey_spoet'}]);
@@ -541,14 +541,14 @@ function notificationText_(event, kind) {
   if (d.venue) parts.push('🏛️ <b>' + escapeHtml_(d.venue) + '</b>');
   if (d.address) parts.push('📍 ' + escapeHtml_(d.address));
   if (d.phone) {
-    const digits = d.phone.replace(/\\D/g, '');
+    const digits = d.phone.replace(/\D/g, '');
     const dial = digits.length === 11 && digits[0] === '8' ? '+7' + digits.slice(1)
       : digits.length === 11 && digits[0] === '7' ? '+' + digits
       : escapeHtml_(d.phone);
     parts.push('📞 Бронирование: ' + dial);
   }
   parts.push('', 'Буду рад видеть вас! 🎶');
-  return parts.join('\\n');
+  return parts.join('\n');
 }
 
 function sentNotifications_() {
