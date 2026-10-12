@@ -267,6 +267,36 @@ function setupChannelPhoto() {
   }
 }
 
+function setupChannelPhotoFromDrive() {
+  const props = PropertiesService.getScriptProperties();
+  const fileId = props.getProperty('CHANNEL_PHOTO_DRIVE_FILE_ID');
+  if (!fileId) throw new Error('Укажите CHANNEL_PHOTO_DRIVE_FILE_ID в свойствах скрипта');
+  const blob = DriveApp.getFileById(fileId).getBlob();
+  const token = props.getProperty('TELEGRAM_BOT_TOKEN');
+  const text = renderChannel_(publicEvents_());
+  const response = UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/sendPhoto', {
+    method: 'post',
+    payload: { chat_id: CFG.channel, photo: blob, caption: text, parse_mode: 'HTML' },
+    muteHttpExceptions: true
+  });
+  const parsed = JSON.parse(response.getContentText());
+  if (!parsed.ok) throw new Error('Telegram sendPhoto: ' + parsed.description);
+  const sent = parsed.result;
+  console.log('Фотография отправлена: ' + sent.message_id);
+  telegram_('pinChatMessage', {chat_id: CFG.channel, message_id: sent.message_id, disable_notification: true});
+  const oldId = props.getProperty('CHANNEL_MESSAGE_ID');
+  props.setProperties({
+    CHANNEL_MESSAGE_ID: String(sent.message_id),
+    TELEGRAM_PHOTO_FILE_ID: sent.photo[sent.photo.length - 1].file_id,
+    CHANNEL_LAST_TEXT: text
+  });
+  if (oldId && Number(oldId) !== sent.message_id) {
+    try { telegram_('unpinChatMessage', {chat_id: CFG.channel, message_id: Number(oldId)}); }
+    catch (e) { console.warn(e); }
+  }
+  console.log('Фото закреплено. Webhook не изменялся.');
+}
+
 function installTriggers() {
   ScriptApp.getProjectTriggers()
     .filter(t => t.getHandlerFunction() === 'syncChannel')
