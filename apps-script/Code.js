@@ -51,18 +51,51 @@ function escapeHtml_(value) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function cleanCalendarText_(html) {
+  return String(html || '').replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(?:p|div|li)>/gi, '\n')
+    .replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#39;/gi, "'");
+}
+
+function compactAddress_(raw) {
+  const parts = String(raw || '').split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
+  if (!parts.length) return '';
+  const street = parts.find(p => /^(?:ул\.?|улица|проспект|пр-т|пер\.?|переулок|бульвар|шоссе|наб\.?|набережная|площадь|пр-д|проезд|мкр\.?|микрорайон)\s/i.test(p));
+  const cityExplicit = parts.find(p => /^(?:г\.?|город)\s+[А-ЯЁ]/i.test(p));
+  const cityCandidate = cityExplicit || parts.find(p =>
+    p !== street && !/^(?:Россия|Российская Федерация|\d{5,6}|.*(?:край|область|республика|район|округ)|дом\s+\d|д\.\s*\d)/i.test(p)
+    && !/^(?:ул\.?|улица|проспект|пр-т|пер\.?|переулок|бульвар|шоссе|наб\.?|набережная|площадь|проезд)/i.test(p)
+    && /^[А-ЯЁ][а-яё-]+(?:\s+[А-ЯЁа-яё-]+){0,2}$/.test(p));
+  const city = (cityCandidate || '').replace(/^(?:г\.?|город)\s+/i, '');
+  if (city && street) {
+    const afterStreet = parts.slice(parts.indexOf(street) + 1).find(p => /^(?:\d+[а-яa-z]?|д\.?\s*\d+)/i.test(p));
+    const fullStreet = afterStreet ? street + ', ' + afterStreet : street;
+    return city + ', ' + fullStreet;
+  }
+  // Preserve the address if its city/street cannot be identified confidently.
+  return parts.filter(p => !/^(?:Россия|Российская Федерация|\d{5,6}|.*(?:край|область|республика))$/i.test(p)).join(', ');
+}
+
 function eventDetails_(event) {
-  const desc = event.description || '';
-  const read = (labels) => {
+  const original = event.description || '';
+  const desc = cleanCalendarText_(original);
+  const read = labels => {
     const pattern = new RegExp('(?:^|\\n)\\s*(?:[•●▪◦*-]\\s*)?(?:' + labels + ')\\s*[:：]\\s*(.+)', 'im');
     const match = desc.match(pattern);
     return match ? match[1].trim() : '';
   };
+  const rawUrl = read('Сайт|Website|URL|Официальный сайт');
+  const htmlUrl = original.match(/href=["'](https?:\/\/[^"']+)["']/i);
+  const plainUrl = desc.match(/https?:\/\/[^\s<>]+/i);
+  const website = rawUrl || (htmlUrl && htmlUrl[1]) || (plainUrl && plainUrl[0]) || '';
+  const phonePattern = /(?:\+7|8)[\s().-]*(?:\d[\s().-]*){10}(?!\d)/g;
+  const phoneMatch = desc.match(phonePattern);
   return {
     venue: read('Заведение|Площадка|Место|Venue') || event.title,
-    address: read('Адрес|Address') || event.location,
-    website: read('Сайт|Website|URL'),
-    phone: read('Телефон|Тел\\.?|Phone'),
+    address: compactAddress_(read('Адрес|Address') || event.location),
+    website: website.replace(/[.,;]+$/, ''),
+    phone: read('Телефон|Тел\\.?|Phone') || (phoneMatch ? phoneMatch[0].trim() : ''),
   };
 }
 
