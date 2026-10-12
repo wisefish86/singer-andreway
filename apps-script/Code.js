@@ -148,7 +148,7 @@ function publicEventHeading_(event) {
 function renderChannel_(events) {
   const lines = ['<b>Ближайшие открытые выступления</b>', ''];
   if (!events.length) lines.push('Пока нет ближайших открытых выступлений. Новые даты появятся здесь.');
-  const footer = '🔔 <a href="https://t.me/andrey_spoet_bot">Напомнить мне о выступлении</a>';
+  const footer = ''; // Напоминание оформлено отдельной кнопкой под сообщением.
   for (const e of events.slice(0, 6)) {
     const d = eventDetails_(e);
     const h = publicEventHeading_(e);
@@ -172,8 +172,7 @@ function renderChannel_(events) {
     if (separator) lines.push(separator, '');
     lines.push(...block, '');
   }
-  lines.push(footer);
-  return lines.join('\n');
+  return lines.join('\n').trim();
 }
 
 function reminderKeyboard_() {
@@ -206,7 +205,7 @@ function syncChannel() {
     if (id) {
       try {
         telegram_(photoId ? 'editMessageCaption' : 'editMessageText', photoId
-          ? {chat_id: CFG.channel, message_id: Number(id), caption: text, parse_mode: 'HTML'}
+          ? {chat_id: CFG.channel, message_id: Number(id), caption: text, parse_mode: 'HTML', reply_markup: reminderKeyboard_()}
           : {chat_id: CFG.channel, message_id: Number(id), text, parse_mode: 'HTML', link_preview_options: {is_disabled: true}});
       } catch (err) {
         if (!String(err).includes('message is not modified')) throw err;
@@ -241,7 +240,7 @@ function setupChannelPhotoFromSite() {
     console.log('Загружаю изображение в Telegram напрямую (multipart)...');
     const response = UrlFetchApp.fetch('https://api.telegram.org/bot' + token + '/sendPhoto', {
       method: 'post',
-      payload: {chat_id: CFG.channel, photo: blob, caption: caption, parse_mode: 'HTML'},
+      payload: {chat_id: CFG.channel, photo: blob, caption: caption, parse_mode: 'HTML', reply_markup: JSON.stringify(reminderKeyboard_())},
       muteHttpExceptions: true
     });
     const parsed = JSON.parse(response.getContentText());
