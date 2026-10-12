@@ -54,7 +54,7 @@ function escapeHtml_(value) {
 function eventDetails_(event) {
   const desc = event.description || '';
   const read = (labels) => {
-    const pattern = new RegExp('(?:^|\\n)\\s*(?:' + labels + ')\\s*[:：]\\s*(.+)', 'im');
+    const pattern = new RegExp('(?:^|\\n)\\s*(?:[•●▪◦*-]\\s*)?(?:' + labels + ')\\s*[:：]\\s*(.+)', 'im');
     const match = desc.match(pattern);
     return match ? match[1].trim() : '';
   };
