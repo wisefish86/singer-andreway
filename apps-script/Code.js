@@ -175,6 +175,39 @@ function syncChannel() {
   } finally { lock.releaseLock(); }
 }
 
+/**
+ * One-time photo setup: send the desired photo to the bot in a private chat,
+ * then run this function. It replaces the pinned text post with a photo post.
+ */
+function setupChannelPhoto() {
+  const props = PropertiesService.getScriptProperties();
+  const updates = telegram_('getUpdates', {limit: 100, timeout: 0});
+  const photos = updates.filter(u => u.message && u.message.chat.type === 'private' &&
+    Array.isArray(u.message.photo) && u.message.photo.length);
+  if (!photos.length) throw new Error('Send the photo to @andrey_spoet_bot in a private chat, then try again.');
+  const latest = photos[photos.length - 1];
+  const fileId = latest.message.photo[latest.message.photo.length - 1].file_id;
+  const oldId = props.getProperty('CHANNEL_MESSAGE_ID');
+  const oldText = props.getProperty('CHANNEL_LAST_TEXT');
+  props.setProperty('TELEGRAM_PHOTO_FILE_ID', fileId);
+  props.deleteProperty('CHANNEL_MESSAGE_ID');
+  props.deleteProperty('CHANNEL_LAST_TEXT');
+  try {
+    syncChannel();
+    if (oldId) {
+      try { telegram_('unpinChatMessage', {chat_id: CFG.channel, message_id: Number(oldId)}); }
+      catch (e) { console.warn('Could not unpin old message: ' + e); }
+    }
+    // Mark this update as consumed so a later setup doesn't reuse it by accident.
+    telegram_('getUpdates', {offset: latest.update_id + 1, timeout: 0});
+  } catch (e) {
+    props.deleteProperty('TELEGRAM_PHOTO_FILE_ID');
+    props.setProperty('CHANNEL_MESSAGE_ID', oldId || '');
+    if (oldText) props.setProperty('CHANNEL_LAST_TEXT', oldText);
+    throw e;
+  }
+}
+
 function installTriggers() {
   ScriptApp.getProjectTriggers()
     .filter(t => t.getHandlerFunction() === 'syncChannel')
