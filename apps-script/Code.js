@@ -452,8 +452,8 @@ function sentNotifications_() {
 }
 
 /**
- * Check every 15 minutes. Two notifications: at 12:00 the previous day and
- * at 09:00 on performance day, Moscow time. Never send after a show starts.
+ * Check every 15 minutes. Reminders at 48h and 3h before the PUBLIC showtime.
+ * Never use the private calendar start hour as the performance time.
  * Only active subscribers, including the owner if they explicitly /start the bot.
  */
 function sendPerformanceReminders() {
@@ -532,7 +532,8 @@ function installReminderTrigger() {
 function inspectTelegramWebhook() {
   const info = telegram_('getWebhookInfo', {});
   console.log(JSON.stringify({
-    url: info.url, pending_update_count: info.pending_update_count,
+    webhook_host: info.url ? (info.url.match(/^https?:\/\/[^/]+/) || ['unknown'])[0] : '',
+    pending_update_count: info.pending_update_count,
     last_error_message: info.last_error_message || ''
   }));
 }
