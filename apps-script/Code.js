@@ -297,6 +297,29 @@ function setupChannelPhotoFromDrive() {
   console.log('Фото закреплено. Webhook не изменялся.');
 }
 
+
+function setupChannelPhotoFromSite() {
+  const imageUrl = 'https://singer.andreway.ru/images/concert-announcement.webp';
+  const props = PropertiesService.getScriptProperties();
+  const caption = renderChannel_(publicEvents_());
+  const oldId = props.getProperty('CHANNEL_MESSAGE_ID');
+  const sent = telegram_('sendPhoto', {
+    chat_id: CFG.channel, photo: imageUrl, caption: caption, parse_mode: 'HTML'
+  });
+  console.log('Новая фотография опубликована: ' + sent.message_id);
+  telegram_('pinChatMessage', {chat_id: CFG.channel, message_id: sent.message_id, disable_notification: true});
+  props.setProperties({
+    CHANNEL_MESSAGE_ID: String(sent.message_id),
+    TELEGRAM_PHOTO_FILE_ID: sent.photo[sent.photo.length - 1].file_id,
+    CHANNEL_LAST_TEXT: caption
+  });
+  if (oldId && Number(oldId) !== sent.message_id) {
+    try { telegram_('unpinChatMessage', {chat_id: CFG.channel, message_id: Number(oldId)}); }
+    catch (err) { console.warn(err); }
+  }
+  console.log('Фото закреплено; дальше изменяется только подпись.');
+}
+
 function installTriggers() {
   ScriptApp.getProjectTriggers()
     .filter(t => t.getHandlerFunction() === 'syncChannel')
