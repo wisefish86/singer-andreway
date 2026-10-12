@@ -1,0 +1,39 @@
+name: Deploy singer Supabase webhook
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/singer-telegram-webhook/**'
+      - '.github/workflows/deploy-supabase.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: singer-supabase-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check deploy token
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::error::Add SUPABASE_ACCESS_TOKEN to GitHub Actions repository secrets."
+            exit 1
+          fi
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.54.11
+      - name: Deploy only singer webhook
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy singer-telegram-webhook \\
+            --project-ref jjaunlbglskpddslwegp \\
+            --no-verify-jwt
