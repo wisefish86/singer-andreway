@@ -192,12 +192,58 @@ function updateReminderButton() {
   console.log('Кнопка добавлена к существующей закреплённой афише');
 }
 
+/**
+ * Publish only the nearest future public show to Supabase for instant
+ * Telegram preview on subscription. Calendar is still the source of truth.
+ */
+function syncSingerNextShow_(events) {
+  const now = Date.now();
+  const candidates = events.map(event => {
+    const show = publicShowStart_(event);
+    if (!show) return null;
+    const instant = Date.parse(show.day + 'T' + show.time + ':00+03:00');
+    return Number.isFinite(instant) && instant > now ? {event,instant} : null;
+  }).filter(Boolean).sort((a,b) => a.instant - b.instant);
+  const next = candidates.length ? candidates[0] : null;
+  const d = next ? eventDetails_(next.event) : null;
+  const h = next ? publicEventHeading_(next.event) : null;
+  const body = {show_at: next ? new Date(next.instant).toISOString() : null,
+    show: next ? {
+      title: next.event.title, date: h.date, time: h.time, venue: d.venue,
+      address: d.address, website: d.website, map_link: d.mapLink, phone: d.phone
+    } : null};
+  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
+  if (!token) throw new Error('Missing TELEGRAM_BOT_TOKEN');
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, 'singer-webhook:' + token, Utilities.Charset.UTF_8
+  );
+  const secret = digest.map(b => ('0' + ((b + 256) % 256).toString(16)).slice(-2)).join('');
+  const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-telegram-webhook?sync_show=1';
+  const response = UrlFetchApp.fetch(endpoint, {
+    method:'post',contentType:'application/json',
+    headers:{'X-Telegram-Bot-Api-Secret-Token':secret},
+    payload:JSON.stringify(body),muteHttpExceptions:true
+  });
+  if (response.getResponseCode() !== 200) {
+    throw new Error('Supabase sync_show failed, HTTP ' + response.getResponseCode());
+  }
+  console.log(next ? 'Ближайшее выступление синхронизировано: ' + h.date + ' ' + h.time
+    : 'Будущих открытых выступлений нет — карточка очищена');
+}
+
+function syncSingerNextShowNow() {
+  syncSingerNextShow_(publicEvents_());
+}
+
 function syncChannel() {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return;
   try {
     const events = publicEvents_();
     const text = renderChannel_(events);
+    // Preview data is updated even when the channel caption has not changed.
+    try { syncSingerNextShow_(events); }
+    catch (error) { console.error('Preview sync: ' + String(error)); }
     const props = PropertiesService.getScriptProperties();
     if (props.getProperty('CHANNEL_LAST_TEXT') === text) return;
     const id = props.getProperty('CHANNEL_MESSAGE_ID');
