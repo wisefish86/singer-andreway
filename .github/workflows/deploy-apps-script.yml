@@ -1,11 +1,7 @@
 name: Deploy singer Apps Script
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'apps-script/**'
-      - '.github/workflows/deploy-apps-script.yml'
   workflow_dispatch:
+  # Enable push trigger after credentials have been configured and tested.
 
 permissions:
   contents: read
