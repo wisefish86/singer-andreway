@@ -131,6 +131,17 @@ function addressLine_(address, mapLink) {
   return '📍 ' + escapeHtml_(address) + ' · <a href="' + escapeHtml_(routeLink_(address, mapLink)) + '">Построить маршрут</a>';
 }
 
+function publicDateRu_(iso) {
+  const day = Number(Utilities.formatDate(new Date(iso), CFG.timezone, 'd'));
+  const month = Number(Utilities.formatDate(new Date(iso), CFG.timezone, 'M'));
+  const localDate = Utilities.formatDate(new Date(iso), CFG.timezone, 'yyyy-MM-dd');
+  const weekday = new Date(localDate + 'T12:00:00Z').getUTCDay();
+  const months = ['января','февраля','марта','апреля','мая','июня',
+    'июля','августа','сентября','октября','ноября','декабря'];
+  const weekdays = ['вс','пн','вт','ср','чт','пт','сб'];
+  return day + ' ' + months[month - 1] + ' (' + weekdays[weekday] + ')';
+}
+
 function publicEventHeading_(event) {
   // Calendar start/end are private logistics times; only the date is public.
   // Public performance time is explicitly supplied at the end of the event title.
@@ -138,7 +149,7 @@ function publicEventHeading_(event) {
   return {
     venue: match ? match[1].trim() : event.title.trim(),
     time: match ? match[2].replace(/\s*[-–—]\s*/, '–') : '',
-    date: Utilities.formatDate(new Date(event.start), CFG.timezone, 'd MMMM') + ' (' + ['вс','пн','вт','ср','чт','пт','сб'][Number(Utilities.formatDate(new Date(event.start), CFG.timezone, 'u')) % 7] + ')',
+    date: publicDateRu_(event.start),
   };
 }
 
@@ -155,7 +166,7 @@ function renderChannel_(events) {
     if (d.venue) block.push('🏛️ ' + (site
       ? '<a href="' + escapeHtml_(site) + '">' + escapeHtml_(d.venue) + '</a> <i>(сайт)</i>'
       : escapeHtml_(d.venue)));
-    if (d.address) block.push('📍 <a href="' + escapeHtml_(routeLink_(d.address, d.mapLink)) + '">' + escapeHtml_(d.address) + '</a>');
+    if (d.address) block.push('📍 <a href="' + escapeHtml_(routeLink_(d.address, d.mapLink)) + '">' + escapeHtml_(d.address) + '</a> <i>(маршрут)</i>');
     if (d.phone) {
       const digits = d.phone.replace(/\D/g, '');
       const dial = digits.length === 11 && digits[0] === '8' ? '+7' + digits.slice(1)
