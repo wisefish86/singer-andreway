@@ -176,6 +176,23 @@ function renderChannel_(events) {
   return lines.join('\n');
 }
 
+function reminderKeyboard_() {
+  return {inline_keyboard: [[{
+    text: '🔔 Напомнить мне о выступлении',
+    url: 'https://t.me/andrey_spoet_bot?start=reminders'
+  }]]};
+}
+
+// Only update the buttons under the current pinned post, without changing its photo.
+function updateReminderButton() {
+  const id = PropertiesService.getScriptProperties().getProperty('CHANNEL_MESSAGE_ID');
+  if (!id) throw new Error('CHANNEL_MESSAGE_ID отсутствует');
+  telegram_('editMessageReplyMarkup', {
+    chat_id: CFG.channel, message_id: Number(id), reply_markup: reminderKeyboard_()
+  });
+  console.log('Кнопка добавлена к существующей закреплённой афише');
+}
+
 function syncChannel() {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return;
