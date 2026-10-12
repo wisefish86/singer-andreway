@@ -156,7 +156,7 @@ function publicEventHeading_(event) {
 function renderChannel_(events) {
   const lines = ['<b>Ближайшие открытые выступления</b>', ''];
   if (!events.length) lines.push('Новых дат пока нет. Следите за обновлениями!');
-  const footer = '🔔 Напоминания: https://t.me/andrey_spoet_bot';
+  const footer = '🔔 <a href="https://t.me/andrey_spoet_bot">Напомнить мне о выступлении</a>';
   for (const e of events.slice(0, 6)) {
     const d = eventDetails_(e);
     const h = publicEventHeading_(e);
@@ -173,7 +173,9 @@ function renderChannel_(events) {
         : digits.length === 11 && digits[0] === '7' ? '+' + digits : '';
       block.push('📞 ' + (dial ? '<a href="tel:' + dial + '">' + escapeHtml_(d.phone) + '</a>' : escapeHtml_(d.phone)));
     }
-    if ([...lines, ...block, '', footer].join('\n').length > 950) break;
+    const separator = lines.length > 2 ? '──────────' : '';
+    if ([...lines, separator, ...block, '', footer].join('\n').length > 950) break;
+    if (separator) lines.push(separator, '');
     lines.push(...block, '');
   }
   lines.push(footer);
