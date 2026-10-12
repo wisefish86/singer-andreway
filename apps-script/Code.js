@@ -107,7 +107,8 @@ function eventDetails_(event) {
     }
     return url.replace(/[.,;]+$/, '');
   };
-  const mapLink = unwrap(linkedUrl('Яндекс\\s*Карты|Яндекс\\.?Карты|Карта|Маршрут'));
+  const mapCandidates = [...original.matchAll(/https?:\/\/(?:www\.)?(?:yandex\.(?:ru|com)\/maps|maps\.yandex\.[a-z]+)\/[^\s<>"')\]]+/gi)].map(m => m[0]);
+  const mapLink = unwrap(linkedUrl('Яндекс\\s*Карты|Яндекс\\.?Карты|Карта|Маршрут') || mapCandidates[0] || '');
   const siteLine = read('Официальный сайт|Сайт|Website|URL');
   let website = unwrap(linkedUrl('Официальный сайт|Сайт|Website|URL'));
   if (!website && siteLine && /^(?:www\.)?[\w-]+\.[a-z]{2,}/i.test(siteLine)) website = 'https://' + siteLine;
