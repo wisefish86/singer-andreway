@@ -49,13 +49,14 @@ function formatDate_(iso) {
 function renderChannel_(events) {
   const lines = ['🎤 Ближайшие открытые выступления Андрея Шевцова', ''];
   if (!events.length) lines.push('Новых дат пока нет. Следите за обновлениями!');
-  events.slice(0, 15).forEach(e => {
+  events.slice(0, 6).forEach(e => {
     lines.push('📅 ' + formatDate_(e.start));
     lines.push(e.title || 'Выступление');
     if (e.location) lines.push('📍 ' + e.location);
     lines.push('');
   });
-  return lines.join('\n').slice(0, 4000);
+  lines.push('🔔 Уведомления: https://t.me/andrey_spoet_bot');
+  return lines.join('\n').slice(0, 950);
 }
 
 function syncChannel() {
@@ -67,14 +68,19 @@ function syncChannel() {
     const props = PropertiesService.getScriptProperties();
     if (props.getProperty('CHANNEL_LAST_TEXT') === text) return;
     const id = props.getProperty('CHANNEL_MESSAGE_ID');
+    const photoId = props.getProperty('TELEGRAM_PHOTO_FILE_ID');
     if (id) {
       try {
-        telegram_('editMessageText', {chat_id: CFG.channel, message_id: Number(id), text});
+        telegram_(photoId ? 'editMessageCaption' : 'editMessageText', photoId
+          ? {chat_id: CFG.channel, message_id: Number(id), caption: text}
+          : {chat_id: CFG.channel, message_id: Number(id), text});
       } catch (err) {
         if (!String(err).includes('message is not modified')) throw err;
       }
     } else {
-      const sent = telegram_('sendMessage', {chat_id: CFG.channel, text});
+      const sent = photoId
+        ? telegram_('sendPhoto', {chat_id: CFG.channel, photo: photoId, caption: text})
+        : telegram_('sendMessage', {chat_id: CFG.channel, text});
       props.setProperty('CHANNEL_MESSAGE_ID', String(sent.message_id));
       telegram_('pinChatMessage', {chat_id: CFG.channel, message_id: sent.message_id, disable_notification: true});
     }
