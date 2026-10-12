@@ -412,6 +412,74 @@ function doPost(e) {
   return ContentService.createTextOutput('ok');
 }
 
+
+/**
+ * Subscriber commands through Telegram polling. Does not require a web app.
+ * Run enableSubscriberPolling() once to replace the obsolete external webhook.
+ */
+function subscriberKeyboard_() {
+  return {keyboard: [
+    [{text: '🔔 Получать уведомления'}, {text: '🔕 Отключить'}],
+    [{text: '📋 Моя подписка'}]
+  ], resize_keyboard: true, is_persistent: true};
+}
+
+function handleSubscriberMessage_(message) {
+  if (!message || !message.chat || message.chat.type !== 'private') return;
+  const chatId = String(message.chat.id);
+  const value = String(message.text || '').trim();
+  const cmd = value.split(/\s+/)[0].split('@')[0].toLowerCase();
+  let answer = '';
+  if (cmd === '/start' || value === '🔔 Получать уведомления') {
+    updateSubscriber_(chatId, true);
+    answer = '✅ Напоминания включены! Пришлю сообщение за 48 часов и за 3 часа до открытого выступления.\n\nОтключить можно кнопкой ниже или командой /stop.';
+  } else if (cmd === '/stop' || value === '🔕 Отключить') {
+    updateSubscriber_(chatId, false);
+    answer = '🔕 Напоминания отключены. Подписаться снова можно кнопкой ниже.';
+  } else if (cmd === '/status' || value === '📋 Моя подписка') {
+    const record = subscriberRows_().rows.find(r => r.chatId === chatId);
+    answer = record && record.status === 'active'
+      ? '✅ Вы подписаны. Напоминания придут за 48 и за 3 часа до выступления.'
+      : 'Напоминания сейчас выключены. Нажмите «🔔 Получать уведомления».';
+  } else if (cmd === '/help') {
+    answer = 'Здесь можно подписаться на уведомления об открытых выступлениях или отключить их.';
+  } else {
+    answer = 'Выберите действие на клавиатуре ниже.';
+  }
+  telegram_('sendMessage', {chat_id: chatId, text: answer, reply_markup: subscriberKeyboard_()});
+}
+
+function pollSubscriberMessages() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return;
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const offset = Number(props.getProperty('SUBSCRIBER_UPDATE_OFFSET') || '0');
+    const args = {timeout: 0, limit: 50, allowed_updates: ['message']};
+    if (offset > 0) args.offset = offset;
+    const updates = telegram_('getUpdates', args);
+    for (const update of updates) {
+      // Process before confirming the update; failed messages are retried.
+      if (update.message) handleSubscriberMessage_(update.message);
+      props.setProperty('SUBSCRIBER_UPDATE_OFFSET', String(update.update_id + 1));
+    }
+    console.log('Проверено сообщений: ' + updates.length);
+  } finally { lock.releaseLock(); }
+}
+
+function enableSubscriberPolling() {
+  // ControllerBot is no longer used. Revoke its webhook to allow getUpdates.
+  telegram_('deleteWebhook', {drop_pending_updates: true});
+  const props = PropertiesService.getScriptProperties();
+  props.deleteProperty('SUBSCRIBER_UPDATE_OFFSET');
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'pollSubscriberMessages')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('pollSubscriberMessages').timeBased().everyMinutes(1).create();
+  console.log('Приём команд включён. Отправьте /start боту в личный чат.');
+  pollSubscriberMessages();
+}
+
 function moscowTime_(date) {
   return Utilities.formatDate(date, CFG.timezone, 'yyyy-MM-dd HH:mm');
 }
