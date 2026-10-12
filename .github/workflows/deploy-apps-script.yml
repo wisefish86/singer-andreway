@@ -1,0 +1,40 @@
+name: Deploy singer Apps Script
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps-script/**'
+      - '.github/workflows/deploy-apps-script.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: singer-apps-script-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install clasp
+        run: npm install -g @google/clasp@3.4.1
+      - name: Configure project and credentials
+        env:
+          CLASP_CREDENTIALS: ${{ secrets.CLASP_CREDENTIALS }}
+        run: |
+          test -n "$CLASP_CREDENTIALS" || { echo 'Missing CLASP_CREDENTIALS secret'; exit 1; }
+          mkdir -p "$HOME/.config"
+          printf '%s' "$CLASP_CREDENTIALS" > "$HOME/.clasprc.json"
+          chmod 600 "$HOME/.clasprc.json"
+          cat > apps-script/.clasp.json <<'EOF'
+          {"scriptId":"1jMJjCKIclP_1Bk7TR3hmYd1jrNJMLAYGOMZTJzuNe-Gxe0csFOzpCVjN","rootDir":"."}
+          EOF
+      - name: Push to existing Apps Script
+        working-directory: apps-script
+        run: clasp push --force
