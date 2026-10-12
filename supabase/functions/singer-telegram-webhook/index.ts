@@ -87,7 +87,7 @@ Deno.serve(async (request: Request): Promise<Response> => {
         { onConflict: "chat_id" },
       );
       if (error) throw error;
-      responseText = "✅ Вы подписаны на уведомления о выступлениях!\n\nЯ напомню за два дня, а также за три часа до начала выступления. Отключить уведомления можно кнопкой ниже.";
+      responseText = "✅ Вы подписаны на уведомления о выступлениях!\n\nЗа 2 дня и за 3 часа до выступления пришлю напоминание с адресом, маршрутом и контактами заведения для бронирования столика. Отключить уведомления можно кнопкой ниже.";
     } else if (command === "/stop" || text === "🔕 Отключить") {
       const { error } = await supabase.from("singer_subscribers")
         .update({ is_active: false, updated_at: new Date().toISOString() }).eq("chat_id", chatId);
@@ -98,7 +98,7 @@ Deno.serve(async (request: Request): Promise<Response> => {
         .select("is_active").eq("chat_id", chatId).maybeSingle();
       if (error) throw error;
       responseText = data?.is_active
-        ? "✅ Вы подписаны. Я напомню за два дня, а также за три часа до начала выступления."
+        ? "✅ Вы подписаны. За 2 дня и за 3 часа до выступления пришлю напоминание с адресом, маршрутом и контактами заведения для бронирования столика."
         : "Уведомления сейчас выключены. Нажмите «🔔 Получать уведомления».";
     } else if (command === "/help") {
       responseText = "Подписка на открытые выступления: /event — включить; /stop — отключить; /status — проверить.";
