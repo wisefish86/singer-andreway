@@ -183,14 +183,14 @@ function syncChannel() {
       try {
         telegram_(photoId ? 'editMessageCaption' : 'editMessageText', photoId
           ? {chat_id: CFG.channel, message_id: Number(id), caption: text, parse_mode: 'HTML'}
-          : {chat_id: CFG.channel, message_id: Number(id), text, parse_mode: 'HTML'});
+          : {chat_id: CFG.channel, message_id: Number(id), text, parse_mode: 'HTML', link_preview_options: {is_disabled: true}});
       } catch (err) {
         if (!String(err).includes('message is not modified')) throw err;
       }
     } else {
       const sent = photoId
         ? telegram_('sendPhoto', {chat_id: CFG.channel, photo: photoId, caption: text, parse_mode: 'HTML'})
-        : telegram_('sendMessage', {chat_id: CFG.channel, text, parse_mode: 'HTML'});
+        : telegram_('sendMessage', {chat_id: CFG.channel, text, parse_mode: 'HTML', link_preview_options: {is_disabled: true}});
       props.setProperty('CHANNEL_MESSAGE_ID', String(sent.message_id));
       telegram_('pinChatMessage', {chat_id: CFG.channel, message_id: sent.message_id, disable_notification: true});
     }
