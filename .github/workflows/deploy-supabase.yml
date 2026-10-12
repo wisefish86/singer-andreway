@@ -1,4 +1,5 @@
 name: Deploy singer Supabase webhook
+# Deploy is limited to the singer function; fitness functions are untouched.
 on:
   push:
     branches: [main]
