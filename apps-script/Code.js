@@ -52,10 +52,10 @@ function renderChannel_(events) {
   events.slice(0, 6).forEach(e => {
     lines.push('📅 ' + formatDate_(e.start));
     lines.push(e.title || 'Выступление');
-    if (e.location) lines.push('📍 ' + e.location);
+    if (e.location) lines.push('🏛️ ' + e.location);
     lines.push('');
   });
-  lines.push('🔔 Уведомления: https://t.me/andrey_spoet_bot');
+  lines.push('🔔 Хотите получать напоминания о выступлениях? Подпишитесь на уведомления: https://t.me/andrey_spoet_bot');
   return lines.join('\n').slice(0, 950);
 }
 
