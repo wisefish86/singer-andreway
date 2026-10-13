@@ -572,6 +572,10 @@ function singerSubscribersFromSupabase_() {
 function reminderButtons_(event) {
   const d = eventDetails_(event);
   const rows = [];
+  const digits = String(d.phone || '').replace(/\D/g, '').replace(/^8(?=\d{10}$)/, '7');
+  if (digits.length === 11 && digits[0] === '7') {
+    rows.push([{text: '📞 Позвонить в заведение', callback_data: 'venue_call:' + digits}]);
+  }
   if (d.bookingUrl && /^https?:\/\//i.test(d.bookingUrl)) {
     rows.push([{text: '🍽 Забронировать столик', url: d.bookingUrl}]);
   }
@@ -579,7 +583,6 @@ function reminderButtons_(event) {
   if (d.website && /^https?:\/\//i.test(d.website)) {
     rows.push([{text: '🌐 Сайт заведения', url: d.website}]);
   }
-  rows.push([{text: '🎤 Все выступления', url: 'https://t.me/andrey_spoet'}]);
   return {inline_keyboard: rows};
 }
 
@@ -596,7 +599,7 @@ function notificationText_(event, kind) {
     const dial = digits.length === 11 && digits[0] === '8' ? '+7' + digits.slice(1)
       : digits.length === 11 && digits[0] === '7' ? '+' + digits
       : escapeHtml_(d.phone);
-    parts.push('📞 Бронирование: ' + dial);
+    parts.push('📞 Телефон: ' + dial.replace(/[()]/g, ''));
   }
   parts.push('', 'Буду рад видеть вас! 🎶');
   return parts.join('\n');
