@@ -11,6 +11,7 @@ const whatsapp = 'https://wa.me/79181142693';
 const instagram = 'https://www.instagram.com/andrey_spoet/';
 const instagramDirect = 'https://ig.me/m/andrey_spoet';
 const telegramChannelWeb = 'https://t.me/andrey_spoet';
+const reminderBotUrl = 'https://t.me/andrey_spoet_bot?start=reminders';
 const telegramChannelApp = 'tg://resolve?domain=andrey_spoet';
 const vk = 'https://vk.me/andrey_spoet';
 const max = 'https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHMK3ejGSQ';
@@ -80,22 +81,27 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
         <span class="chip">150+ зарубежных хитов</span>
         <span class="chip">своё оборудование</span>
       </div>
-      <div class="hero-actions">
-        <a class="btn primary full" href="#contact">Заказать выступление →</a>
-        <a class="btn" href="#video"><Icon name="play" size={18} /> Смотреть видео</a>
-        <a class="btn" href="/andrey-shevtsov.vcf" type="text/vcard"><Icon name="contact" size={18} /> Сохранить контакт</a>
+      <div class="hero-actions" aria-label="Главные действия">
+        <a class="btn primary hero-booking" href="#contact">Заказать выступление →</a>
+        <a class="btn hero-subscribe" href={reminderBotUrl} target="_blank" rel="noopener noreferrer">
+          <BrandIcon name="telegram" size={22} />
+          <span><strong>Получать напоминания в Telegram</strong><small>За 2 дня и за 3 часа до выступления</small></span>
+        </a>
+        <div class="hero-more-actions">
+          <a class="btn" href="#video"><Icon name="play" size={18} /> Смотреть видео</a>
+          <a class="btn" href="/andrey-shevtsov.vcf" type="text/vcard"><Icon name="contact" size={18} /> Сохранить контакт</a>
+        </div>
+        <a class="hero-channel-link" href={telegramChannelWeb} target="_blank" rel="noopener noreferrer"><BrandIcon name="telegram" size={17} /> Афиша и новости в Telegram-канале →</a>
       </div>
     </div>
   </section>
 
   <section class="quick">
     <div class="container quick-grid">
-      <a class="quick-card" href="#video"><div class="quick-icon"><Icon name="play" size={28} /></div><div class="quick-title">Видео</div><div class="quick-sub">живые выступления</div></a>
       <a class="quick-card" href="#repertoire"><div class="quick-icon"><Icon name="music" size={28} /></div><div class="quick-title">Репертуар</div><div class="quick-sub">300+ песен</div></a>
       <a class="quick-card" href="#photos"><div class="quick-icon"><Icon name="image" size={28} /></div><div class="quick-title">Фото</div><div class="quick-sub">с выступлений</div></a>
       <a class="quick-card" href="#events"><div class="quick-icon"><Icon name="calendar" size={28} /></div><div class="quick-title">Афиша</div><div class="quick-sub">ближайшие даты</div></a>
       <a class="quick-card" href="#live"><div class="quick-icon"><Icon name="mic" size={28} /></div><div class="quick-title">Во время выступления</div><div class="quick-sub">песня, сообщение, благодарность</div></a>
-      <a class="quick-card" href="#contact"><div class="quick-icon"><Icon name="smartphone" size={28} /></div><div class="quick-title">Контакты</div><div class="quick-sub">мессенджеры, звонок, соцсети</div></a>
     </div>
   </section>
 
@@ -115,7 +121,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
             <div class="event-actions">
               <a class="btn primary" href="#">Подробнее →</a>
               <a class="btn" href="#">＋ В календарь</a>
-              <a class="btn" href={telegramApp}>◉ Напомнить в Telegram</a>
+              <a class="btn" href={reminderBotUrl} target="_blank" rel="noopener noreferrer">🔔 Напоминания в Telegram</a>
             </div>
           </div>
         </article>
