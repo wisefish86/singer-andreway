@@ -66,15 +66,18 @@ async function sendNearestShow(chatId: number): Promise<void> {
   const show = await nearestShow();
   if (!show) return;
   const rows: Array<Array<{text:string;url?:string;callback_data?:string}>> = [];
+  const digits = String(show.phone || "").replace(/\D/g, "");
+  // Telegram inline URL buttons don't reliably support tel:, so send a callable contact instead.
+  if (digits.length === 11 && digits[0] === "7") {
+    rows.push([{text:"📞 Позвонить в заведение",callback_data:"venue_contact"}]);
+  }
+  const booking = validUrl(show.booking_url);
+  if (booking) rows.push([{text:"🍽 Забронировать столик",url:booking}]);
   const map = validUrl(show.map_link) || (show.address
     ? "https://yandex.ru/maps/?text=" + encodeURIComponent(show.address) : "");
   if (map) rows.push([{text:"🗺 Построить маршрут",url:map}]);
-  const booking = validUrl(show.booking_url);
-  if (booking) rows.unshift([{text:"🍽 Забронировать столик",url:booking}]);
-  else if (String(show.phone || "").replace(/\D/g,"").length === 11) rows.unshift([{text:"📞 Позвонить в заведение",callback_data:"venue_contact"}]);
   const website = validUrl(show.website);
   if (website) rows.push([{text:"🌐 Сайт заведения",url:website}]);
-  rows.push([{text:"📣 Telegram-канал",url:channelUrl},{text:"🌐 Мой сайт",url:siteUrl}]);
   const caption = [
     "<b>🎤 Ближайшее выступление Андрея Шевцова</b>",
     "",
@@ -82,7 +85,7 @@ async function sendNearestShow(chatId: number): Promise<void> {
     show.time ? "🕗 " + html(show.time) : "",
     show.venue ? "🏛️ <b>" + html(show.venue) + "</b>" : "",
     show.address ? "📍 " + html(show.address) : "",
-    show.phone ? "📞 Бронирование: " + html(show.phone) : "",
+    show.phone ? "📞 Телефон: +" + html(String(show.phone).replace(/\D/g, "").replace(/^8(?=\d{10}$)/, "7")) : "",
     "",
     "Буду рад видеть вас! 🎶",
   ].filter((x, i, a) => x || (i > 0 && a[i-1] !== "")).join("\n");
