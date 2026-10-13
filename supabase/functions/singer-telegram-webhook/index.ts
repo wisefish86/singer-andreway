@@ -192,6 +192,29 @@ Deno.serve(async (request: Request): Promise<Response> => {
     if (existing.error) throw existing.error;
     if (existing.data?.handled_at) return new Response("ok");
 
+    const callback = update.callback_query;
+    if (callback?.data === "venue_contact" && callback.message?.chat?.type === "private") {
+      const show = await nearestShow();
+      const digits = String(show?.phone || "").replace(/\D/g, "");
+      const chatId = callback.message.chat.id;
+      if (show && digits.length === 11 && digits[0] === "7") {
+        const res = await fetch("https://api.telegram.org/bot" + token + "/sendContact", {
+          method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({chat_id:chatId,phone_number:"+"+digits,first_name:show.venue || "Заведение"})
+        });
+        const body = await res.json();
+        if (!res.ok || !body.ok) throw new Error("sendContact: " + String(body.description || res.status));
+      }
+      await fetch("https://api.telegram.org/bot" + token + "/answerCallbackQuery", {
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({callback_query_id:callback.id,text:show && digits ? "Контакт заведения отправлен" : "Номер недоступен"})
+      });
+      const {error} = await supabase.from("singer_bot_updates").upsert({
+        update_id:update.update_id,handled_at:new Date().toISOString()
+      });
+      if(error) throw error;
+      return new Response("ok");
+    }
     const message = update.message;
     if (message?.chat?.type !== "private" || typeof message?.text !== "string") {
       const { error } = await supabase.from("singer_bot_updates")
