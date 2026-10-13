@@ -65,12 +65,13 @@ async function nearestShow(): Promise<Show | null> {
 async function sendNearestShow(chatId: number): Promise<void> {
   const show = await nearestShow();
   if (!show) return;
-  const rows: { text:string; url:string }[][] = [];
+  const rows: Array<Array<{text:string;url?:string;callback_data?:string}>> = [];
   const map = validUrl(show.map_link) || (show.address
     ? "https://yandex.ru/maps/?text=" + encodeURIComponent(show.address) : "");
   if (map) rows.push([{text:"🗺 Построить маршрут",url:map}]);
   const booking = validUrl(show.booking_url);
   if (booking) rows.unshift([{text:"🍽 Забронировать столик",url:booking}]);
+  else if (String(show.phone || "").replace(/\D/g,"").length === 11) rows.unshift([{text:"📞 Позвонить в заведение",callback_data:"venue_contact"}]);
   const website = validUrl(show.website);
   if (website) rows.push([{text:"🌐 Сайт заведения",url:website}]);
   rows.push([{text:"📣 Telegram-канал",url:channelUrl},{text:"🌐 Мой сайт",url:siteUrl}]);
