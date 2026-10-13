@@ -15,7 +15,6 @@ async function telegramWebhookSecret(tokenValue: string): Promise<string> {
 const keyboard = {
   keyboard: [
     [{ text: "🎤 Ближайшее выступление" }, { text: "⚙️ Настройки уведомлений" }],
-    [{ text: "🌐 Мой сайт" }, { text: "📣 Telegram-канал" }],
   ],
   resize_keyboard: true,
   is_persistent: true,
@@ -62,6 +61,26 @@ async function nearestShow(): Promise<Show | null> {
   if (!data?.show_at || Date.parse(data.show_at) <= Date.now()) return null;
   return data.details as Show;
 }
+async function channelPinnedUrl(): Promise<string> {
+  try {
+    const response = await fetch("https://api.telegram.org/bot" + token + "/getChat?chat_id=%40andrey_spoet");
+    const payload = await response.json();
+    const id = payload?.result?.pinned_message?.message_id;
+    if (response.ok && payload?.ok && Number.isSafeInteger(id) && id > 0) {
+      return channelUrl + "/" + id;
+    }
+  } catch (error) {
+    console.error("Pinned channel link unavailable", error instanceof Error ? error.message : "unknown");
+  }
+  return channelUrl;
+}
+async function linkKeyboard(): Promise<object> {
+  const pinned = await channelPinnedUrl();
+  return {inline_keyboard: [[
+    {text:"📣 Telegram-канал / афиша",url:pinned},
+    {text:"🌐 Мой сайт",url:siteUrl}
+  ]]};
+}
 async function sendNearestShow(chatId: number): Promise<void> {
   const show = await nearestShow();
   if (!show) return;
@@ -78,6 +97,7 @@ async function sendNearestShow(chatId: number): Promise<void> {
   if (map) rows.push([{text:"🗺 Построить маршрут",url:map}]);
   const website = validUrl(show.website);
   if (website) rows.push([{text:"🌐 Сайт заведения",url:website}]);
+  rows.push([{text:"📣 Telegram-канал / афиша",url:await channelPinnedUrl()},{text:"🌐 Мой сайт",url:siteUrl}]);
   const caption = [
     "<b>🎤 Ближайшее выступление Андрея Шевцова</b>",
     "",
@@ -117,21 +137,16 @@ async function sendReply(chatId: number, text: string, replyMarkup: object = key
   }
 }
 
-async function sendLink(chatId: number, type: "site" | "channel"): Promise<void> {
-  const isSite = type === "site";
-  const reply = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      chat_id:chatId,
-      text: isSite ? "🌐 Сайт Андрея Шевцова" : "📣 Telegram-канал с афишей",
-      reply_markup: {inline_keyboard: [[{
-        text: isSite ? "🌐 Открыть сайт" : "📣 Перейти в канал",
-        url: isSite ? siteUrl : channelUrl
-      }]]}
+async function sendLinks(chatId: number): Promise<void> {
+  const response = await fetch("https://api.telegram.org/bot" + token + "/sendMessage", {
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      chat_id:chatId,text:"Мой сайт и канал с афишей:",
+      reply_markup:await linkKeyboard()
     })
   });
-  if (!reply.ok) throw new Error("Link message failed: HTTP " + reply.status);
+  const payload=await response.json();
+  if(!response.ok || !payload.ok) throw new Error("sendLinks failed: "+String(payload.description||response.status));
 }
 
 Deno.serve(async (request: Request): Promise<Response> => {
@@ -272,11 +287,13 @@ Deno.serve(async (request: Request): Promise<Response> => {
     } else if (text === "📣 Telegram-канал") {
       linkType = "channel";
       responseText = "📣 Канал с афишей выступлений:";
+    } else if (command === "/links") {
+      linkType = "channel";
     } else if (command === "/help") {
       responseText = "Здесь можно посмотреть афишу, управлять уведомлениями и перейти на сайт или в канал.";
     }
-    await sendReply(chatId,responseText,replyKeyboard);
-    if(linkType) await sendLink(chatId,linkType);
+    if (linkType) await sendLinks(chatId);
+    else await sendReply(chatId,responseText,replyKeyboard);
     if(showCard) {
       try {
         const show=await nearestShow();
