@@ -745,3 +745,30 @@ function activateSingerSupabaseWebhook() {
   console.log('Готово: Telegram webhook подключён к Supabase; опрос отключён.');
   console.log('Теперь отправь боту /start или /event, затем /status.');
 }
+
+
+/**
+ * After the Supabase function has deployed: enable callbacks used by
+ * "Позвонить в заведение" while retaining the same webhook and secret.
+ */
+function enableSingerButtonCallbacks() {
+  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
+  if (!token) throw new Error('TELEGRAM_BOT_TOKEN отсутствует');
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, 'singer-webhook:' + token, Utilities.Charset.UTF_8
+  );
+  const secret = digest.map(b => ('0' + ((b + 256) % 256).toString(16)).slice(-2)).join('');
+  const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-telegram-webhook';
+  const result = UrlFetchApp.fetch(endpoint, {
+    method: 'get', headers: {'X-Telegram-Bot-Api-Secret-Token': secret},
+    muteHttpExceptions: true
+  });
+  if (result.getResponseCode() !== 200 || result.getContentText().trim() !== 'ready') {
+    throw new Error('Supabase не готов; webhook не изменён, HTTP ' + result.getResponseCode());
+  }
+  telegram_('setWebhook', {
+    url: endpoint, secret_token: secret,
+    allowed_updates: ['message', 'callback_query'], drop_pending_updates: false
+  });
+  console.log('Кнопки Telegram подключены: message + callback_query.');
+}
