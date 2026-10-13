@@ -114,6 +114,7 @@ function eventDetails_(event) {
     venue: read('Заведение|Площадка|Место|Venue') || publicEventHeading_(event).venue,
     address: compactAddress_(read('Адрес|Address') || event.location),
     website,
+    bookingUrl: unwrap(linkedUrl('Бронирование столика|Ссылка на бронирование|Бронирование|Забронировать столик')),
     mapLink: /^https?:\/\/(?:yandex\.ru|www\.yandex\.ru|yandex\.com|maps\.yandex\.[a-z]+)\//i.test(mapLink) ? mapLink : '',
     phone: read('Телефон|Тел\\.?|Phone') || (phoneMatch ? phoneMatch[0].trim() : ''),
   };
@@ -159,6 +160,7 @@ function renderChannel_(events) {
       ? '<a href="' + escapeHtml_(site) + '">' + escapeHtml_(d.venue) + '</a> <i>(сайт)</i>'
       : escapeHtml_(d.venue)));
     if (d.address) block.push('📍 <a href="' + escapeHtml_(routeLink_(d.address, d.mapLink)) + '">' + escapeHtml_(d.address) + '</a> <i>(маршрут)</i>');
+    if (d.bookingUrl && /^https?:\/\//i.test(d.bookingUrl)) block.push('🍽 <a href="' + escapeHtml_(d.bookingUrl) + '">Забронировать столик</a>');
     if (d.phone) {
       // Telegram clients detect a plain international phone number more reliably
       // than an HTML tel: link inside a photo caption.
@@ -210,7 +212,7 @@ function syncSingerNextShow_(events) {
   const body = {show_at: next ? new Date(next.instant).toISOString() : null,
     show: next ? {
       title: next.event.title, date: h.date, time: h.time, venue: d.venue,
-      address: d.address, website: d.website, map_link: d.mapLink, phone: d.phone
+      address: d.address, website: d.website, booking_url: d.bookingUrl, map_link: d.mapLink, phone: d.phone
     } : null};
   const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
   if (!token) throw new Error('Missing TELEGRAM_BOT_TOKEN');
@@ -570,9 +572,12 @@ function singerSubscribersFromSupabase_() {
 function reminderButtons_(event) {
   const d = eventDetails_(event);
   const rows = [];
+  if (d.bookingUrl && /^https?:\/\//i.test(d.bookingUrl)) {
+    rows.push([{text: '🍽 Забронировать столик', url: d.bookingUrl}]);
+  }
   if (d.address) rows.push([{text: '🗺 Построить маршрут', url: routeLink_(d.address, d.mapLink)}]);
   if (d.website && /^https?:\/\//i.test(d.website)) {
-    rows.push([{text: '🍽 Сайт заведения / бронь', url: d.website}]);
+    rows.push([{text: '🌐 Сайт заведения', url: d.website}]);
   }
   rows.push([{text: '🎤 Все выступления', url: 'https://t.me/andrey_spoet'}]);
   return {inline_keyboard: rows};
