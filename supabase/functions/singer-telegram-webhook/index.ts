@@ -196,9 +196,11 @@ Deno.serve(async (request: Request): Promise<Response> => {
     if (existing.data?.handled_at) return new Response("ok");
 
     const callback = update.callback_query;
-    if (callback?.data === "venue_contact" && callback.message?.chat?.type === "private") {
+    if ((callback?.data === "venue_contact" || /^venue_call:7\d{10}$/.test(String(callback?.data || ""))) && callback.message?.chat?.type === "private") {
       const show = await nearestShow();
-      const digits = String(show?.phone || "").replace(/\D/g, "");
+      const digits = String(callback.data).startsWith("venue_call:")
+        ? String(callback.data).slice("venue_call:".length)
+        : String(show?.phone || "").replace(/\D/g, "");
       const chatId = callback.message.chat.id;
       if (show && digits.length === 11 && digits[0] === "7") {
         const res = await fetch("https://api.telegram.org/bot" + token + "/sendContact", {
