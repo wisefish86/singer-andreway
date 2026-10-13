@@ -228,43 +228,56 @@ Deno.serve(async (request: Request): Promise<Response> => {
     const command = text.split(/\s+/)[0].split("@")[0].toLowerCase();
     let responseText = "Выберите действие на клавиатуре ниже.";
     let showCard = false;
-
-    if (command === "/start" || command === "/event" || text === "🔔 Получать уведомления") {
-      const { error } = await supabase.from("singer_subscribers").upsert(
-        { chat_id: chatId, is_active: true, updated_at: new Date().toISOString() },
-        { onConflict: "chat_id" },
-      );
-      if (error) throw error;
+    let replyKeyboard: object = keyboard;
+    let linkType: "site" | "channel" | null = null;
+    if (command === "/start" || command === "/event" || text === "🔔 Включить уведомления" || text === "🔔 Получать уведомления") {
+      const {error}=await supabase.from("singer_subscribers").upsert({chat_id:chatId,is_active:true,updated_at:new Date().toISOString()},{onConflict:"chat_id"});
+      if(error) throw error;
+      showCard = command === "/start" || command === "/event";
+      responseText = "✅ Вы подписаны на уведомления!\nЗа 2 дня и за 3 часа пришлю напоминание с адресом, маршрутом и контактами заведения.";
+      if(text === "🔔 Включить уведомления") replyKeyboard = settingsKeyboard;
+    } else if (text === "⚙️ Настройки уведомлений" || command === "/settings") {
+      const {data,error}=await supabase.from("singer_subscribers").select("is_active").eq("chat_id",chatId).maybeSingle();
+      if(error) throw error;
+      responseText = data?.is_active ? "✅ Напоминания включены (за 2 дня и 3 часа)." : "🔕 Напоминания выключены.";
+      replyKeyboard = settingsKeyboard;
+    } else if (text === "🔕 Отключить уведомления" || command === "/stop") {
+      responseText = "Вы точно хотите отключить уведомления?";
+      replyKeyboard = confirmKeyboard;
+    } else if (text === "❗ Да, отключить уведомления") {
+      const {error}=await supabase.from("singer_subscribers").update({is_active:false,updated_at:new Date().toISOString()}).eq("chat_id",chatId);
+      if(error) throw error;
+      responseText = "🔕 Уведомления отключены. Включить их снова можно в настройках.";
+    } else if (text === "↩️ Отмена") {
+      responseText = "Отмена. Подписка не изменена.";
+      replyKeyboard = settingsKeyboard;
+    } else if (text === "⬅️ Назад") {
+      responseText = "Главное меню:";
+    } else if (command === "/status" || text === "📋 Статус уведомлений" || text === "📋 Моя подписка") {
+      const {data,error}=await supabase.from("singer_subscribers").select("is_active").eq("chat_id",chatId).maybeSingle();
+      if(error) throw error;
+      responseText = data?.is_active ? "✅ Напоминания включены." : "🔕 Напоминания выключены.";
+      replyKeyboard = settingsKeyboard;
+    } else if (command === "/preview" || text === "🎤 Ближайшее выступление") {
       showCard = true;
-      responseText = "✅ Вы подписаны на уведомления о выступлениях!\n\nЗа 2 дня и за 3 часа до выступления пришлю напоминание с адресом, маршрутом и контактами заведения для бронирования столика. Отключить уведомления можно кнопкой ниже.";
-    } else if (command === "/stop" || text === "🔕 Отключить") {
-      const { error } = await supabase.from("singer_subscribers")
-        .update({ is_active: false, updated_at: new Date().toISOString() }).eq("chat_id", chatId);
-      if (error) throw error;
-      responseText = "🔕 Уведомления отключены.";
-    } else if (command === "/status" || text === "📋 Моя подписка") {
-      const { data, error } = await supabase.from("singer_subscribers")
-        .select("is_active").eq("chat_id", chatId).maybeSingle();
-      if (error) throw error;
-      responseText = data?.is_active
-        ? "✅ Вы подписаны. За 2 дня и за 3 часа до выступления пришлю напоминание с адресом, маршрутом и контактами заведения для бронирования столика."
-        : "Уведомления сейчас выключены. Нажмите «🔔 Получать уведомления».";
-    } else if (command === "/preview") {
-      showCard = true;
-      responseText = "🎤 Вот карточка ближайшего открытого выступления:";
+      responseText = "🎤 Ближайшее открытое выступление:";
+    } else if (text === "🌐 Мой сайт") {
+      linkType = "site";
+      responseText = "🌐 Сайт Андрея Шевцова:";
+    } else if (text === "📣 Telegram-канал") {
+      linkType = "channel";
+      responseText = "📣 Канал с афишей выступлений:";
     } else if (command === "/help") {
-      responseText = "Подписка на открытые выступления: /event — включить; /stop — отключить; /status — проверить.";
+      responseText = "Здесь можно посмотреть афишу, управлять уведомлениями и перейти на сайт или в канал.";
     }
-
-    await sendReply(chatId, responseText);
-    if (showCard) {
+    await sendReply(chatId,responseText,replyKeyboard);
+    if(linkType) await sendLink(chatId,linkType);
+    if(showCard) {
       try {
-        const show = await nearestShow();
-        if (show) await sendNearestShow(chatId);
-        else await sendReply(chatId, "Пока ближайших открытых выступлений нет. Как только появятся — сообщу!");
-      } catch (error) {
-        console.error("Nearest show card failed", error instanceof Error ? error.message : "unknown");
-      }
+        const show=await nearestShow();
+        if(show) await sendNearestShow(chatId);
+        else await sendReply(chatId,"Пока ближайших открытых выступлений нет.");
+      } catch(error) {console.error("Nearest show card failed",error instanceof Error?error.message:"unknown");}
     }
     const { error } = await supabase.from("singer_bot_updates")
       .upsert({ update_id: update.update_id, handled_at: new Date().toISOString() });
