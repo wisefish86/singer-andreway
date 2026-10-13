@@ -185,3 +185,33 @@ button.action-wide,button.after-action{font:inherit;color:inherit;cursor:pointer
   .contact-sheet{margin:auto;border-radius:22px;padding:18px 20px 20px}
   .sheet-handle{display:none}
 }
+
+/* Hero conversion hierarchy: two important actions, then compact supporting links. */
+.hero-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:9px;max-width:550px}
+.hero-actions .hero-booking,.hero-actions .hero-subscribe{width:100%;min-height:52px}
+.hero-actions .hero-booking{grid-column:auto}
+.hero-actions .hero-subscribe{justify-content:flex-start;text-align:left;background:linear-gradient(130deg,rgba(32,118,150,.30),rgba(9,26,43,.87));border:1px solid rgba(83,185,232,.58);color:#f4fbff;padding:9px 15px}
+.hero-subscribe .brand-icon{flex:none;width:22px;height:22px}
+.hero-subscribe span{display:flex;flex-direction:column;gap:3px;min-width:0}
+.hero-subscribe strong{font-size:.88rem;line-height:1.2}
+.hero-subscribe small{font-size:.73rem;font-weight:500;color:#c8e9f8;line-height:1.25}
+.hero-more-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.hero-more-actions .btn{min-width:0;font-size:.82rem;padding:8px 9px;text-align:center}
+.hero-channel-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;color:var(--accent2);font-size:.81rem;font-weight:650;text-underline-offset:3px}
+.hero-channel-link:hover,.hero-channel-link:focus-visible{text-decoration:underline}
+.hero-actions a:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
+@media(max-width:759px){
+  .hero-content{padding-top:56px}
+  .hero .chips{display:none}
+  .hero-role{margin-bottom:10px}
+  .hero-copy{font-size:.9rem;line-height:1.35;margin-bottom:14px}
+  .hero{padding-bottom:22px}
+}
+@media(min-width:760px){
+  .hero-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:10px;max-width:600px}
+  .hero-more-actions{grid-column:1/-1}
+  .hero-channel-link{grid-column:1/-1;justify-content:flex-start}
+  .quick-grid{grid-template-columns:repeat(4,1fr)}
+  .hero-content{max-width:660px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
