@@ -14,11 +14,34 @@ async function telegramWebhookSecret(tokenValue: string): Promise<string> {
 }
 const keyboard = {
   keyboard: [
-    [{ text: "🔔 Получать уведомления" }, { text: "🔕 Отключить" }],
-    [{ text: "📋 Моя подписка" }],
+    [{ text: "🎤 Ближайшее выступление" }, { text: "⚙️ Настройки уведомлений" }],
+    [{ text: "🌐 Мой сайт" }, { text: "📣 Telegram-канал" }],
   ],
   resize_keyboard: true,
+  is_persistent: true,
 };
+const settingsKeyboard = {
+  keyboard: [
+    [{ text: "📋 Статус уведомлений" }, { text: "🔔 Включить уведомления" }],
+    [{ text: "🔕 Отключить уведомления" }],
+    [{ text: "⬅️ Назад" }],
+  ],
+  resize_keyboard: true,
+  is_persistent: true,
+};
+const confirmKeyboard = {
+  keyboard: [
+    [{ text: "❗ Да, отключить уведомления" }],
+    [{ text: "↩️ Отмена" }],
+  ],
+  resize_keyboard: true,
+  is_persistent: true,
+};
+const siteUrl = "https://singer.andreway.ru/";
+const channelUrl = "https://t.me/andrey_spoet";
+const photoUrl = "https://wsrv.nl/?url=" +
+  encodeURIComponent("https://singer.andreway.ru/images/hero-main-1920.webp") +
+  "&w=960&h=540&fit=cover&output=jpg&q=80";
 
 type Show = {
   title: string; date: string; time: string; venue: string;
@@ -50,9 +73,9 @@ async function sendNearestShow(chatId: number): Promise<void> {
   if (booking) rows.unshift([{text:"🍽 Забронировать столик",url:booking}]);
   const website = validUrl(show.website);
   if (website) rows.push([{text:"🌐 Сайт заведения",url:website}]);
-  rows.push([{text:"🎤 Все выступления",url:"https://t.me/andrey_spoet"}]);
+  rows.push([{text:"📣 Telegram-канал",url:channelUrl},{text:"🌐 Мой сайт",url:siteUrl}]);
   const caption = [
-    "<b>🎤 Ближайшее выступление</b>",
+    "<b>🎤 Ближайшее выступление Андрея Шевцова</b>",
     "",
     show.date ? "📅 " + html(show.date) : "",
     show.time ? "🕗 " + html(show.time) : "",
@@ -66,7 +89,7 @@ async function sendNearestShow(chatId: number): Promise<void> {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       chat_id:chatId,
-      photo:(await (async () => { const r = await fetch(`https://api.telegram.org/bot${token}/getChat?chat_id=%40andrey_spoet`); const j = await r.json(); const p = j?.result?.pinned_message?.photo; return p?.length ? p[p.length - 1].file_id : "https://singer.andreway.ru/images/concert-announcement.webp"; })()),
+      photo:photoUrl,
       caption,parse_mode:"HTML",reply_markup:{inline_keyboard:rows}
     })
   });
@@ -78,16 +101,33 @@ async function sendNearestShow(chatId: number): Promise<void> {
   }
 }
 
-async function sendReply(chatId: number, text: string): Promise<void> {
+async function sendReply(chatId: number, text: string, replyMarkup: object = keyboard): Promise<void> {
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, reply_markup: keyboard }),
+    body: JSON.stringify({ chat_id: chatId, text, reply_markup: replyMarkup }),
   });
   const payload = await response.json();
   if (!response.ok || !payload.ok) {
     throw new Error(`Telegram sendMessage failed: HTTP ${response.status}`);
   }
+}
+
+async function sendLink(chatId: number, type: "site" | "channel"): Promise<void> {
+  const isSite = type === "site";
+  const reply = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      chat_id:chatId,
+      text: isSite ? "🌐 Сайт Андрея Шевцова" : "📣 Telegram-канал с афишей",
+      reply_markup: {inline_keyboard: [[{
+        text: isSite ? "🌐 Открыть сайт" : "📣 Перейти в канал",
+        url: isSite ? siteUrl : channelUrl
+      }]]}
+    })
+  });
+  if (!reply.ok) throw new Error("Link message failed: HTTP " + reply.status);
 }
 
 Deno.serve(async (request: Request): Promise<Response> => {
