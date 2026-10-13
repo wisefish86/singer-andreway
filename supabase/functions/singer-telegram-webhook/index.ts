@@ -66,13 +66,15 @@ async function sendNearestShow(chatId: number): Promise<void> {
     method:"POST", headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       chat_id:chatId,
-      photo:"https://singer.andreway.ru/images/concert-announcement.webp",
+      photo:(await (async () => { const r = await fetch(`https://api.telegram.org/bot${token}/getChat?chat_id=%40andrey_spoet`); const j = await r.json(); const p = j?.result?.pinned_message?.photo; return p?.length ? p[p.length - 1].file_id : "https://singer.andreway.ru/images/concert-announcement.webp"; })()),
       caption,parse_mode:"HTML",reply_markup:{inline_keyboard:rows}
     })
   });
   const payload = await response.json();
   if (!response.ok || !payload.ok) {
-    throw new Error("Telegram sendPhoto failed: HTTP " + response.status);
+    console.error("Photo error: " + String(payload?.description || response.status).slice(0,300));
+    const backup = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:chatId,text:caption,parse_mode:"HTML",reply_markup:{inline_keyboard:rows}})});
+    if (!backup.ok) throw new Error("Fallback failed, HTTP " + backup.status);
   }
 }
 
