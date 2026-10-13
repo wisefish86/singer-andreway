@@ -22,7 +22,7 @@ const keyboard = {
 
 type Show = {
   title: string; date: string; time: string; venue: string;
-  address: string; website: string; map_link: string; phone: string;
+  address: string; website: string; booking_url: string; map_link: string; phone: string;
 };
 function html(value: string): string {
   return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;")
@@ -46,6 +46,8 @@ async function sendNearestShow(chatId: number): Promise<void> {
   const map = validUrl(show.map_link) || (show.address
     ? "https://yandex.ru/maps/?text=" + encodeURIComponent(show.address) : "");
   if (map) rows.push([{text:"🗺 Построить маршрут",url:map}]);
+  const booking = validUrl(show.booking_url);
+  if (booking) rows.unshift([{text:"🍽 Забронировать столик",url:booking}]);
   const website = validUrl(show.website);
   if (website) rows.push([{text:"🌐 Сайт заведения",url:website}]);
   rows.push([{text:"🎤 Все выступления",url:"https://t.me/andrey_spoet"}]);
@@ -99,11 +101,11 @@ Deno.serve(async (request: Request): Promise<Response> => {
       if (input !== null && (!input || typeof input !== "object")) {
         return new Response("Invalid show", {status:400});
       }
-      const fields = ["title","date","time","venue","address","website","map_link","phone"];
+      const fields = ["title","date","time","venue","address","website","booking_url","map_link","phone"];
       const details: Record<string,string> = {};
       for (const key of fields) {
-        if (input && typeof input[key] !== "string") return new Response("Invalid field", {status:400});
-        details[key] = input ? input[key].slice(0,1000) : "";
+        if (input && input[key] !== undefined && typeof input[key] !== "string") return new Response("Invalid field", {status:400});
+        details[key] = input ? String(input[key] ?? "").slice(0,1000) : "";
       }
       const showAt = input ? String(data.show_at || "") : null;
       if (showAt && !Number.isFinite(Date.parse(showAt))) return new Response("Invalid show time",{status:400});
