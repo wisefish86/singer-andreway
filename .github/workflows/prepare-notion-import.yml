@@ -1,0 +1,71 @@
+name: Prepare Anytype ZIP images for Notion
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download ZIPs, prepare protected image URLs
+        env:
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          python - <<'PY'
+          import os,io,json,zipfile,uuid,posixpath,hashlib
+          from ftplib import FTP
+          from pathlib import PurePosixPath
+          host="andreway.ru"; base="/www/andreway.ru/notion-import"
+          ftp=FTP(host,timeout=60); ftp.login("andreway",os.environ["FTP_PASSWORD"])
+          def mkdir(path):
+              try: ftp.mkd(path)
+              except Exception: ftp.cwd(path)
+          for suffix in ("","/incoming","/done","/failed","/assets"):
+              mkdir(base+suffix)
+          def upload(path,data):
+              ftp.storbinary("STOR "+path,io.BytesIO(data))
+          # Deny HTTP access to uploaded archives, whether the server uses Apache or LiteSpeed.
+          deny=b"Require all denied\nDeny from all\n"
+          for directory in ("incoming","done","failed"):
+              upload(base+"/"+directory+"/.htaccess",deny)
+          ftp.cwd(base+"/incoming")
+          names=[x.rsplit("/",1)[-1] for x in ftp.nlst()]
+          archives=[x for x in names if x.lower().endswith(".zip")]
+          manifest={"archives":[]}
+          for filename in archives:
+              buf=io.BytesIO()
+              ftp.retrbinary("RETR "+base+"/incoming/"+filename,buf.write)
+              buf.seek(0); filehash=hashlib.sha256(buf.getvalue()).hexdigest()
+              item={"filename":filename,"sha256":filehash,"images":[],"errors":[]}
+              try:
+                  with zipfile.ZipFile(buf) as z:
+                      members=z.infolist()
+                      if len(members)>3000: raise ValueError("Too many ZIP entries")
+                      total=sum(i.file_size for i in members)
+                      if total>500*1024*1024: raise ValueError("ZIP expanded size exceeds 500 MB")
+                      for i in members:
+                          p=PurePosixPath(i.filename.replace("\\","/"))
+                          if i.is_dir() or p.is_absolute() or ".." in p.parts: continue
+                          if p.suffix.lower() not in (".png",".jpg",".jpeg",".webp",".gif"): continue
+                          if i.file_size>20*1024*1024: item["errors"].append(i.filename+": too large");continue
+                          raw=z.read(i)
+                          # Random directory prevents filename collision or predictable enumeration.
+                          token=uuid.uuid4().hex
+                          safe=token+p.suffix.lower()
+                          upload(base+"/assets/"+safe,raw)
+                          item["images"].append({"original_path":i.filename,"url":"https://andreway.ru/notion-import/assets/"+safe,"bytes":len(raw)})
+              except Exception as e: item["errors"].append(str(e))
+              manifest["archives"].append(item)
+          ftp.quit()
+          with open("notion-import-manifest.json","w",encoding="utf-8") as f:
+              json.dump(manifest,f,ensure_ascii=False,indent=2)
+          print("ZIP files:",len(manifest["archives"]))
+          print("Images prepared:",sum(len(a["images"]) for a in manifest["archives"]))
+          print("Errors:",sum(len(a["errors"]) for a in manifest["archives"]))
+          PY
+      - name: Save manifest for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: notion-import-manifest
+          path: notion-import-manifest.json
+          retention-days: 7
