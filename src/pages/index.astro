@@ -318,6 +318,56 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
         || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
     }
 
+    // A locally drawn QR with rounded data modules and rounded finder eyes.
+    // Keep the full 4-module quiet zone and high error correction for camera reliability.
+    function drawRoundedQr(canvas, url, dark) {
+      const qr = QRCode.create(url, { errorCorrectionLevel: 'H' });
+      const size = qr.modules.size;
+      const margin = 4;
+      const pixels = 320;
+      const unit = pixels / (size + margin * 2);
+      canvas.width = pixels;
+      canvas.height = pixels;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas unavailable');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, pixels, pixels);
+      ctx.fillStyle = dark;
+
+      function roundSquare(x, y, width, radius) {
+        const r = Math.min(radius, width / 2);
+        ctx.beginPath();
+        ctx.roundRect(x, y, width, width, r);
+        ctx.fill();
+      }
+
+      function inFinder(row, col) {
+        return (row < 7 && col < 7)
+          || (row < 7 && col >= size - 7)
+          || (row >= size - 7 && col < 7);
+      }
+
+      const radius = unit * 0.28;
+      for (let row = 0; row < size; row++) {
+        for (let col = 0; col < size; col++) {
+          if (inFinder(row, col) || !qr.modules.get(row, col)) continue;
+          roundSquare((col + margin) * unit, (row + margin) * unit, unit, radius);
+        }
+      }
+
+      // Draw the 3 positioning eyes with large rounded frames and crisp white gaps.
+      [[0, 0], [size - 7, 0], [0, size - 7]].forEach(([col, row]) => {
+        const x = (col + margin) * unit;
+        const y = (row + margin) * unit;
+        ctx.fillStyle = dark;
+        roundSquare(x, y, unit * 7, unit * 1.7);
+        ctx.fillStyle = '#ffffff';
+        roundSquare(x + unit, y + unit, unit * 5, unit * 1.05);
+        ctx.fillStyle = dark;
+        roundSquare(x + unit * 2, y + unit * 2, unit * 3, unit * 0.75);
+      });
+    }
+
     document.querySelectorAll('a[data-social-destination]').forEach((link) => {
       link.addEventListener('click', (event) => {
         if (isMobileDevice() || !socialDialog || event.defaultPrevented) return;
@@ -344,14 +394,14 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
           : 'Сканируйте камерой телефона, чтобы открыть Telegram в приложении.';
         socialDialog.dataset.platform = isWhatsApp ? 'whatsapp' : isInstagram ? 'instagram' : 'telegram';
         socialQr.setAttribute('aria-label', 'QR-код: ' + (link.dataset.socialName || service));
-        QRCode.toCanvas(socialQr, webUrl, {
-          width: 194, margin: 2, errorCorrectionLevel: 'H',
-          color: { dark: isWhatsApp ? '#12683e' : isInstagram ? '#642c86' : '#075778', light: '#ffffff' },
-        }).catch((error) => {
+        try {
+          drawRoundedQr(socialQr, webUrl,
+            isWhatsApp ? '#12683e' : isInstagram ? '#642c86' : '#075778');
+        } catch (error) {
           console.error('QR-code generation failed', error);
           socialQr.getContext('2d')?.clearRect(0, 0, socialQr.width, socialQr.height);
           socialQr.setAttribute('aria-label', 'QR-код недоступен — используйте ссылку ниже');
-        });
+        }
         socialDialog.showModal();
         socialOpen.focus();
       });
