@@ -261,9 +261,9 @@ class Notion:
                 # API may normalize null annotation/color keys; check content + flags separately.
                 if exp!=act:raise Unsupported('Block payload mismatch after write: '+typ)
             if children:self.append_verified(created['id'],children,files)
-    def import_one(self,data):
+    def import_one(self,data, title_prefix=''):
         converted,files,doc=preview(data)
-        title=doc['properties']['Name']; existing=self.find(title)
+        title=title_prefix+doc['properties']['Name']; existing=self.find(title)
         if existing:
             # Safest strategy: do not mutate an existing page until conflict-resolution is implemented.
             raise Unsupported('Page already exists: refusing overwrite '+existing['id'])
@@ -273,9 +273,30 @@ class Notion:
         return page
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--check',metavar='ZIP');p.add_argument('--import-ftp',action='store_true');args=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--check',metavar='ZIP');p.add_argument('--import-ftp',action='store_true');p.add_argument('--test-ftp',action='store_true');args=p.parse_args()
     if args.check:
         with open(args.check,'rb') as f:preview(f.read());return
+    if args.test_ftp:
+        # Isolated test: import ONLY the sample note, NEVER move or delete source ZIP.
+        ftp=FTP('andreway.ru',timeout=60)
+        ftp.login('andreway',os.environ['FTP_PASSWORD'])
+        try:
+            ftp.cwd(BASE+'/01_Inbox')
+            names=sorted(n.split('/')[-1] for n in ftp.nlst()
+                         if n.lower().endswith('.zip') and 'notion-test' in n.lower())
+            if len(names)!=1:
+                raise Unsupported('Expected exactly one notion-test ZIP in 01_Inbox; found '+str(len(names)))
+            buf=io.BytesIO()
+            ftp.retrbinary('RETR '+BASE+'/01_Inbox/'+names[0],buf.write)
+        finally:
+            ftp.quit()
+        # Fail before writing anything if local conversion cannot be completed.
+        preview(buf.getvalue())
+        api=Notion()
+        page=api.import_one(buf.getvalue(),title_prefix='[ТЕСТ V3] ')
+        print('TEST SUCCESS:',page.get('url','https://www.notion.so/'+page['id'].replace('-','')))
+        print('ZIP LEFT IN 01_Inbox:',names[0])
+        return
     if args.import_ftp:
         api=Notion();ftp=FTP('andreway.ru',timeout=60);ftp.login('andreway',os.environ['FTP_PASSWORD']);ftp.cwd(BASE+'/01_Inbox')
         names=[n.split('/')[-1] for n in ftp.nlst() if n.lower().endswith('.zip')]
