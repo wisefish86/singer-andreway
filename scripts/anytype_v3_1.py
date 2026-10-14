@@ -471,7 +471,7 @@ def main():
                 page=api.import_one(buf.getvalue())
                 ftp.rename(BASE+'/01_Inbox/'+name,BASE+'/02_Done/'+name)
                 passed+=1
-                link='https://www.notion.so/'+page['id'].replace('-','')
+                link='https://app.notion.com/p/'+page['id'].replace('-','')
                 elapsed=time.monotonic()-started
                 results.append(('DONE',title,count,elapsed,link))
                 print('DONE:',title,'| blocks:',count,'| seconds:',round(elapsed,2),'| Notion:',link,flush=True)
