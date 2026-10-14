@@ -1,0 +1,38 @@
+name: Verify Notion import access
+on:
+  push:
+    paths:
+      - .github/workflows/verify-notion-access.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify GitHub secret and Notion permissions
+        env:
+          NOTION_API_TOKEN: ${{ secrets.NOTION_API_TOKEN }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          python - <<'PY'
+          import os,json,urllib.request,urllib.error
+          from ftplib import FTP
+          token=os.environ.get("NOTION_API_TOKEN","")
+          assert token, "NOTION_API_TOKEN secret is missing"
+          headers={"Authorization":"Bearer "+token,"Notion-Version":"2025-09-03","Content-Type":"application/json"}
+          for kind,uid in [("databases","3e056f1afcfe80f089b7c97ce979d1dd"),("data_sources","3e056f1afcfe80e1b558000bd0464a2b")]:
+              try:
+                  req=urllib.request.Request("https://api.notion.com/v1/"+kind+"/"+uid,headers=headers)
+                  with urllib.request.urlopen(req,timeout=20) as resp:
+                      obj=json.load(resp);print("Notion",kind,"HTTP",resp.status,"type",obj.get("object"))
+                      if kind=="data_sources":print("Properties:",",".join(obj.get("properties",{}).keys()))
+              except urllib.error.HTTPError as e:
+                  print("Notion",kind,"HTTP",e.code)
+                  raise
+          ftp=FTP("andreway.ru",timeout=30);ftp.login("andreway",os.environ["FTP_PASSWORD"])
+          ftp.cwd("/www/andreway.ru/notion-import/01_Inbox")
+          names=ftp.nlst()
+          print("Inbox ZIP files:",sum(n.lower().endswith(".zip") for n in names))
+          ftp.quit()
+          PY
