@@ -21,7 +21,7 @@ jobs:
           token=os.environ.get("NOTION_API_TOKEN","")
           assert token, "NOTION_API_TOKEN secret is missing"
           headers={"Authorization":"Bearer "+token,"Notion-Version":"2025-09-03","Content-Type":"application/json"}
-          for kind,uid in [("databases","3e056f1afcfe80f089b7c97ce979d1dd"),("data_sources","3e056f1afcfe80e1b558000bd0464a2b")]:
+          for kind,uid in [("users","me"),("databases","3e056f1afcfe80f089b7c97ce979d1dd"),("data_sources","3e056f1afcfe80e1b558000bd0464a2b")]:
               try:
                   req=urllib.request.Request("https://api.notion.com/v1/"+kind+"/"+uid,headers=headers)
                   with urllib.request.urlopen(req,timeout=20) as resp:
@@ -29,7 +29,10 @@ jobs:
                       if kind=="data_sources":print("Properties:",",".join(obj.get("properties",{}).keys()))
               except urllib.error.HTTPError as e:
                   print("Notion",kind,"HTTP",e.code)
-                  raise
+          req=urllib.request.Request("https://api.notion.com/v1/search",data=b'{"page_size":100}',headers=headers)
+          with urllib.request.urlopen(req,timeout=20) as resp:
+              result=json.load(resp)
+              print("Visible search objects:",[(x.get("object"),x.get("id"),x.get("title",[{}])[0].get("plain_text","") if isinstance(x.get("title"),list) else "") for x in result.get("results",[]) if x.get("object") in ("database","data_source")][:25])
           ftp=FTP("andreway.ru",timeout=30);ftp.login("andreway",os.environ["FTP_PASSWORD"])
           ftp.cwd("/www/andreway.ru/notion-import/01_Inbox")
           names=ftp.nlst()
