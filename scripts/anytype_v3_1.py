@@ -269,7 +269,7 @@ class Notion:
             raise Unsupported('Page already exists: refusing overwrite '+existing['id'])
         page=self.create(title)
         self.append_verified(page['id'],converted,files)
-        print('VERIFIED and archived:',title,'Notion page:',page['id'],'URL:',page.get('url',''))
+        print('VERIFIED (Notion page created):',title,'Notion page:',page['id'],'URL:',page.get('url',''))
         return page
 
 def main():
