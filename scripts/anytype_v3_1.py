@@ -166,7 +166,8 @@ def convert(node,files,objects):
             raise Unsupported('Property block without a property key')
         properties=objects.get('__import_document_properties__',{})
         if key not in properties:
-            raise Unsupported('Property block references a missing property: '+key)
+            print('WARNING: property key has no value in export:',key)
+            return {'object':'block','type':'paragraph','paragraph':{'rich_text':split_text('[Свойство Anytype: '+key+' (значение отсутствует в экспорте)]')}}
         value=properties[key]
         if isinstance(value,(dict,list)):
             shown=json.dumps(value,ensure_ascii=False,sort_keys=True)
