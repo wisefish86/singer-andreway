@@ -106,7 +106,7 @@ def rich(src, *, raw=False):
 
 def plain_value(arr): return ''.join(v.get('plain_text',v.get('text',{}).get('content','')) for v in arr)
 
-def scan_archive(data):
+def scan_archive(data,source_name=''):
     with zipfile.ZipFile(io.BytesIO(data)) as z:
         files=z.infolist()
         if len(files)>3000 or sum(f.file_size for f in files)>500_000_000: raise Unsupported('Archive too large')
@@ -125,7 +125,7 @@ def scan_archive(data):
             # Linked Anytype documents can reference each other, leaving several
             # apparent roots. Select only an unambiguous title match against
             # the exported ZIP filename, otherwise refuse to guess.
-            archive_name=os.path.basename(getattr(scan_archive,'source_name','')).lower()
+            archive_name=os.path.basename(source_name).lower()
             letters={'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z','и':'i','й':'i','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'iu','я':'ia'}
             def slug(value):
                 value=''.join(letters.get(c,c) for c in value.lower())
@@ -266,8 +266,8 @@ def collect(blocks,files,objects):
         result.append((a,collect(n['children'],files,objects)))
     return result
 
-def preview(data):
-    names,files,doc,objects=scan_archive(data)
+def preview(data,source_name=''):
+    names,files,doc,objects=scan_archive(data,source_name)
     nodes=tree(doc['blocks']); converted=collect(nodes,files,objects)
     c=Counter(b['type'] for b in doc['blocks']);print('TITLE',doc['properties']['Name']);print('BLOCKS',len(doc['blocks']));print('TYPES',dict(c));print('READY',len(converted),'root blocks; nested blocks checked');return converted,files,doc
 
@@ -424,8 +424,8 @@ class Notion:
                 checked += n; chars += c; images += i
         return checked,chars,images
 
-    def import_one(self,data, title_prefix=''):
-        converted,files,doc=preview(data)
+    def import_one(self,data, title_prefix='', source_name=''):
+        converted,files,doc=preview(data,source_name)
         title=title_prefix+doc['properties']['Name']
         digest=hashlib.sha256(data).hexdigest()
         existing=self.find(title)
@@ -467,9 +467,9 @@ def main():
         finally:
             ftp.quit()
         # Fail before writing anything if local conversion cannot be completed.
-        preview(buf.getvalue())
+        preview(buf.getvalue(),names[0])
         api=Notion()
-        page=api.import_one(buf.getvalue(),title_prefix='[ТЕСТ V3.5] ')
+        page=api.import_one(buf.getvalue(),title_prefix='[ТЕСТ V3.5] ',source_name=names[0])
         print('TEST SUCCESS:',page.get('url','https://www.notion.so/'+page['id'].replace('-','')))
         print('ZIP LEFT IN 01_Inbox:',names[0])
         return
@@ -488,10 +488,10 @@ def main():
             try:
                 buf=io.BytesIO()
                 ftp.retrbinary('RETR '+BASE+'/01_Inbox/'+name,buf.write)
-                doc=scan_archive(buf.getvalue())[2]
+                doc=scan_archive(buf.getvalue(),name)[2]
                 count=len(doc.get('blocks',[]))
                 title=doc['properties']['Name']
-                page=api.import_one(buf.getvalue())
+                page=api.import_one(buf.getvalue(),source_name=name)
                 ftp.rename(BASE+'/01_Inbox/'+name,BASE+'/02_Done/'+name)
                 passed+=1
                 link='https://app.notion.com/p/'+page['id'].replace('-','')
