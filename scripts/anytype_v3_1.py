@@ -12,7 +12,7 @@ from pathlib import PurePosixPath
 # No parser dependency: controlled Markdown inline grammar with strict detection.
 INLINE = re.compile(r'\*\*(.+?)\*\*|~~(.+?)~~|`([^`]+)`|(?<!\*)\*([^*\n]+)\*(?!\*)|\[([^\]\n]+)\]\((https?://[^\s)]+)\)|<font (color|background)="([a-zA-Z]+)">([^<]+)</font>', re.S)
 FONT_COLOR = {'yellow':'yellow','red':'red','blue':'blue','green':'green','gray':'gray','grey':'gray','orange':'orange','purple':'purple','pink':'pink','brown':'brown'}
-BLOCK_TYPES = {'paragraph','heading_1','heading_2','heading_3','toggle_heading_1','toggle_heading_2','toggle_heading_3','toggle','bulleted_list_item','numbered_list_item','quote','divider','callout','checkbox','code','table','image','bookmark','link','property','file'}
+BLOCK_TYPES = {'paragraph','heading_1','heading_2','heading_3','toggle_heading_1','toggle_heading_2','toggle_heading_3','toggle','bulleted_list_item','numbered_list_item','quote','divider','callout','checkbox','code','table','image','bookmark','link','property','file','video'}
 NOTION_API='https://api.notion.com/v1'
 DATASOURCE='3e056f1afcfe80e1b558000bd0464a2b'
 BASE='/www/andreway.ru/notion-import'
@@ -121,7 +121,18 @@ def scan_archive(data):
         # A single exported page may bundle linked objects with their own blocks.
         referenced={b.get('object_id') for o in pages for b in o.get('blocks',[]) if b.get('type')=='link'}
         roots=[o for o in pages if o.get('id') not in referenced]
-        if len(roots)!=1: raise Unsupported('Cannot identify unique main document: '+str(len(roots)))
+        if len(roots)!=1:
+            # Linked Anytype documents can reference each other, leaving several
+            # apparent roots. Select only an unambiguous title match against
+            # the exported ZIP filename, otherwise refuse to guess.
+            archive_name=os.path.basename(getattr(scan_archive,'source_name','')).lower()
+            letters={'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z','и':'i','й':'i','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'shch','ъ':'','ы':'y','ь':'','э':'e','ю':'iu','я':'ia'}
+            def slug(value):
+                value=''.join(letters.get(c,c) for c in value.lower())
+                return re.sub('-+','-',re.sub('[^a-z0-9]+','-',value)).strip('-')
+            matches=[p for p in pages if slug(p.get('properties',{}).get('Name','')) in archive_name]
+            if len(matches)!=1:raise Unsupported('Cannot identify unique main document: '+str(len(roots))+'; title matches: '+str(len(matches)))
+            roots=matches
         doc=roots[0]
         title=doc.get('properties',{}).get('Name')
         if not isinstance(title,str) or not title.strip(): raise Unsupported('Missing note title')
@@ -151,7 +162,7 @@ def convert(node,files,objects):
         p=candidates[0];mime=mimetypes.guess_type(p)[0]
         if mime not in ('image/jpeg','image/png','image/gif','image/webp'):raise Unsupported('Unsupported image MIME '+str(mime))
         return {'__asset':p,'__mime':mime,'object':'block','type':'image'}
-    if k=='file':
+    if k in ('file','video'):
         oid=b.get('object_id')
         if not oid: raise Unsupported('File block has no object_id')
         candidates=[p for p in files if p.startswith('files/'+str(oid)+'.') and not p.endswith('.json')]
@@ -164,7 +175,7 @@ def convert(node,files,objects):
             print('SKIPPED WINDOWS SHORTCUT:',name,flush=True)
             return None
         print('FILE ATTACHMENT:',name,'bytes:',len(files[path]),'MIME:',mime)
-        return {'__asset':path,'__mime':mime,'__name':name,'object':'block','type':'file'}
+        return {'__asset':path,'__mime':mime,'__name':name,'object':'block','type':k}
     if k=='link':
         target=objects.get(b.get('object_id'))
         if target is None:raise Unsupported('Linked Anytype object missing')
@@ -204,8 +215,18 @@ def convert(node,files,objects):
             vals=row.get('cells',[])
             if len(vals)>width:raise Unsupported('Table cell mismatch')
             vals=list(vals)+[None]*(width-len(vals))
-            if not all(v is None or isinstance(v,str) for v in vals): raise Unsupported('Complex table cells not yet supported')
-            children_rows.append({'object':'block','type':'table_row','table_row':{'cells':[rich(v or '') for v in vals]}})
+            def cell_text(v):
+                if v is None:return ''
+                if isinstance(v,str):return v
+                if isinstance(v,list):
+                    lines=[]
+                    for part in v:
+                        if not isinstance(part,dict) or part.get('type') not in ('paragraph',):
+                            raise Unsupported('Unsupported rich table cell block')
+                        lines.append(part.get('text',''))
+                    return '\\n'.join(lines)
+                raise Unsupported('Unsupported table cell value')
+            children_rows.append({'object':'block','type':'table_row','table_row':{'cells':[rich(cell_text(v)) for v in vals]}})
         return {'object':'block','type':'table','table':{'table_width':width,'has_column_header':bool(rows[0].get('is_header',False)),'has_row_header':False,'children':children_rows}}
     aliases={'toggle':'toggle','callout':'callout','checkbox':'to_do','code':'code'}
     type_name=aliases.get(k,k.removeprefix('toggle_'))
@@ -327,6 +348,8 @@ class Notion:
                         request['image']={'type':'file_upload','file_upload':{'id':upload_id}}
                     elif request['type']=='file':
                         request['file']={'type':'file_upload','file_upload':{'id':upload_id},'name':name}
+                    elif request['type']=='video':
+                        request['video']={'type':'file_upload','file_upload':{'id':upload_id}}
                     else:
                         raise Unsupported('Unsupported uploaded block type')
                 requests.append(request)
