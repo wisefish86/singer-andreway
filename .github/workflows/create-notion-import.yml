@@ -17,7 +17,7 @@ jobs:
           import os
           ftp = FTP("andreway.ru", timeout=30)
           ftp.login("andreway", os.environ["FTP_PASSWORD"])
-          base = "/www/singer.andreway.ru"
+          base = "/www/andreway.ru"
           ftp.cwd(base)
           for name in ["notion-import"]:
               try: ftp.mkd(name)
