@@ -426,32 +426,46 @@ def main():
         print('ZIP LEFT IN 01_Inbox:',names[0])
         return
     if args.import_ftp:
-        api=Notion();ftp=FTP('andreway.ru',timeout=60);ftp.login('andreway',os.environ['FTP_PASSWORD']);ftp.cwd(BASE+'/01_Inbox')
+        total_started=time.monotonic()
+        api=Notion()
+        ftp=FTP('andreway.ru',timeout=60)
+        ftp.login('andreway',os.environ['FTP_PASSWORD'])
+        ftp.cwd(BASE+'/01_Inbox')
         names=[n.split('/')[-1] for n in ftp.nlst() if n.lower().endswith('.zip') and 'notion-test' not in n.lower()]
-        print('ZIP archives found:',len(names));passed=failed=0
+        print('ZIP archives found:',len(names),flush=True)
+        passed=failed=0
         results=[]
-        if not names: print('No ZIPs to import');ftp.quit();return
         for name in sorted(names):
+            started=time.monotonic()
             try:
-                buf=io.BytesIO();ftp.retrbinary('RETR '+BASE+'/01_Inbox/'+name,buf.write)
+                buf=io.BytesIO()
+                ftp.retrbinary('RETR '+BASE+'/01_Inbox/'+name,buf.write)
+                doc=scan_archive(buf.getvalue())[2]
+                count=len(doc.get('blocks',[]))
+                title=doc['properties']['Name']
                 page=api.import_one(buf.getvalue())
-                # Move only after successful import. Errors leave the original ZIP in Inbox.
                 ftp.rename(BASE+'/01_Inbox/'+name,BASE+'/02_Done/'+name)
                 passed+=1
                 link='https://www.notion.so/'+page['id'].replace('-','')
-                results.append(('DONE',name,link))
-                print('DONE:',name,'-> 02_Done | Notion:',link)
+                elapsed=time.monotonic()-started
+                results.append(('DONE',title,count,elapsed,link))
+                print('DONE:',title,'| blocks:',count,'| seconds:',round(elapsed,2),'| Notion:',link,flush=True)
             except Exception as e:
                 failed+=1
-                results.append(('RETAINED',name,str(e)[:250]))
-                print('WARNING: ZIP kept in 01_Inbox:',name,type(e).__name__,str(e)[:250])
+                elapsed=time.monotonic()-started
+                results.append(('RETAINED',name,None,elapsed,type(e).__name__+': '+str(e)[:250]))
+                print('WARNING: ZIP kept in 01_Inbox:',name,type(e).__name__,str(e)[:250],flush=True)
         ftp.quit()
-        print('========== IMPORT SUMMARY ==========')
-        for status,name,detail in results: print(status,'|',name,'|',detail)
-        print('RESULT',{'archived':passed,'retained_with_errors':failed})
-        # Individual bad archives do not make successfully imported ones fail.
-        # Still fail visibly if absolutely nothing was imported successfully.
-        if failed: print('WARNING: some archives were retained in 01_Inbox; see summary above')
+        overall=time.monotonic()-total_started
+        print('========== IMPORT SUMMARY ==========',flush=True)
+        for status,name,count,elapsed,detail in results:
+            if status=='DONE':
+                print('DONE |',name,'| blocks:',count,'|',f'{elapsed:.2f}s','| Notion:',detail,flush=True)
+            else:
+                print('RETAINED |',name,'|',f'{elapsed:.2f}s','|',detail,flush=True)
+        print('TOTAL TIME:',f'{overall:.2f}s',flush=True)
+        print('RESULT',{'archived':passed,'retained_with_errors':failed,'seconds':round(overall,2)},flush=True)
+        if failed:print('WARNING: some archives were retained in 01_Inbox',flush=True)
         return
     p.error('Choose --check or --import-ftp')
 if __name__=='__main__':main()
