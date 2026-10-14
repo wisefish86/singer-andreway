@@ -235,6 +235,32 @@ class Notion:
         r=self.req('POST',f'/data_sources/{DATASOURCE}/query',json={'filter':{'property':'Name','title':{'equals':title}},'page_size':10})
         if len(r['results'])>1 or r['has_more']:raise Unsupported('Duplicate Notion title')
         return r['results'][0] if r['results'] else None
+    def update_title(self,page_id,title):
+        return self.req('PATCH','/pages/'+page_id,json={'properties':{'Name':{'title':[{'text':{'content':title[:2000]}}]}}})
+
+    def archive_page(self,page_id):
+        return self.req('PATCH','/pages/'+page_id,json={'archived':True})
+
+    def get_comments(self,page_id):
+        comments=[];cursor=None
+        while True:
+            params={'block_id':page_id,'page_size':100}
+            if cursor: params['start_cursor']=cursor
+            result=self.req('GET','/comments',params=params)
+            comments.extend(result.get('results',[]))
+            if not result.get('has_more'):return comments
+            cursor=result['next_cursor']
+
+    def completion_marker(self,page_id,digest):
+        return any('ANYTYPE_IMPORT_COMPLETE_SHA256='+digest in
+                   ''.join(x.get('plain_text',x.get('text',{}).get('content',''))
+                           for x in c.get('rich_text',[]))
+                   for c in self.get_comments(page_id))
+
+    def mark_complete(self,page_id,digest):
+        self.req('POST','/comments',json={'parent':{'page_id':page_id},
+            'rich_text':[{'type':'text','text':{'content':'ANYTYPE_IMPORT_COMPLETE_SHA256='+digest}}]})
+
     def append_verified(self,parent,converted,files):
         # Append siblings in batches; responses already include IDs for nested children.
         # No extra GET requests for each block or image.
@@ -321,13 +347,26 @@ class Notion:
 
     def import_one(self,data, title_prefix=''):
         converted,files,doc=preview(data)
-        title=title_prefix+doc['properties']['Name']; existing=self.find(title)
+        title=title_prefix+doc['properties']['Name']
+        digest=hashlib.sha256(data).hexdigest()
+        existing=self.find(title)
         if existing:
-            # Safest strategy: do not mutate an existing page until conflict-resolution is implemented.
-            raise Unsupported('Page already exists: refusing overwrite '+existing['id'])
-        page=self.create(title)
+            if self.completion_marker(existing['id'],digest):
+                print('ALREADY IMPORTED (matching SHA256):',title,'URL:',existing.get('url',''))
+                return existing
+            raise Unsupported('Page with same title exists but does not have matching completion marker: '+existing['id'])
+        staging='[ANYTYPE IMPORTING '+digest[:16]+'] '+title
+        prior=self.find(staging)
+        if prior:
+            # This is our importer-owned staging page. Archiving it removes incomplete
+            # content from active results; retries start clean instead of duplicating.
+            self.archive_page(prior['id'])
+            print('ARCHIVED INCOMPLETE STAGING PAGE:',prior['id'])
+        page=self.create(staging)
         self.append_verified(page['id'],converted,files)
-        print('IMPORT ACCEPTED: source blocks:',len(doc['blocks']),'ZIP SHA256:',hashlib.sha256(data).hexdigest(),'(Notion API responses checked; no redundant reads)')
+        self.mark_complete(page['id'],digest)
+        self.update_title(page['id'],title)
+        print('IMPORT ACCEPTED: source blocks:',len(doc['blocks']),'ZIP SHA256:',digest,'(Notion API responses checked)')
         print('VERIFIED (Notion page created):',title,'Notion page:',page['id'],'URL:',page.get('url',''))
         return page
 
@@ -360,6 +399,7 @@ def main():
         api=Notion();ftp=FTP('andreway.ru',timeout=60);ftp.login('andreway',os.environ['FTP_PASSWORD']);ftp.cwd(BASE+'/01_Inbox')
         names=[n.split('/')[-1] for n in ftp.nlst() if n.lower().endswith('.zip')]
         print('ZIP archives found:',len(names));passed=failed=0
+        if not names: print('No ZIPs to import');ftp.quit();return
         for name in names:
             try:
                 buf=io.BytesIO();ftp.retrbinary('RETR '+BASE+'/01_Inbox/'+name,buf.write)
