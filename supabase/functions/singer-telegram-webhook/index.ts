@@ -77,7 +77,7 @@ async function channelPinnedUrl(): Promise<string> {
 async function linkKeyboard(): Promise<object> {
   const pinned = await channelPinnedUrl();
   return {inline_keyboard: [[
-    {text:"📣 TG · Афиша",url:pinned},
+    {text:"📣 ТГ-канал",url:pinned},
     {text:"🌐 Мой сайт",url:siteUrl}
   ]]};
 }
@@ -97,7 +97,7 @@ async function sendNearestShow(chatId: number): Promise<void> {
   if (map) rows.push([{text:"🗺 Построить маршрут",url:map}]);
   const website = validUrl(show.website);
   if (website) rows.push([{text:"🌐 Сайт заведения",url:website}]);
-  rows.push([{text:"📣 TG · Афиша",url:await channelPinnedUrl()},{text:"🌐 Мой сайт",url:siteUrl}]);
+  rows.push([{text:"📣 ТГ-канал",url:await channelPinnedUrl()},{text:"🌐 Мой сайт",url:siteUrl}]);
   const caption = [
     "<b>🎤 Ближайшее выступление Андрея Шевцова</b>",
     "",
