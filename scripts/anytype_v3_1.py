@@ -160,6 +160,9 @@ def convert(node,files,objects):
         path=candidates[0]
         mime=b.get('mime_type') or mimetypes.guess_type(path)[0] or 'application/octet-stream'
         name=b.get('name') or PurePosixPath(path).name
+        if name.lower().endswith('.lnk') or path.lower().endswith('.lnk'):
+            print('SKIPPED WINDOWS SHORTCUT:',name,flush=True)
+            return None
         print('FILE ATTACHMENT:',name,'bytes:',len(files[path]),'MIME:',mime)
         return {'__asset':path,'__mime':mime,'__name':name,'object':'block','type':'file'}
     if k=='link':
@@ -235,6 +238,10 @@ def collect(blocks,files,objects):
     result=[]
     for n in blocks:
         a=convert(n,files,objects)
+        if a is None:
+            if n['children']:
+                raise Unsupported('Skipped shortcut unexpectedly contains nested blocks')
+            continue
         result.append((a,collect(n['children'],files,objects)))
     return result
 
@@ -315,20 +322,7 @@ class Notion:
                 if '__asset' in request:
                     path=request.pop('__asset');mime=request.pop('__mime')
                     name=request.pop('__name',None)
-                    content=files[path]
-                    upload_name=name
-                    if request['type']=='file' and name and name.lower().endswith('.lnk'):
-                        # Notion rejects Windows shortcuts as attachments. Wrap original bytes
-                        # without modification into a standard ZIP containing the .lnk file.
-                        wrapped=io.BytesIO()
-                        with zipfile.ZipFile(wrapped,'w',compression=zipfile.ZIP_STORED) as archive:
-                            archive.writestr(PurePosixPath(name).name,content)
-                        content=wrapped.getvalue()
-                        mime='application/zip'
-                        upload_name=PurePosixPath(name).name+'.zip'
-                        name=upload_name
-                        print('ATTACHMENT PACKAGED:',upload_name,'original bytes:',len(files[path]),flush=True)
-                    upload_id=self.upload(path,content,mime,filename=upload_name)
+                    upload_id=self.upload(path,files[path],mime,filename=name)
                     if request['type']=='image':
                         request['image']={'type':'file_upload','file_upload':{'id':upload_id}}
                     elif request['type']=='file':
