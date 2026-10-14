@@ -167,7 +167,7 @@ button.action-wide,button.after-action{font:inherit;color:inherit;cursor:pointer
 .after-live-label{margin-bottom:9px;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.12em}
 .after-live-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .after-action{min-height:54px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:flex-start;gap:9px;background:rgba(255,255,255,.025);text-align:left}
-.contact-sheet{width:min(100% - 16px,520px);max-height:min(82vh,680px);margin:auto auto 8px;border:1px solid rgba(255,255,255,.13);border-radius:24px 24px 18px 18px;padding:12px 14px 16px;background:#0b1824;color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.55)}
+.contact-sheet{width:min(100% - 16px,580px);max-height:min(82vh,680px);margin:auto auto 8px;border:1px solid rgba(255,255,255,.13);border-radius:24px 24px 18px 18px;padding:12px 14px 16px;background:#0b1824;color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.55)}
 .contact-sheet::backdrop{background:rgba(1,7,12,.72);backdrop-filter:blur(6px)}
 .sheet-handle{width:42px;height:4px;border-radius:99px;background:rgba(255,255,255,.22);margin:0 auto 13px}
 .sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
@@ -266,7 +266,7 @@ button.action-wide,button.after-action{font:inherit;color:inherit;cursor:pointer
 
 
 /* Desktop-only choice for public Telegram navigation (contact links stay direct). */
-.telegram-sheet{max-width:420px;text-align:left}
+.telegram-sheet{max-width:560px;text-align:left}
 .telegram-open-app{
   display:flex;align-items:center;justify-content:center;gap:10px;
   min-height:56px;margin-top:18px;padding:11px 14px;
@@ -284,6 +284,7 @@ button.action-wide,button.after-action{font:inherit;color:inherit;cursor:pointer
 .telegram-qr-hint{max-width:300px;margin:13px auto 0;color:var(--muted);font-size:.8rem;line-height:1.45}
 .telegram-mobile-url{display:inline-block;color:var(--accent2);font-size:.78rem;margin-top:12px;text-decoration:underline;text-underline-offset:3px}
 .telegram-sheet a:focus-visible,.telegram-sheet button:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
+@media(min-width:760px){.telegram-open-app #telegram-open-label{white-space:nowrap}}
 @media(max-width:480px){.telegram-sheet{max-width:calc(100% - 16px)}}
 
 /* The shared desktop social chooser uses the site sheet pattern, with a subtle platform accent. */
