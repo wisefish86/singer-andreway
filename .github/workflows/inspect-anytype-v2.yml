@@ -1,0 +1,44 @@
+name: Inspect Anytype V2 structure
+on:
+  push:
+    paths:
+      - .github/workflows/inspect-anytype-v2.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect schemas without logging personal text
+        env:
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          python - <<'PY'
+          import os,io,json,zipfile,collections
+          from ftplib import FTP
+          ftp=FTP("andreway.ru",timeout=60);ftp.login("andreway",os.environ["FTP_PASSWORD"])
+          ftp.cwd("/www/andreway.ru/notion-import/01_Inbox")
+          archives=[x for x in ftp.nlst() if x.lower().endswith(".zip")]
+          for ai,name in enumerate(archives,1):
+              buf=io.BytesIO();ftp.retrbinary("RETR "+name,buf.write)
+              print("ARCHIVE",ai)
+              with zipfile.ZipFile(buf) as z:
+                  for i in z.namelist():
+                      if not i.lower().endswith(".anyblock.json"):continue
+                      d=json.loads(z.read(i))
+                      print("File structure keys:",list(d) if isinstance(d,dict) else type(d).__name__)
+                      def walk(node,depth=0):
+                          if depth>5:return
+                          if isinstance(node,dict):
+                              print("  "*depth+"object keys",list(node.keys()))
+                              for k,v in node.items():
+                                  if isinstance(v,(list,dict)):walk(v,depth+1)
+                                  elif isinstance(v,(str,int,bool)):print("  "*(depth+1)+k,":",("str" if isinstance(v,str) else type(v).__name__))
+                          elif isinstance(node,list):
+                              print("  "*depth+"list length",len(node))
+                              if node:walk(node[0],depth+1)
+                      walk(d)
+                      break
+          ftp.quit()
+          PY
