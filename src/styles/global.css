@@ -280,7 +280,7 @@ button.action-wide,button.after-action{font:inherit;color:inherit;cursor:pointer
   width:222px;height:222px;margin:0 auto;display:grid;place-items:center;
   background:white;border-radius:16px;padding:14px
 }
-.telegram-qr-frame img{width:194px;height:194px;object-fit:contain}
+.telegram-qr-frame canvas{display:block;width:194px;height:194px;max-width:100%;image-rendering:auto}
 .telegram-qr-hint{max-width:300px;margin:13px auto 0;color:var(--muted);font-size:.8rem;line-height:1.45}
 .telegram-mobile-url{display:inline-block;color:var(--accent2);font-size:.78rem;margin-top:12px;text-decoration:underline;text-underline-offset:3px}
 .telegram-sheet a:focus-visible,.telegram-sheet button:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
