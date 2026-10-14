@@ -97,6 +97,9 @@ def rich(src, *, raw=False):
         if active and active[-1][0]==kind:active.pop()
         else:active.append((kind,True))
         i=m.end()
+    if active and all(kind=='code' for kind,_ in active):
+        print('WARNING: unclosed inline code marker; preserving literal source text',flush=True)
+        return split_text(src)
     if active:raise Unsupported('Unclosed inline formatting: '+repr(active))
     flush()
     # Reject unrecognized known-tag shapes to prevent accidental silent loss.
@@ -223,6 +226,8 @@ def convert(node,files,objects):
             def cell_text(v):
                 if v is None:return ''
                 if isinstance(v,str):return v
+                if isinstance(v,dict) and v.get('type')=='paragraph':
+                    return v.get('text') or ''
                 if isinstance(v,list):
                     lines=[]
                     for part in v:
@@ -285,7 +290,9 @@ class Notion:
             resp=self.r.request(method,NOTION_API+path,timeout=90,**kw)
             if resp.status_code in (429,500,502,503,504) and trial<5:
                 time.sleep(max(int(resp.headers.get('Retry-After','1')),2**trial));continue
-            resp.raise_for_status(); time.sleep(.36);return resp.json()
+            if not resp.ok:
+                raise Unsupported('Notion API '+str(resp.status_code)+' '+path+': '+resp.text[:600])
+            time.sleep(.36);return resp.json()
     def upload(self,path,bytes_,mime,filename=None):
         filename=filename or PurePosixPath(path).name
         obj=self.req('POST','/file_uploads',json={'mode':'single_part','filename':filename,'content_type':mime})
@@ -348,7 +355,18 @@ class Notion:
                 if '__asset' in request:
                     path=request.pop('__asset');mime=request.pop('__mime')
                     name=request.pop('__name',None)
-                    upload_id=self.upload(path,files[path],mime,filename=name)
+                    data=files[path]
+                    # Notion blocks unusual technical formats; preserve exact bytes
+                    # in a standard ZIP rather than dropping the attachment.
+                    if request['type']=='file' and not str(name).lower().endswith(('.pdf','.txt','.csv','.json','.md','.doc','.docx','.xls','.xlsx','.ppt','.pptx','.zip','.html','.xml','.py','.js','.jsx')):
+                        archive_buffer=io.BytesIO()
+                        with zipfile.ZipFile(archive_buffer,'w',compression=zipfile.ZIP_STORED) as package:
+                            package.writestr(PurePosixPath(str(name)).name,data)
+                        data=archive_buffer.getvalue()
+                        name=str(name)+'.zip'
+                        mime='application/zip'
+                        print('PACKAGED RARE ATTACHMENT:',name,flush=True)
+                    upload_id=self.upload(path,data,mime,filename=name)
                     if request['type']=='image':
                         request['image']={'type':'file_upload','file_upload':{'id':upload_id}}
                     elif request['type']=='file':
