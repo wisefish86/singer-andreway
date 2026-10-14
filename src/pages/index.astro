@@ -64,8 +64,8 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
         <a href="#contact">Контакты</a>
       </nav>
       <div class="social-mini">
-        <a class="icon-btn" href={telegramApp} aria-label="Telegram" target="_blank" rel="noreferrer"><BrandIcon name="telegram" size={19} /></a>
-        <a class="icon-btn" href={instagram} aria-label="Instagram" target="_blank" rel="noreferrer"><BrandIcon name="instagram" size={19} /></a>
+        <a class="icon-btn" href={telegramChannelApp} data-social-destination data-social-web={telegramChannelWeb} data-social-platform="telegram" data-social-name="Telegram-канал с афишей" aria-label="Telegram-канал"><BrandIcon name="telegram" size={19} /></a>
+        <a class="icon-btn" href={instagram} data-social-destination data-social-web={instagram} data-social-platform="instagram" data-social-name="Instagram" aria-label="Instagram"><BrandIcon name="instagram" size={19} /></a>
       </div>
     </div>
   </header>
@@ -84,7 +84,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
       </div>
       <div class="hero-actions" aria-label="Главные действия">
         <a class="btn primary hero-booking" href="#contact">Заказать выступление →</a>
-        <a class="btn hero-subscribe" href={reminderBotUrl} data-tg-destination data-tg-web={reminderBotWeb} data-tg-name="напоминания о выступлениях">
+        <a class="btn hero-subscribe" href={reminderBotUrl} data-social-destination data-social-platform="telegram" data-social-web={reminderBotWeb} data-social-name="напоминания о выступлениях">
           <BrandIcon name="telegram" size={22} />
           <span><strong>Напоминания в Telegram</strong><small>О ближайших выступлениях</small></span>
         </a>
@@ -92,7 +92,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
           <a class="btn" href="#video"><Icon name="play" size={18} /> Смотреть видео</a>
           <a class="btn" href="/andrey-shevtsov.vcf" type="text/vcard"><Icon name="contact" size={18} /> Сохранить контакт</a>
         </div>
-        <a class="hero-channel-link" href={telegramChannelApp} data-tg-destination data-tg-web={telegramChannelWeb} data-tg-name="Telegram-канал с афишей"><BrandIcon name="telegram" size={17} /> Афиша и новости в Telegram-канале →</a>
+        <a class="hero-channel-link" href={telegramChannelApp} data-social-destination data-social-platform="telegram" data-social-web={telegramChannelWeb} data-social-name="Telegram-канал с афишей"><BrandIcon name="telegram" size={17} /> Афиша и новости в Telegram-канале →</a>
       </div>
     </div>
   </section>
@@ -122,7 +122,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
             <div class="event-actions">
               <a class="btn primary" href="#">Подробнее →</a>
               <a class="btn" href="#">＋ В календарь</a>
-              <a class="btn" href={reminderBotUrl} target="_blank" rel="noopener noreferrer">🔔 Напоминания в Telegram</a>
+              <a class="btn" href={reminderBotUrl} data-social-destination data-social-web={reminderBotWeb} data-social-platform="telegram" data-social-name="напоминания в Telegram">🔔 Напоминания в Telegram</a>
             </div>
           </div>
         </article>
@@ -227,11 +227,11 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
               <div class="contact-write">
                 <div class="contact-group-label">Написать</div>
                 <div class="contact-socials" aria-label="Написать в мессенджере или соцсети">
-                  <a href={telegramApp}><BrandIcon name="telegram" size={22} /><span>Telegram</span></a>
+                  <a href={telegramApp} data-social-destination data-social-web={telegramWeb} data-social-platform="telegram" data-social-name="написать в Telegram"><BrandIcon name="telegram" size={22} /><span>Telegram</span></a>
                   <a href={whatsapp} target="_blank" rel="noreferrer"><BrandIcon name="whatsapp" size={22} /><span>WhatsApp</span></a>
                   <a href={max} target="_blank" rel="noreferrer"><BrandIcon name="max" size={22} /><span>MAX</span></a>
                   <a href={vk} target="_blank" rel="noreferrer"><BrandIcon name="vk" size={22} /><span>ВКонтакте</span></a>
-                  <a href={instagramDirect} target="_blank" rel="noreferrer"><BrandIcon name="instagram" size={22} /><span>Instagram</span></a>
+                  <a href={instagramDirect} data-social-destination data-social-web={instagramDirect} data-social-platform="instagram" data-social-name="написать в Instagram"><BrandIcon name="instagram" size={22} /><span>Instagram</span></a>
                 </div>
               </div>
 
@@ -242,8 +242,8 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
               <div class="stay-title">Останемся на связи</div>
               <div class="stay-copy">Афиши, новые видео и новости — подпишитесь там, где удобнее.</div>
               <div class="stay-links">
-                <a href={telegramChannelApp}><BrandIcon name="telegram" size={22} /><span><strong>Telegram</strong><small>подписаться на канал</small></span></a>
-                <a href={instagram} target="_blank" rel="noreferrer"><BrandIcon name="instagram" size={22} /><span><strong>Instagram</strong><small>подписаться</small></span></a>
+                <a href={telegramChannelApp} data-social-destination data-social-web={telegramChannelWeb} data-social-platform="telegram" data-social-name="Telegram-канал с афишей"><BrandIcon name="telegram" size={22} /><span><strong>Telegram</strong><small>подписаться на канал</small></span></a>
+                <a href={instagram} data-social-destination data-social-web={instagram} data-social-platform="instagram" data-social-name="Instagram"><BrandIcon name="instagram" size={22} /><span><strong>Instagram</strong><small>подписаться</small></span></a>
               </div>
             </div>
           </div>
@@ -256,21 +256,21 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
     <div class="sheet-handle" aria-hidden="true"></div>
     <div class="sheet-head">
       <div>
-        <h3 id="telegram-sheet-title">Открыть Telegram</h3>
+        <h3 id="telegram-sheet-title">Открыть соцсеть</h3>
         <p id="telegram-sheet-description">Выберите, как удобнее перейти.</p>
       </div>
       <button class="sheet-close" type="button" data-telegram-close aria-label="Закрыть"><Icon name="close" size={20} /></button>
     </div>
-    <a class="telegram-open-app" id="telegram-open-app" href={telegramChannelApp}>
-      <BrandIcon name="telegram" size={22} /><span>Открыть приложение Telegram</span><Icon name="arrow" size={18} />
+    <a class="telegram-open-app" id="telegram-open-app" href={telegramChannelApp} target="_blank" rel="noopener noreferrer">
+      <span id="telegram-open-label">Открыть приложение Telegram</span><Icon name="arrow" size={18} />
     </a>
     <div class="telegram-qr-panel">
-      <p class="telegram-qr-title">Или откройте на телефоне</p>
+      <p class="telegram-qr-title">Откройте на телефоне по QR-коду</p>
       <div class="telegram-qr-frame">
         <canvas id="telegram-qr" width="194" height="194" role="img" aria-label="QR-код для открытия Telegram на телефоне"></canvas>
       </div>
-      <p class="telegram-qr-hint">Наведите камеру телефона на QR-код. Если Telegram установлен, ссылка обычно откроется в приложении.</p>
-      <a class="telegram-mobile-url" id="telegram-mobile-url" href={telegramChannelWeb} target="_blank" rel="noopener noreferrer">Скопировать или открыть ссылку ↗</a>
+      <p class="telegram-qr-hint" id="telegram-qr-hint">Наведите камеру телефона на QR-код.</p>
+      <a class="telegram-mobile-url" id="telegram-mobile-url" href={telegramChannelWeb} target="_blank" rel="noopener noreferrer">Открыть веб-версию ↗</a>
     </div>
   </dialog>
 
@@ -287,7 +287,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
       <Icon name="music" size={20} /><span><strong>Выбрать песню из репертуара</strong><small>откроется список песен</small></span><Icon name="arrow" size={18} />
     </a>
     <div class="sheet-messengers">
-      <a data-messenger="telegram" href={telegramApp}><BrandIcon name="telegram" size={23} /><span>Telegram</span></a>
+      <a data-messenger="telegram" href={telegramApp} data-social-destination data-social-web={telegramWeb} data-social-platform="telegram" data-social-name="написать в Telegram"><BrandIcon name="telegram" size={23} /><span>Telegram</span></a>
       <a data-messenger="whatsapp" href={whatsapp} target="_blank" rel="noreferrer"><BrandIcon name="whatsapp" size={23} /><span>WhatsApp</span></a>
       <a data-messenger="max" href={max} target="_blank" rel="noreferrer"><BrandIcon name="max" size={23} /><span>MAX</span></a>
       <a data-messenger="vk" href={vk} target="_blank" rel="noreferrer"><BrandIcon name="vk" size={23} /><span>ВКонтакте</span></a>
@@ -299,14 +299,17 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
   </footer>
   <script>
     import QRCode from "qrcode";
-    const telegramDialog = document.getElementById('telegram-sheet');
-    const telegramOpenApp = document.getElementById('telegram-open-app');
-    const telegramQr = document.getElementById('telegram-qr');
-    const telegramMobileUrl = document.getElementById('telegram-mobile-url');
-    const telegramDialogDescription = document.getElementById('telegram-sheet-description');
-    let lastTelegramTrigger;
+    const socialDialog = document.getElementById('telegram-sheet');
+    const socialTitle = document.getElementById('telegram-sheet-title');
+    const socialDescription = document.getElementById('telegram-sheet-description');
+    const socialOpen = document.getElementById('telegram-open-app');
+    const socialOpenLabel = document.getElementById('telegram-open-label');
+    const socialQr = document.getElementById('telegram-qr');
+    const socialWeb = document.getElementById('telegram-mobile-url');
+    const socialQrHint = document.getElementById('telegram-qr-hint');
+    let lastSocialTrigger;
 
-    function isMobileTelegramDevice() {
+    function isMobileDevice() {
       if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
         return navigator.userAgentData.mobile;
       }
@@ -315,44 +318,47 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
         || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
     }
 
-    document.querySelectorAll('a[data-tg-destination]').forEach((link) => {
+    document.querySelectorAll('a[data-social-destination]').forEach((link) => {
       link.addEventListener('click', (event) => {
-        if (isMobileTelegramDevice() || !telegramDialog) return;
+        if (isMobileDevice() || !socialDialog || event.defaultPrevented) return;
         if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        const webUrl = link.dataset.socialWeb;
+        const destination = link.getAttribute('href');
+        if (!webUrl || !destination) return;
         event.preventDefault();
 
-        const appUrl = link.getAttribute('href');
-        const webUrl = link.dataset.tgWeb;
-        if (!appUrl || !webUrl) return;
-
-        lastTelegramTrigger = link;
-        telegramOpenApp.href = appUrl;
-        telegramMobileUrl.href = webUrl;
-        telegramDialogDescription.textContent = 'Открыть ' + (link.dataset.tgName || 'Telegram') + ' в приложении или на телефоне.';
-        // Render a self-contained, high-contrast QR code in the browser.
-        // The public Telegram destination is never sent to an external QR service.
-        telegramQr.setAttribute('aria-label', 'QR-код для перехода: ' + (link.dataset.tgName || 'Telegram'));
-        QRCode.toCanvas(telegramQr, webUrl, {
-          width: 194,
-          margin: 2,
-          errorCorrectionLevel: 'H',
-          color: { dark: '#0b2130', light: '#ffffff' },
+        const isInstagram = link.dataset.socialPlatform === 'instagram';
+        const service = isInstagram ? 'Instagram' : 'Telegram';
+        lastSocialTrigger = link;
+        socialTitle.textContent = 'Открыть ' + service;
+        socialDescription.textContent = 'Выберите удобный способ перейти: на компьютере или по QR-коду на телефоне.';
+        socialOpen.href = isInstagram ? webUrl : destination;
+        socialOpenLabel.textContent = isInstagram ? 'Открыть Instagram на компьютере' : 'Открыть приложение Telegram';
+        socialWeb.href = webUrl;
+        socialWeb.textContent = 'Открыть ссылку в браузере ↗';
+        socialQrHint.textContent = isInstagram
+          ? 'Сканируйте камерой телефона, чтобы открыть Instagram в приложении.'
+          : 'Сканируйте камерой телефона, чтобы открыть Telegram в приложении.';
+        socialDialog.dataset.platform = isInstagram ? 'instagram' : 'telegram';
+        socialQr.setAttribute('aria-label', 'QR-код: ' + (link.dataset.socialName || service));
+        QRCode.toCanvas(socialQr, webUrl, {
+          width: 194, margin: 2, errorCorrectionLevel: 'H',
+          color: { dark: isInstagram ? '#642c86' : '#075778', light: '#ffffff' },
         }).catch((error) => {
-          console.error('Unable to generate Telegram QR code', error);
-          const context = telegramQr.getContext('2d');
-          context?.clearRect(0, 0, telegramQr.width, telegramQr.height);
-          telegramQr.setAttribute('aria-label', 'QR-код недоступен — используйте ссылку ниже');
+          console.error('QR-code generation failed', error);
+          socialQr.getContext('2d')?.clearRect(0, 0, socialQr.width, socialQr.height);
+          socialQr.setAttribute('aria-label', 'QR-код недоступен — используйте ссылку ниже');
         });
-        telegramDialog.showModal();
-        telegramOpenApp.focus();
+        socialDialog.showModal();
+        socialOpen.focus();
       });
     });
 
-    document.querySelector('[data-telegram-close]')?.addEventListener('click', () => telegramDialog?.close());
-    telegramDialog?.addEventListener('click', (event) => {
-      if (event.target === telegramDialog) telegramDialog.close();
+    document.querySelector('[data-telegram-close]')?.addEventListener('click', () => socialDialog?.close());
+    socialDialog?.addEventListener('click', (event) => {
+      if (event.target === socialDialog) socialDialog.close();
     });
-    telegramDialog?.addEventListener('close', () => lastTelegramTrigger?.focus());
+    socialDialog?.addEventListener('close', () => lastSocialTrigger?.focus());
   </script>
 
   <script is:inline data-contact-sheet-script>
