@@ -12,7 +12,7 @@ from pathlib import PurePosixPath
 # No parser dependency: controlled Markdown inline grammar with strict detection.
 INLINE = re.compile(r'\*\*(.+?)\*\*|~~(.+?)~~|`([^`]+)`|(?<!\*)\*([^*\n]+)\*(?!\*)|\[([^\]\n]+)\]\((https?://[^\s)]+)\)|<font (color|background)="([a-zA-Z]+)">([^<]+)</font>', re.S)
 FONT_COLOR = {'yellow':'yellow','red':'red','blue':'blue','green':'green','gray':'gray','grey':'gray','orange':'orange','purple':'purple','pink':'pink','brown':'brown'}
-BLOCK_TYPES = {'paragraph','heading_1','heading_2','heading_3','toggle_heading_1','toggle_heading_2','toggle_heading_3','toggle','bulleted_list_item','numbered_list_item','quote','divider','callout','checkbox','code','table','image','bookmark','link','property','file','video'}
+BLOCK_TYPES = {'paragraph','heading_1','heading_2','heading_3','toggle_heading_1','toggle_heading_2','toggle_heading_3','toggle','bulleted_list_item','numbered_list_item','quote','divider','callout','checkbox','code','table','image','bookmark','link','property','file','video','pdf'}
 NOTION_API='https://api.notion.com/v1'
 DATASOURCE='3e056f1afcfe80e1b558000bd0464a2b'
 BASE='/www/andreway.ru/notion-import'
@@ -158,11 +158,16 @@ def convert(node,files,objects):
     if k=='image':
         oid=b.get('object_id')
         candidates=[p for p in files if p.startswith('files/'+str(oid)+'.') and not p.endswith('.json')]
-        if len(candidates)!=1:raise Unsupported(f'Image {oid} missing/ambiguous in ZIP')
+        if len(candidates)!=1:
+            if not oid and len(candidates)==0:
+                label=b.get('name') or 'без названия'
+                print('WARNING: missing image source, inserted placeholder:',label,flush=True)
+                return {'object':'block','type':'paragraph','paragraph':{'rich_text':split_text('[Изображение из Anytype отсутствует в ZIP: '+label+']')}}
+            raise Unsupported(f'Image {oid} missing/ambiguous in ZIP')
         p=candidates[0];mime=mimetypes.guess_type(p)[0]
         if mime not in ('image/jpeg','image/png','image/gif','image/webp'):raise Unsupported('Unsupported image MIME '+str(mime))
         return {'__asset':p,'__mime':mime,'object':'block','type':'image'}
-    if k in ('file','video'):
+    if k in ('file','video','pdf'):
         oid=b.get('object_id')
         if not oid: raise Unsupported('File block has no object_id')
         candidates=[p for p in files if p.startswith('files/'+str(oid)+'.') and not p.endswith('.json')]
@@ -175,7 +180,7 @@ def convert(node,files,objects):
             print('SKIPPED WINDOWS SHORTCUT:',name,flush=True)
             return None
         print('FILE ATTACHMENT:',name,'bytes:',len(files[path]),'MIME:',mime)
-        return {'__asset':path,'__mime':mime,'__name':name,'object':'block','type':k}
+        return {'__asset':path,'__mime':mime,'__name':name,'object':'block','type':('file' if k=='pdf' else k)}
     if k=='link':
         target=objects.get(b.get('object_id'))
         if target is None:raise Unsupported('Linked Anytype object missing')
@@ -224,7 +229,7 @@ def convert(node,files,objects):
                         if not isinstance(part,dict) or part.get('type') not in ('paragraph',):
                             raise Unsupported('Unsupported rich table cell block')
                         lines.append(part.get('text',''))
-                    return '\\n'.join(lines)
+                    return '\n'.join(lines)
                 raise Unsupported('Unsupported table cell value')
             children_rows.append({'object':'block','type':'table_row','table_row':{'cells':[rich(cell_text(v)) for v in vals]}})
         return {'object':'block','type':'table','table':{'table_width':width,'has_column_header':bool(rows[0].get('is_header',False)),'has_row_header':False,'children':children_rows}}
