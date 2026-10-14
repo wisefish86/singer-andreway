@@ -1,6 +1,9 @@
 name: Test Anytype V3 Import into Notion
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/test-anytype-v3.yml
 permissions:
   contents: read
 concurrency:
