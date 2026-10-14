@@ -26,15 +26,15 @@ jobs:
               ftp.storbinary("STOR "+path,io.BytesIO(data))
           # Deny HTTP access to uploaded archives, whether the server uses Apache or LiteSpeed.
           deny=b"Require all denied\nDeny from all\n"
-          for directory in ("incoming","done","failed"):
+          for directory in ("01_Inbox","02_Done","03_Failed"):
               upload(base+"/"+directory+"/.htaccess",deny)
-          ftp.cwd(base+"/incoming")
+          ftp.cwd(base+"/01_Inbox")
           names=[x.rsplit("/",1)[-1] for x in ftp.nlst()]
           archives=[x for x in names if x.lower().endswith(".zip")]
           manifest={"archives":[]}
           for filename in archives:
               buf=io.BytesIO()
-              ftp.retrbinary("RETR "+base+"/incoming/"+filename,buf.write)
+              ftp.retrbinary("RETR "+base+"/01_Inbox/"+filename,buf.write)
               buf.seek(0); filehash=hashlib.sha256(buf.getvalue()).hexdigest()
               item={"filename":filename,"sha256":filehash,"images":[],"errors":[]}
               try:
