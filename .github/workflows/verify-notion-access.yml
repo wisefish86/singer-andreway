@@ -1,4 +1,5 @@
 name: Verify Notion import access
+# Recheck after database connection granted
 on:
   push:
     paths:
