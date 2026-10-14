@@ -241,25 +241,29 @@ class Notion:
     def archive_page(self,page_id):
         return self.req('PATCH','/pages/'+page_id,json={'archived':True})
 
-    def get_comments(self,page_id):
-        comments=[];cursor=None
-        while True:
-            params={'block_id':page_id,'page_size':100}
-            if cursor: params['start_cursor']=cursor
-            result=self.req('GET','/comments',params=params)
-            comments.extend(result.get('results',[]))
-            if not result.get('has_more'):return comments
-            cursor=result['next_cursor']
-
-    def completion_marker(self,page_id,digest):
-        return any('ANYTYPE_IMPORT_COMPLETE_SHA256='+digest in
-                   ''.join(x.get('plain_text',x.get('text',{}).get('content',''))
-                           for x in c.get('rich_text',[]))
-                   for c in self.get_comments(page_id))
-
-    def mark_complete(self,page_id,digest):
-        self.req('POST','/comments',json={'parent':{'page_id':page_id},
-            'rich_text':[{'type':'text','text':{'content':'ANYTYPE_IMPORT_COMPLETE_SHA256='+digest}}]})
+    def same_content(self,page_id,expected):
+        # Read-only duplicate check, used only when a final-title page already exists.
+        actual=self.list_children(page_id)
+        if len(actual)!=len(expected):return False
+        for (want,children),got in zip(expected,actual):
+            if want['type']!=got['type']:return False
+            kind=want['type']
+            if kind=='image':
+                if got['image'].get('type')!='file':return False
+            elif kind=='table':
+                w=want['table'];v=got['table']
+                if w['table_width']!=v['table_width'] or w['has_column_header']!=v['has_column_header']:return False
+                rows=self.list_children(got['id'])
+                if len(rows)!=len(w['children']):return False
+                for left,right in zip(w['children'],rows):
+                    if right['type']!='table_row':return False
+                    aa=left['table_row']['cells'];bb=right['table_row']['cells']
+                    if len(aa)!=len(bb) or any(plain_value(x)!=plain_value(y) for x,y in zip(aa,bb)):return False
+            elif kind=='bookmark':
+                if want['bookmark']['url']!=got['bookmark'].get('url'):return False
+            elif kind!='divider' and norm(want)!=norm(got):return False
+            if children and not self.same_content(got['id'],children):return False
+        return True
 
     def append_verified(self,parent,converted,files):
         # Append siblings in batches; responses already include IDs for nested children.
@@ -351,10 +355,10 @@ class Notion:
         digest=hashlib.sha256(data).hexdigest()
         existing=self.find(title)
         if existing:
-            if self.completion_marker(existing['id'],digest):
-                print('ALREADY IMPORTED (matching SHA256):',title,'URL:',existing.get('url',''))
+            if self.same_content(existing['id'],converted):
+                print('ALREADY IMPORTED (matching content):',title,'URL:',existing.get('url',''))
                 return existing
-            raise Unsupported('Page with same title exists but does not have matching completion marker: '+existing['id'])
+            raise Unsupported('Page with same title differs: refusing overwrite '+existing['id'])
         staging='[ANYTYPE IMPORTING '+digest[:16]+'] '+title
         prior=self.find(staging)
         if prior:
@@ -364,7 +368,6 @@ class Notion:
             print('ARCHIVED INCOMPLETE STAGING PAGE:',prior['id'])
         page=self.create(staging)
         self.append_verified(page['id'],converted,files)
-        self.mark_complete(page['id'],digest)
         self.update_title(page['id'],title)
         print('IMPORT ACCEPTED: source blocks:',len(doc['blocks']),'ZIP SHA256:',digest,'(Notion API responses checked)')
         print('VERIFIED (Notion page created):',title,'Notion page:',page['id'],'URL:',page.get('url',''))
@@ -391,7 +394,7 @@ def main():
         # Fail before writing anything if local conversion cannot be completed.
         preview(buf.getvalue())
         api=Notion()
-        page=api.import_one(buf.getvalue(),title_prefix='[ТЕСТ V3.4] ')
+        page=api.import_one(buf.getvalue(),title_prefix='[ТЕСТ V3.5] ')
         print('TEST SUCCESS:',page.get('url','https://www.notion.so/'+page['id'].replace('-','')))
         print('ZIP LEFT IN 01_Inbox:',names[0])
         return
