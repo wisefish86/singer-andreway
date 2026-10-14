@@ -39,6 +39,11 @@ jobs:
                               print("  "*depth+"list length",len(node))
                               if node:walk(node[0],depth+1)
                       print("KIND",d.get("kind"),"VERSION",d.get("formatVersion"),"BLOCKS",len(d.get("blocks",[])),"PROPERTY_KEYS",list(d.get("properties",{}).keys()))
+                      if d.get("kind") is None:
+                          from collections import Counter
+                          print("ACTUAL_BLOCK_TYPES",dict(Counter(b.get("type") for b in d.get("blocks",[]))))
+                          print("NONBASIC",[(b.get("type"),list(b)) for b in d.get("blocks",[]) if set(b)-{"id","type","text"}][:12])
+                          print("TEXT_LENGTHS",sorted([len(str(b.get("text",""))) for b in d.get("blocks",[])],reverse=True)[:8])
                       for b in d.get("blocks",[]):
                           print("BLOCK",b.get("type"),"keys",list(b.keys()),"child_types",{k:(list(v.keys()) if isinstance(v,dict) else type(v).__name__) for k,v in b.items() if k not in ("text","id")})
           ftp.quit()
