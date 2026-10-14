@@ -12,6 +12,7 @@ const instagram = 'https://www.instagram.com/andrey_spoet/';
 const instagramDirect = 'https://ig.me/m/andrey_spoet';
 const telegramChannelWeb = 'https://t.me/andrey_spoet';
 const reminderBotUrl = 'tg://resolve?domain=andrey_spoet_bot&start=reminders';
+const reminderBotWeb = 'https://t.me/andrey_spoet_bot?start=reminders';
 const telegramChannelApp = 'tg://resolve?domain=andrey_spoet';
 const vk = 'https://vk.me/andrey_spoet';
 const max = 'https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHMK3ejGSQ';
@@ -83,7 +84,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
       </div>
       <div class="hero-actions" aria-label="Главные действия">
         <a class="btn primary hero-booking" href="#contact">Заказать выступление →</a>
-        <a class="btn hero-subscribe" href={reminderBotUrl} target="_blank" rel="noopener noreferrer">
+        <a class="btn hero-subscribe" href={reminderBotUrl} data-tg-destination data-tg-web={reminderBotWeb} data-tg-name="напоминания о выступлениях">
           <BrandIcon name="telegram" size={22} />
           <span><strong>Напоминания в Telegram</strong><small>О ближайших выступлениях</small></span>
         </a>
@@ -91,7 +92,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
           <a class="btn" href="#video"><Icon name="play" size={18} /> Смотреть видео</a>
           <a class="btn" href="/andrey-shevtsov.vcf" type="text/vcard"><Icon name="contact" size={18} /> Сохранить контакт</a>
         </div>
-        <a class="hero-channel-link" href={telegramChannelApp}><BrandIcon name="telegram" size={17} /> Афиша и новости в Telegram-канале →</a>
+        <a class="hero-channel-link" href={telegramChannelApp} data-tg-destination data-tg-web={telegramChannelWeb} data-tg-name="Telegram-канал с афишей"><BrandIcon name="telegram" size={17} /> Афиша и новости в Telegram-канале →</a>
       </div>
     </div>
   </section>
@@ -251,6 +252,28 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
     </section>
   </main>
 
+  <dialog class="contact-sheet telegram-sheet" id="telegram-sheet" aria-labelledby="telegram-sheet-title" aria-describedby="telegram-sheet-description">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <div class="sheet-head">
+      <div>
+        <h3 id="telegram-sheet-title">Открыть Telegram</h3>
+        <p id="telegram-sheet-description">Выберите, как удобнее перейти.</p>
+      </div>
+      <button class="sheet-close" type="button" data-telegram-close aria-label="Закрыть"><Icon name="close" size={20} /></button>
+    </div>
+    <a class="telegram-open-app" id="telegram-open-app" href={telegramChannelApp}>
+      <BrandIcon name="telegram" size={22} /><span>Открыть приложение Telegram</span><Icon name="arrow" size={18} />
+    </a>
+    <div class="telegram-qr-panel">
+      <p class="telegram-qr-title">Или откройте на телефоне</p>
+      <div class="telegram-qr-frame">
+        <img id="telegram-qr" width="194" height="194" alt="QR-код для открытия Telegram на телефоне" loading="lazy" />
+      </div>
+      <p class="telegram-qr-hint">Наведите камеру телефона на QR-код. Если Telegram установлен, ссылка обычно откроется в приложении.</p>
+      <a class="telegram-mobile-url" id="telegram-mobile-url" href={telegramChannelWeb} target="_blank" rel="noopener noreferrer">Скопировать или открыть ссылку ↗</a>
+    </div>
+  </dialog>
+
   <dialog class="contact-sheet" id="contact-sheet">
     <div class="sheet-handle" aria-hidden="true"></div>
     <div class="sheet-head">
@@ -274,6 +297,53 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
   <footer class="footer">
     <div class="container">© {new Date().getFullYear()} Андрей Шевцов · singer.andreway.ru</div>
   </footer>
+  <script is:inline data-telegram-links-script>
+    const telegramDialog = document.getElementById('telegram-sheet');
+    const telegramOpenApp = document.getElementById('telegram-open-app');
+    const telegramQr = document.getElementById('telegram-qr');
+    const telegramMobileUrl = document.getElementById('telegram-mobile-url');
+    const telegramDialogDescription = document.getElementById('telegram-sheet-description');
+    let lastTelegramTrigger;
+
+    function isMobileTelegramDevice() {
+      if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
+        return navigator.userAgentData.mobile;
+      }
+      const ua = navigator.userAgent || '';
+      return /Android|iPhone|iPad|iPod|Mobile/i.test(ua)
+        || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+    }
+
+    document.querySelectorAll('a[data-tg-destination]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        if (isMobileTelegramDevice() || !telegramDialog) return;
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+
+        const appUrl = link.getAttribute('href');
+        const webUrl = link.dataset.tgWeb;
+        if (!appUrl || !webUrl) return;
+
+        lastTelegramTrigger = link;
+        telegramOpenApp.href = appUrl;
+        telegramMobileUrl.href = webUrl;
+        telegramDialogDescription.textContent = 'Открыть ' + (link.dataset.tgName || 'Telegram') + ' в приложении или на телефоне.';
+        // Generate a QR image dynamically for the selected destination.
+        // QR includes only the public Telegram URL, no private user information.
+        telegramQr.src = 'https://api.qrserver.com/v1/create-qr-code/?size=194x194&margin=12&data=' + encodeURIComponent(webUrl);
+        telegramQr.alt = 'QR-код для перехода: ' + (link.dataset.tgName || 'Telegram');
+        telegramDialog.showModal();
+        telegramOpenApp.focus();
+      });
+    });
+
+    document.querySelector('[data-telegram-close]')?.addEventListener('click', () => telegramDialog?.close());
+    telegramDialog?.addEventListener('click', (event) => {
+      if (event.target === telegramDialog) telegramDialog.close();
+    });
+    telegramDialog?.addEventListener('close', () => lastTelegramTrigger?.focus());
+  </script>
+
   <script is:inline data-contact-sheet-script>
     const sheet = document.getElementById('contact-sheet');
     const sheetTitle = document.getElementById('sheet-title');
