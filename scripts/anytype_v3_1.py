@@ -400,7 +400,7 @@ def main():
         return
     if args.import_ftp:
         api=Notion();ftp=FTP('andreway.ru',timeout=60);ftp.login('andreway',os.environ['FTP_PASSWORD']);ftp.cwd(BASE+'/01_Inbox')
-        names=[n.split('/')[-1] for n in ftp.nlst() if n.lower().endswith('.zip')]
+        names=[n.split('/')[-1] for n in ftp.nlst() if n.lower().endswith('.zip') and 'notion-test' not in n.lower()]
         print('ZIP archives found:',len(names));passed=failed=0
         if not names: print('No ZIPs to import');ftp.quit();return
         for name in names:
