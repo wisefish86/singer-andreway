@@ -261,6 +261,68 @@ class Notion:
                 # API may normalize null annotation/color keys; check content + flags separately.
                 if exp!=act:raise Unsupported('Block payload mismatch after write: '+typ)
             if children:self.append_verified(created['id'],children,files)
+    def verify_subtree(self, parent_id, expected, files):
+        """Independently re-read the entire page in source order after writing."""
+        actual = self.list_children(parent_id)
+        if len(actual) != len(expected):
+            raise Unsupported(f'Child count mismatch: {parent_id}: expected {len(expected)}, received {len(actual)}')
+        checked = 0
+        chars = 0
+        images = 0
+        for pos, ((want, children), got) in enumerate(zip(expected, actual), 1):
+            kind = want['type']
+            if kind != got['type']:
+                raise Unsupported(f'Block {pos}: expected {kind}, got {got["type"]}')
+            if kind == 'image':
+                asset = want['__asset']
+                image = got['image']
+                if image.get('type') != 'file':
+                    raise Unsupported(f'Image {pos}: not a Notion-hosted file')
+                url = image['file']['url']
+                response = self.r.get(url, timeout=120)
+                response.raise_for_status()
+                original = files[asset]
+                expected_hash = hashlib.sha256(original).hexdigest()
+                actual_hash = hashlib.sha256(response.content).hexdigest()
+                if len(original) != len(response.content) or expected_hash != actual_hash:
+                    raise Unsupported(f'Image {pos}: original bytes differ from downloaded Notion file (sha256 {expected_hash} != {actual_hash})')
+                images += 1
+                print('IMAGE VERIFIED:',asset,'bytes:',len(original),'sha256:',expected_hash)
+            elif kind == 'table':
+                source_table = want['table']
+                dest_table = got['table']
+                if (source_table['table_width'] != dest_table['table_width'] or
+                    source_table['has_column_header'] != dest_table['has_column_header']):
+                    raise Unsupported(f'Table {pos}: dimensions/header mismatch')
+                rows = self.list_children(got['id'])
+                expected_rows = source_table['children']
+                if len(rows) != len(expected_rows):
+                    raise Unsupported(f'Table {pos}: row count mismatch')
+                for j, (a, b) in enumerate(zip(expected_rows, rows),1):
+                    if b['type'] != 'table_row':
+                        raise Unsupported('Table row type mismatch')
+                    expected_cells = a['table_row']['cells']
+                    actual_cells = b['table_row']['cells']
+                    if len(expected_cells) != len(actual_cells):
+                        raise Unsupported('Table cell count mismatch')
+                    for ci, (x, y) in enumerate(zip(expected_cells,actual_cells),1):
+                        if plain_value(x) != plain_value(y):
+                            raise Unsupported(f'Table {pos} row {j} cell {ci}: text mismatch')
+                        chars += len(plain_value(x))
+            elif kind == 'bookmark':
+                if got['bookmark'].get('url') != want['bookmark']['url']:
+                    raise Unsupported(f'Bookmark {pos}: URL mismatch')
+            elif kind != 'divider':
+                # norm checks all rich-text spans, attributes, links, checklist flags, and heading toggles.
+                if norm(want) != norm(got):
+                    raise Unsupported(f'Block {pos} ({kind}): text/formatting mismatch')
+                chars += len(plain_value(want[kind].get('rich_text',[])))
+            checked += 1
+            if children:
+                n,c,i = self.verify_subtree(got['id'],children,files)
+                checked += n; chars += c; images += i
+        return checked,chars,images
+
     def import_one(self,data, title_prefix=''):
         converted,files,doc=preview(data)
         title=title_prefix+doc['properties']['Name']; existing=self.find(title)
@@ -269,6 +331,8 @@ class Notion:
             raise Unsupported('Page already exists: refusing overwrite '+existing['id'])
         page=self.create(title)
         self.append_verified(page['id'],converted,files)
+        n,chars,images=self.verify_subtree(page['id'],converted,files)
+        print('FULL VERIFY PASSED: blocks:',n,'text characters:',chars,'images SHA256:',images)
         print('VERIFIED (Notion page created):',title,'Notion page:',page['id'],'URL:',page.get('url',''))
         return page
 
@@ -293,7 +357,7 @@ def main():
         # Fail before writing anything if local conversion cannot be completed.
         preview(buf.getvalue())
         api=Notion()
-        page=api.import_one(buf.getvalue(),title_prefix='[ТЕСТ V3] ')
+        page=api.import_one(buf.getvalue(),title_prefix='[ТЕСТ V3.2] ')
         print('TEST SUCCESS:',page.get('url','https://www.notion.so/'+page['id'].replace('-','')))
         print('ZIP LEFT IN 01_Inbox:',names[0])
         return
