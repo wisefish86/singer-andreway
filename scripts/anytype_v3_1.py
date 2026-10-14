@@ -464,6 +464,13 @@ def main():
             else:
                 print('RETAINED |',name,'|',f'{elapsed:.2f}s','|',detail,flush=True)
         print('TOTAL TIME:',f'{overall:.2f}s',flush=True)
+        # Prefix detailed lines with RESULT for the existing desktop PowerShell log filter.
+        for status,name,count,elapsed,detail in results:
+            if status=='DONE':
+                print('RESULT PAGE:',name,'| blocks:',count,'| time:',f'{elapsed:.2f}s','| Notion:',detail,flush=True)
+            else:
+                print('RESULT SKIPPED:',name,'| time:',f'{elapsed:.2f}s','| reason:',detail,flush=True)
+        print('RESULT TOTAL:',f'{overall:.2f}s','| imported:',passed,'| retained:',failed,flush=True)
         print('RESULT',{'archived':passed,'retained_with_errors':failed,'seconds':round(overall,2)},flush=True)
         if failed:print('WARNING: some archives were retained in 01_Inbox',flush=True)
         return
