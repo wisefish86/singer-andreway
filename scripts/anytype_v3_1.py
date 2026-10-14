@@ -12,7 +12,7 @@ from pathlib import PurePosixPath
 # No parser dependency: controlled Markdown inline grammar with strict detection.
 INLINE = re.compile(r'\*\*(.+?)\*\*|~~(.+?)~~|`([^`]+)`|(?<!\*)\*([^*\n]+)\*(?!\*)|\[([^\]\n]+)\]\((https?://[^\s)]+)\)|<font (color|background)="([a-zA-Z]+)">([^<]+)</font>', re.S)
 FONT_COLOR = {'yellow':'yellow','red':'red','blue':'blue','green':'green','gray':'gray','grey':'gray','orange':'orange','purple':'purple','pink':'pink','brown':'brown'}
-BLOCK_TYPES = {'paragraph','heading_1','heading_2','heading_3','toggle_heading_1','toggle_heading_2','toggle_heading_3','toggle','bulleted_list_item','numbered_list_item','quote','divider','callout','checkbox','code','table','image','bookmark','link','property'}
+BLOCK_TYPES = {'paragraph','heading_1','heading_2','heading_3','toggle_heading_1','toggle_heading_2','toggle_heading_3','toggle','bulleted_list_item','numbered_list_item','quote','divider','callout','checkbox','code','table','image','bookmark','link','property','file'}
 NOTION_API='https://api.notion.com/v1'
 DATASOURCE='3e056f1afcfe80e1b558000bd0464a2b'
 BASE='/www/andreway.ru/notion-import'
@@ -151,6 +151,17 @@ def convert(node,files,objects):
         p=candidates[0];mime=mimetypes.guess_type(p)[0]
         if mime not in ('image/jpeg','image/png','image/gif','image/webp'):raise Unsupported('Unsupported image MIME '+str(mime))
         return {'__asset':p,'__mime':mime,'object':'block','type':'image'}
+    if k=='file':
+        oid=b.get('object_id')
+        if not oid: raise Unsupported('File block has no object_id')
+        candidates=[p for p in files if p.startswith('files/'+str(oid)+'.') and not p.endswith('.json')]
+        if len(candidates)!=1:
+            raise Unsupported(f'File attachment {oid}: expected original file in ZIP, found {len(candidates)}')
+        path=candidates[0]
+        mime=b.get('mime_type') or mimetypes.guess_type(path)[0] or 'application/octet-stream'
+        name=b.get('name') or PurePosixPath(path).name
+        print('FILE ATTACHMENT:',name,'bytes:',len(files[path]),'MIME:',mime)
+        return {'__asset':path,'__mime':mime,'__name':name,'object':'block','type':'file'}
     if k=='link':
         target=objects.get(b.get('object_id'))
         if target is None:raise Unsupported('Linked Anytype object missing')
@@ -302,8 +313,14 @@ class Notion:
                 request=copy.deepcopy(block)
                 if '__asset' in request:
                     path=request.pop('__asset');mime=request.pop('__mime')
+                    name=request.pop('__name',None)
                     upload_id=self.upload(path,files[path],mime)
-                    request['image']={'type':'file_upload','file_upload':{'id':upload_id}}
+                    if request['type']=='image':
+                        request['image']={'type':'file_upload','file_upload':{'id':upload_id}}
+                    elif request['type']=='file':
+                        request['file']={'type':'file_upload','file_upload':{'id':upload_id},'name':name}
+                    else:
+                        raise Unsupported('Unsupported uploaded block type')
                 requests.append(request)
             result=self.req('PATCH',f'/blocks/{parent}/children',json={'children':requests})
             added=result.get('results',[])
