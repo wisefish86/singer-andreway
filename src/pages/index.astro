@@ -228,7 +228,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
                 <div class="contact-group-label">Написать</div>
                 <div class="contact-socials" aria-label="Написать в мессенджере или соцсети">
                   <a href={telegramApp} data-social-destination data-social-web={telegramWeb} data-social-platform="telegram" data-social-name="написать в Telegram"><BrandIcon name="telegram" size={22} /><span>Telegram</span></a>
-                  <a href={whatsapp} target="_blank" rel="noreferrer"><BrandIcon name="whatsapp" size={22} /><span>WhatsApp</span></a>
+                  <a href={whatsapp} data-social-destination data-social-web={whatsapp} data-social-platform="whatsapp" data-social-name="написать в WhatsApp"><BrandIcon name="whatsapp" size={22} /><span>WhatsApp</span></a>
                   <a href={max} target="_blank" rel="noreferrer"><BrandIcon name="max" size={22} /><span>MAX</span></a>
                   <a href={vk} target="_blank" rel="noreferrer"><BrandIcon name="vk" size={22} /><span>ВКонтакте</span></a>
                   <a href={instagramDirect} data-social-destination data-social-web={instagramDirect} data-social-platform="instagram" data-social-name="написать в Instagram"><BrandIcon name="instagram" size={22} /><span>Instagram</span></a>
@@ -288,7 +288,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
     </a>
     <div class="sheet-messengers">
       <a data-messenger="telegram" href={telegramApp} data-social-destination data-social-web={telegramWeb} data-social-platform="telegram" data-social-name="написать в Telegram"><BrandIcon name="telegram" size={23} /><span>Telegram</span></a>
-      <a data-messenger="whatsapp" href={whatsapp} target="_blank" rel="noreferrer"><BrandIcon name="whatsapp" size={23} /><span>WhatsApp</span></a>
+      <a data-messenger="whatsapp" href={whatsapp} data-social-destination data-social-web={whatsapp} data-social-platform="whatsapp" data-social-name="написать в WhatsApp"><BrandIcon name="whatsapp" size={23} /><span>WhatsApp</span></a>
       <a data-messenger="max" href={max} target="_blank" rel="noreferrer"><BrandIcon name="max" size={23} /><span>MAX</span></a>
       <a data-messenger="vk" href={vk} target="_blank" rel="noreferrer"><BrandIcon name="vk" size={23} /><span>ВКонтакте</span></a>
     </div>
@@ -328,22 +328,25 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
         event.preventDefault();
 
         const isInstagram = link.dataset.socialPlatform === 'instagram';
-        const service = isInstagram ? 'Instagram' : 'Telegram';
+        const isWhatsApp = link.dataset.socialPlatform === 'whatsapp';
+        const service = isInstagram ? 'Instagram' : isWhatsApp ? 'WhatsApp' : 'Telegram';
         lastSocialTrigger = link;
         socialTitle.textContent = 'Открыть ' + service;
         socialDescription.textContent = 'Выберите удобный способ перейти: на компьютере или по QR-коду на телефоне.';
-        socialOpen.href = isInstagram ? webUrl : destination;
-        socialOpenLabel.textContent = isInstagram ? 'Открыть Instagram на компьютере' : 'Открыть приложение Telegram';
+        socialOpen.href = isWhatsApp ? 'whatsapp://send?phone=79181142693' + (new URL(webUrl).searchParams.has('text') ? '&text=' + encodeURIComponent(new URL(webUrl).searchParams.get('text')) : '') : isInstagram ? webUrl : destination;
+        socialOpenLabel.textContent = isWhatsApp ? 'Открыть приложение WhatsApp для ПК' : isInstagram ? 'Открыть Instagram на компьютере' : 'Открыть приложение Telegram';
         socialWeb.href = webUrl;
         socialWeb.textContent = 'Открыть ссылку в браузере ↗';
-        socialQrHint.textContent = isInstagram
+        socialQrHint.textContent = isWhatsApp
+          ? 'Сканируйте камерой телефона, чтобы открыть чат в WhatsApp.'
+          : isInstagram
           ? 'Сканируйте камерой телефона, чтобы открыть Instagram в приложении.'
           : 'Сканируйте камерой телефона, чтобы открыть Telegram в приложении.';
-        socialDialog.dataset.platform = isInstagram ? 'instagram' : 'telegram';
+        socialDialog.dataset.platform = isWhatsApp ? 'whatsapp' : isInstagram ? 'instagram' : 'telegram';
         socialQr.setAttribute('aria-label', 'QR-код: ' + (link.dataset.socialName || service));
         QRCode.toCanvas(socialQr, webUrl, {
           width: 194, margin: 2, errorCorrectionLevel: 'H',
-          color: { dark: isInstagram ? '#642c86' : '#075778', light: '#ffffff' },
+          color: { dark: isWhatsApp ? '#12683e' : isInstagram ? '#642c86' : '#075778', light: '#ffffff' },
         }).catch((error) => {
           console.error('QR-code generation failed', error);
           socialQr.getContext('2d')?.clearRect(0, 0, socialQr.width, socialQr.height);
@@ -374,6 +377,12 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
         sheetCopy.textContent = trigger.dataset.copy || 'Выберите удобный способ связи.';
         sheetTemplate = decodeURIComponent(trigger.dataset.template || '');
         sheetRepertoire.hidden = trigger.dataset.repertoire !== 'true';
+        const waLink = sheet.querySelector('[data-messenger="whatsapp"]');
+        if (waLink) {
+          const url = 'https://wa.me/79181142693' + (sheetTemplate ? '?text=' + encodeURIComponent(sheetTemplate) : '');
+          waLink.href = url;
+          waLink.dataset.socialWeb = url;
+        }
         sheet.showModal();
       });
     });
@@ -383,14 +392,6 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
       if (event.target === sheet) sheet.close();
     });
 
-    document.querySelectorAll('[data-messenger]').forEach((link) => {
-      link.addEventListener('click', async (event) => {
-        const messenger = link.dataset.messenger;
-        if (messenger === 'whatsapp' && sheetTemplate) {
-          link.href = 'https://wa.me/79181142693?text=' + encodeURIComponent(sheetTemplate);
-        }
-      });
-    });
   </script>
 
 </body>
