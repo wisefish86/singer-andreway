@@ -255,3 +255,25 @@ button.action-wide,button.after-action{font:inherit;color:inherit;cursor:pointer
   .quick-grid{grid-template-columns:repeat(4,1fr)}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+
+/* Desktop-only choice for public Telegram navigation (contact links stay direct). */
+.telegram-sheet{max-width:420px;text-align:left}
+.telegram-open-app{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  min-height:56px;margin-top:18px;padding:11px 14px;
+  border-radius:14px;background:linear-gradient(135deg,var(--accent2),var(--accent));
+  color:#17110a;font-weight:800;text-align:center
+}
+.telegram-open-app .ui-icon:last-child{margin-left:auto}
+.telegram-qr-panel{text-align:center;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.telegram-qr-title{font-size:.94rem;font-weight:750;margin:0 0 12px}
+.telegram-qr-frame{
+  width:222px;height:222px;margin:0 auto;display:grid;place-items:center;
+  background:white;border-radius:16px;padding:14px
+}
+.telegram-qr-frame img{width:194px;height:194px;object-fit:contain}
+.telegram-qr-hint{max-width:300px;margin:13px auto 0;color:var(--muted);font-size:.8rem;line-height:1.45}
+.telegram-mobile-url{display:inline-block;color:var(--accent2);font-size:.78rem;margin-top:12px;text-decoration:underline;text-underline-offset:3px}
+.telegram-sheet a:focus-visible,.telegram-sheet button:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
+@media(max-width:480px){.telegram-sheet{max-width:calc(100% - 16px)}}
