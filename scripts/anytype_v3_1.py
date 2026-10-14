@@ -402,17 +402,29 @@ def main():
         api=Notion();ftp=FTP('andreway.ru',timeout=60);ftp.login('andreway',os.environ['FTP_PASSWORD']);ftp.cwd(BASE+'/01_Inbox')
         names=[n.split('/')[-1] for n in ftp.nlst() if n.lower().endswith('.zip') and 'notion-test' not in n.lower()]
         print('ZIP archives found:',len(names));passed=failed=0
+        results=[]
         if not names: print('No ZIPs to import');ftp.quit();return
-        for name in names:
+        for name in sorted(names):
             try:
                 buf=io.BytesIO();ftp.retrbinary('RETR '+BASE+'/01_Inbox/'+name,buf.write)
-                api.import_one(buf.getvalue())
-                # Only archive after full Notion API verification
-                ftp.rename(BASE+'/01_Inbox/'+name,BASE+'/02_Done/'+name);passed+=1
+                page=api.import_one(buf.getvalue())
+                # Move only after successful import. Errors leave the original ZIP in Inbox.
+                ftp.rename(BASE+'/01_Inbox/'+name,BASE+'/02_Done/'+name)
+                passed+=1
+                link='https://www.notion.so/'+page['id'].replace('-','')
+                results.append(('DONE',name,link))
+                print('DONE:',name,'-> 02_Done | Notion:',link)
             except Exception as e:
-                failed+=1;print('FAILED, ZIP retained:',name,type(e).__name__,str(e)[:250])
-        ftp.quit();print('RESULT',{'verified':passed,'failed':failed})
-        if failed:sys.exit(1)
+                failed+=1
+                results.append(('RETAINED',name,str(e)[:250]))
+                print('WARNING: ZIP kept in 01_Inbox:',name,type(e).__name__,str(e)[:250])
+        ftp.quit()
+        print('========== IMPORT SUMMARY ==========')
+        for status,name,detail in results: print(status,'|',name,'|',detail)
+        print('RESULT',{'archived':passed,'retained_with_errors':failed})
+        # Individual bad archives do not make successfully imported ones fail.
+        # Still fail visibly if absolutely nothing was imported successfully.
+        if failed and not passed:sys.exit(1)
         return
     p.error('Choose --check or --import-ftp')
 if __name__=='__main__':main()
