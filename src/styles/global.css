@@ -290,3 +290,6 @@ button.action-wide,button.after-action{font:inherit;color:inherit;cursor:pointer
 .telegram-sheet[data-platform="instagram"] .telegram-open-app{background:linear-gradient(120deg,#f7b650,#e8758b 55%,#a66cde);color:#1b1022}
 .telegram-sheet[data-platform="instagram"] .telegram-qr-frame{box-shadow:0 0 0 1px rgba(232,117,139,.4),0 12px 38px rgba(166,108,222,.15)}
 .telegram-sheet[data-platform="telegram"] .telegram-qr-frame{box-shadow:0 0 0 1px rgba(70,177,211,.35),0 12px 38px rgba(33,147,183,.12)}
+
+.telegram-sheet[data-platform="whatsapp"] .telegram-open-app{background:linear-gradient(135deg,#59dea0,#24aa71);color:#082b1c}
+.telegram-sheet[data-platform="whatsapp"] .telegram-qr-frame{box-shadow:0 0 0 1px rgba(48,190,118,.35),0 12px 38px rgba(48,190,118,.12)}
