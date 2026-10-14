@@ -12,7 +12,7 @@ from pathlib import PurePosixPath
 # No parser dependency: controlled Markdown inline grammar with strict detection.
 INLINE = re.compile(r'\*\*(.+?)\*\*|~~(.+?)~~|`([^`]+)`|(?<!\*)\*([^*\n]+)\*(?!\*)|\[([^\]\n]+)\]\((https?://[^\s)]+)\)|<font (color|background)="([a-zA-Z]+)">([^<]+)</font>', re.S)
 FONT_COLOR = {'yellow':'yellow','red':'red','blue':'blue','green':'green','gray':'gray','grey':'gray','orange':'orange','purple':'purple','pink':'pink','brown':'brown'}
-BLOCK_TYPES = {'paragraph','heading_1','heading_2','heading_3','toggle_heading_1','toggle_heading_2','toggle_heading_3','toggle','bulleted_list_item','numbered_list_item','quote','divider','callout','checkbox','code','table','image','bookmark','link'}
+BLOCK_TYPES = {'paragraph','heading_1','heading_2','heading_3','toggle_heading_1','toggle_heading_2','toggle_heading_3','toggle','bulleted_list_item','numbered_list_item','quote','divider','callout','checkbox','code','table','image','bookmark','link','property'}
 NOTION_API='https://api.notion.com/v1'
 DATASOURCE='3e056f1afcfe80e1b558000bd0464a2b'
 BASE='/www/andreway.ru/notion-import'
@@ -125,6 +125,7 @@ def scan_archive(data):
         doc=roots[0]
         title=doc.get('properties',{}).get('Name')
         if not isinstance(title,str) or not title.strip(): raise Unsupported('Missing note title')
+        objs['__import_document_properties__']=doc.get('properties',{})
         return z.namelist(),{n:z.read(n) for n in z.namelist()},doc,objs
 
 def tree(blocks):
@@ -157,6 +158,25 @@ def convert(node,files,objects):
         caption=f'[Здесь была ссылка на заметку «{name}»]'
         print('WARNING: internal Anytype link replaced with placeholder:',name)
         return {'object':'block','type':'paragraph','paragraph':{'rich_text':split_text(caption)}}
+    if k=='property':
+        # AnyBlock property blocks represent an inline property view.
+        # Never discard the value if its Notion equivalent is unavailable.
+        key=b.get('property')
+        if not isinstance(key,str) or not key.strip():
+            raise Unsupported('Property block without a property key')
+        properties=objects.get('__import_document_properties__',{})
+        if key not in properties:
+            raise Unsupported('Property block references a missing property: '+key)
+        value=properties[key]
+        if isinstance(value,(dict,list)):
+            shown=json.dumps(value,ensure_ascii=False,sort_keys=True)
+        elif value is None:
+            shown='(пусто)'
+        else:
+            shown=str(value)
+        line='[Свойство Anytype: '+key+' = '+shown+']'
+        print('WARNING: property view converted to visible text:',key)
+        return {'object':'block','type':'paragraph','paragraph':{'rich_text':split_text(line)}}
     if k=='bookmark':
         url=b.get('url')
         if not (isinstance(url,str) and url.startswith(('https://','http://'))):raise Unsupported('Bookmark without valid URL')
@@ -177,7 +197,13 @@ def convert(node,files,objects):
     value={'rich_text':rich(b.get('text',''),raw=(k=='code'))}
     if k.startswith('toggle_heading_'):value['is_toggleable']=True
     if k=='checkbox': value['checked']=bool(b.get('checked',False))
-    if k=='code':value['language']=b.get('language','plain text')
+    if k=='code':
+        language=b.get('language') or 'plain text'
+        notion_langs={'abap','agda','arduino','assembly','bash','basic','bnf','c','c#','c++','clojure','coffeescript','coq','css','dart','dhall','diff','docker','ebnf','elixir','elm','erlang','f#','flow','fortran','gherkin','glsl','go','graphql','groovy','haskell','hcl','html','idris','java','javascript','json','julia','kotlin','latex','less','lisp','livescript','llvm ir','lua','makefile','markdown','markup','matlab','mathematica','mermaid','nix','notion formula','objective-c','ocaml','pascal','perl','php','plain text','powershell','prolog','protobuf','purescript','python','r','racket','reason','ruby','rust','sass','scala','scheme','scss','shell','smalltalk','solidity','sql','swift','toml','typescript','vb.net','verilog','vhdl','visual basic','webassembly','xml','yaml'}
+        if language not in notion_langs:
+            print('WARNING: code language unsupported by Notion, using plain text:',language)
+            language='plain text'
+        value['language']=language
     if k=='callout':value['icon']={'type':'emoji','emoji':'💡'}
     if k=='toggle' and not children:value['children']=[]
     return {'object':'block','type':type_name,type_name:value}
