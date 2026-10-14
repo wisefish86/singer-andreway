@@ -321,10 +321,10 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
     // A locally drawn QR with rounded data modules and rounded finder eyes.
     // Keep the full 4-module quiet zone and high error correction for camera reliability.
     function drawRoundedQr(canvas, url, dark) {
-      const qr = QRCode.create(url, { errorCorrectionLevel: 'H' });
+      const qr = QRCode.create(url, { errorCorrectionLevel: 'M' });
       const size = qr.modules.size;
-      const margin = 4;
-      const pixels = 320;
+      const margin = 3;
+      const pixels = 384;
       const unit = pixels / (size + margin * 2);
       canvas.width = pixels;
       canvas.height = pixels;
