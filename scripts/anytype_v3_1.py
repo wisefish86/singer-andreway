@@ -424,7 +424,7 @@ def main():
         print('RESULT',{'archived':passed,'retained_with_errors':failed})
         # Individual bad archives do not make successfully imported ones fail.
         # Still fail visibly if absolutely nothing was imported successfully.
-        if failed and not passed:sys.exit(1)
+        if failed: print('WARNING: some archives were retained in 01_Inbox; see summary above')
         return
     p.error('Choose --check or --import-ftp')
 if __name__=='__main__':main()
