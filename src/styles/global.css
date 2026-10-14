@@ -26,7 +26,8 @@ img{display:block;max-width:100%}
 .brand{font-weight:800;letter-spacing:.13em;font-size:.74rem;text-transform:uppercase}
 .nav{display:none;gap:18px;color:#d9e2ea;font-size:.88rem}
 .social-mini{display:flex;gap:8px}
-.icon-btn{width:38px;height:38px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.03)}
+.icon-btn{width:38px;height:38px;border:1px solid var(--line);border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;line-height:0;background:rgba(255,255,255,.03)}
+.icon-btn .brand-svg{display:block;flex:none}
 .brand-icon{width:19px;height:19px;display:block;object-fit:contain}
 .contact-brand{width:22px;height:22px}
 .ui-icon{display:block;flex:0 0 auto}
@@ -277,10 +278,10 @@ button.action-wide,button.after-action{font:inherit;color:inherit;cursor:pointer
 .telegram-qr-panel{text-align:center;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
 .telegram-qr-title{font-size:.94rem;font-weight:750;margin:0 0 12px}
 .telegram-qr-frame{
-  width:222px;height:222px;margin:0 auto;display:grid;place-items:center;
-  background:white;border-radius:16px;padding:14px
+  width:250px;height:250px;margin:0 auto;display:grid;place-items:center;
+  background:white;border-radius:16px;padding:10px
 }
-.telegram-qr-frame canvas{display:block;width:194px;height:194px;max-width:100%;image-rendering:auto}
+.telegram-qr-frame canvas{display:block;width:230px;height:230px;max-width:100%;image-rendering:auto}
 .telegram-qr-hint{max-width:300px;margin:13px auto 0;color:var(--muted);font-size:.8rem;line-height:1.45}
 .telegram-mobile-url{display:inline-block;color:var(--accent2);font-size:.78rem;margin-top:12px;text-decoration:underline;text-underline-offset:3px}
 .telegram-sheet a:focus-visible,.telegram-sheet button:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
