@@ -391,7 +391,7 @@ def main():
         # Fail before writing anything if local conversion cannot be completed.
         preview(buf.getvalue())
         api=Notion()
-        page=api.import_one(buf.getvalue(),title_prefix='[ТЕСТ V3.3] ')
+        page=api.import_one(buf.getvalue(),title_prefix='[ТЕСТ V3.4] ')
         print('TEST SUCCESS:',page.get('url','https://www.notion.so/'+page['id'].replace('-','')))
         print('ZIP LEFT IN 01_Inbox:',names[0])
         return
