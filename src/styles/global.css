@@ -240,15 +240,16 @@ button.action-wide,button.after-action{font:inherit;color:inherit;cursor:pointer
   .hero-role{margin-bottom:10px}
   .hero-copy{font-size:.9rem;line-height:1.35;margin-bottom:14px}
   .hero{padding-bottom:22px}
-  /* Mobile CTA order: booking, reminders, video, contact — each full width. */
-  .hero-actions{grid-template-columns:minmax(0,1fr);width:100%;gap:10px}
+  /* Mobile: two full-width primary actions, then two equal half-width utility actions. */
+  .hero-actions{grid-template-columns:minmax(0,1fr);width:100%;gap:9px}
   .hero-actions .hero-booking,
   .hero-actions .hero-subscribe{grid-column:1/-1}
-  .hero-more-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;width:100%}
-  .hero-actions .btn{width:100%;min-height:54px;padding:12px 16px;font-size:.9rem}
+  .hero-more-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;width:100%}
+  .hero-actions .btn{width:100%;min-height:52px;padding:10px 12px;font-size:.85rem}
   .hero-actions .hero-subscribe{justify-content:center}
-  .hero-subscribe strong{font-size:.9rem}
-  .hero-subscribe small{font-size:.75rem}
+  .hero-subscribe strong{font-size:.87rem}
+  .hero-subscribe small{font-size:.73rem}
+  .hero-more-actions .btn{padding:9px 7px;font-size:.81rem;gap:5px}
   .hero-channel-link{grid-column:1/-1}
 }
 @media(min-width:760px){
