@@ -253,10 +253,11 @@ class Notion:
             if resp.status_code in (429,500,502,503,504) and trial<5:
                 time.sleep(max(int(resp.headers.get('Retry-After','1')),2**trial));continue
             resp.raise_for_status(); time.sleep(.36);return resp.json()
-    def upload(self,path,bytes_,mime):
-        obj=self.req('POST','/file_uploads',json={'mode':'single_part','filename':PurePosixPath(path).name,'content_type':mime})
+    def upload(self,path,bytes_,mime,filename=None):
+        filename=filename or PurePosixPath(path).name
+        obj=self.req('POST','/file_uploads',json={'mode':'single_part','filename':filename,'content_type':mime})
         ident=obj['id']
-        result=self.req('POST',f'/file_uploads/{ident}/send',files={'file':(PurePosixPath(path).name,bytes_,mime)})
+        result=self.req('POST',f'/file_uploads/{ident}/send',files={'file':(filename,bytes_,mime)})
         if result.get('status') not in ('uploaded','pending'):raise Unsupported('File upload not accepted')
         return ident
     def list_children(self,id_):
@@ -314,7 +315,20 @@ class Notion:
                 if '__asset' in request:
                     path=request.pop('__asset');mime=request.pop('__mime')
                     name=request.pop('__name',None)
-                    upload_id=self.upload(path,files[path],mime)
+                    content=files[path]
+                    upload_name=name
+                    if request['type']=='file' and name and name.lower().endswith('.lnk'):
+                        # Notion rejects Windows shortcuts as attachments. Wrap original bytes
+                        # without modification into a standard ZIP containing the .lnk file.
+                        wrapped=io.BytesIO()
+                        with zipfile.ZipFile(wrapped,'w',compression=zipfile.ZIP_STORED) as archive:
+                            archive.writestr(PurePosixPath(name).name,content)
+                        content=wrapped.getvalue()
+                        mime='application/zip'
+                        upload_name=PurePosixPath(name).name+'.zip'
+                        name=upload_name
+                        print('ATTACHMENT PACKAGED:',upload_name,'original bytes:',len(files[path]),flush=True)
+                    upload_id=self.upload(path,content,mime,filename=upload_name)
                     if request['type']=='image':
                         request['image']={'type':'file_upload','file_upload':{'id':upload_id}}
                     elif request['type']=='file':
