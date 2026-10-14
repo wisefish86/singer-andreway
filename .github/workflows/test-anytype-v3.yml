@@ -1,4 +1,4 @@
-name: Test Anytype V3 Import into Notion
+name: Test Anytype V3.5 Import into Notion
 on:
   workflow_dispatch:
   push:
