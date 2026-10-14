@@ -1,0 +1,34 @@
+name: Create Notion import folders
+on:
+  push:
+    paths:
+      - .github/workflows/create-notion-import.yml
+  workflow_dispatch:
+jobs:
+  mkdir:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create directories with existing FTP access
+        env:
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          python - <<'PY'
+          from ftplib import FTP
+          import os
+          ftp = FTP("andreway.ru", timeout=30)
+          ftp.login("andreway", os.environ["FTP_PASSWORD"])
+          base = "/www/singer.andreway.ru"
+          ftp.cwd(base)
+          for name in ["notion-import"]:
+              try: ftp.mkd(name)
+              except Exception: pass
+          ftp.cwd("notion-import")
+          for name in ["incoming", "done", "failed"]:
+              try: ftp.mkd(name)
+              except Exception: pass
+          existing = set(ftp.nlst())
+          required = {"incoming", "done", "failed"}
+          assert required.issubset({x.rstrip("/").split("/")[-1] for x in existing}), existing
+          print("Verified: notion-import/incoming, done, failed")
+          ftp.quit()
+          PY
