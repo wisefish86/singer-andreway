@@ -285,3 +285,8 @@ button.action-wide,button.after-action{font:inherit;color:inherit;cursor:pointer
 .telegram-mobile-url{display:inline-block;color:var(--accent2);font-size:.78rem;margin-top:12px;text-decoration:underline;text-underline-offset:3px}
 .telegram-sheet a:focus-visible,.telegram-sheet button:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
 @media(max-width:480px){.telegram-sheet{max-width:calc(100% - 16px)}}
+
+/* The shared desktop social chooser uses the site sheet pattern, with a subtle platform accent. */
+.telegram-sheet[data-platform="instagram"] .telegram-open-app{background:linear-gradient(120deg,#f7b650,#e8758b 55%,#a66cde);color:#1b1022}
+.telegram-sheet[data-platform="instagram"] .telegram-qr-frame{box-shadow:0 0 0 1px rgba(232,117,139,.4),0 12px 38px rgba(166,108,222,.15)}
+.telegram-sheet[data-platform="telegram"] .telegram-qr-frame{box-shadow:0 0 0 1px rgba(70,177,211,.35),0 12px 38px rgba(33,147,183,.12)}
