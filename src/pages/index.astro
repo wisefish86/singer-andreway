@@ -267,7 +267,7 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
     <div class="telegram-qr-panel">
       <p class="telegram-qr-title">Или откройте на телефоне</p>
       <div class="telegram-qr-frame">
-        <img id="telegram-qr" width="194" height="194" alt="QR-код для открытия Telegram на телефоне" loading="lazy" />
+        <canvas id="telegram-qr" width="194" height="194" role="img" aria-label="QR-код для открытия Telegram на телефоне"></canvas>
       </div>
       <p class="telegram-qr-hint">Наведите камеру телефона на QR-код. Если Telegram установлен, ссылка обычно откроется в приложении.</p>
       <a class="telegram-mobile-url" id="telegram-mobile-url" href={telegramChannelWeb} target="_blank" rel="noopener noreferrer">Скопировать или открыть ссылку ↗</a>
@@ -297,7 +297,8 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
   <footer class="footer">
     <div class="container">© {new Date().getFullYear()} Андрей Шевцов · singer.andreway.ru</div>
   </footer>
-  <script is:inline data-telegram-links-script>
+  <script>
+    import QRCode from "qrcode";
     const telegramDialog = document.getElementById('telegram-sheet');
     const telegramOpenApp = document.getElementById('telegram-open-app');
     const telegramQr = document.getElementById('telegram-qr');
@@ -328,10 +329,20 @@ const repertoireUrl = 'https://magazinot.ru/files/andrey-spoet/index.html';
         telegramOpenApp.href = appUrl;
         telegramMobileUrl.href = webUrl;
         telegramDialogDescription.textContent = 'Открыть ' + (link.dataset.tgName || 'Telegram') + ' в приложении или на телефоне.';
-        // Generate a QR image dynamically for the selected destination.
-        // QR includes only the public Telegram URL, no private user information.
-        telegramQr.src = 'https://api.qrserver.com/v1/create-qr-code/?size=194x194&margin=12&data=' + encodeURIComponent(webUrl);
-        telegramQr.alt = 'QR-код для перехода: ' + (link.dataset.tgName || 'Telegram');
+        // Render a self-contained, high-contrast QR code in the browser.
+        // The public Telegram destination is never sent to an external QR service.
+        telegramQr.setAttribute('aria-label', 'QR-код для перехода: ' + (link.dataset.tgName || 'Telegram'));
+        QRCode.toCanvas(telegramQr, webUrl, {
+          width: 194,
+          margin: 2,
+          errorCorrectionLevel: 'H',
+          color: { dark: '#0b2130', light: '#ffffff' },
+        }).catch((error) => {
+          console.error('Unable to generate Telegram QR code', error);
+          const context = telegramQr.getContext('2d');
+          context?.clearRect(0, 0, telegramQr.width, telegramQr.height);
+          telegramQr.setAttribute('aria-label', 'QR-код недоступен — используйте ссылку ниже');
+        });
         telegramDialog.showModal();
         telegramOpenApp.focus();
       });
