@@ -1,0 +1,42 @@
+name: Inspect Anytype inbox safely
+on:
+  push:
+    paths:
+      - .github/workflows/inspect-anytype-inbox.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect ZIP count and formats without exposing note contents
+        env:
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          python - <<'PY'
+          from ftplib import FTP
+          from io import BytesIO
+          from zipfile import ZipFile
+          from pathlib import PurePosixPath
+          import os,hashlib
+          ftp=FTP("andreway.ru",timeout=60)
+          ftp.login("andreway",os.environ["FTP_PASSWORD"])
+          root="/www/andreway.ru/notion-import"
+          ftp.cwd(root+"/01_Inbox")
+          filenames=[x.rsplit("/",1)[-1] for x in ftp.nlst()]
+          zips=[x for x in filenames if x.lower().endswith(".zip")]
+          print("Inbox ZIP count:",len(zips))
+          for n,name in enumerate(zips,1):
+              data=BytesIO()
+              ftp.retrbinary("RETR "+root+"/01_Inbox/"+name,data.write)
+              contents=data.getvalue()
+              print("Archive",n,":",name)
+              print("Size:",len(contents),"SHA256:",hashlib.sha256(contents).hexdigest())
+              try:
+                  with ZipFile(BytesIO(contents)) as z:
+                      items=z.infolist()
+                      print("Members:",len(items),"Anyblock JSON:",sum(x.filename.endswith(".anyblock.json") for x in items),"Images:",sum(PurePosixPath(x.filename).suffix.lower() in (".png",".jpeg",".jpg",".webp",".gif") for x in items))
+              except Exception as e: print("ZIP error:",type(e).__name__)
+          ftp.quit()
+          PY
