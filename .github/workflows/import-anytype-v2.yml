@@ -1,4 +1,5 @@
 name: Import Anytype ZIPs into Notion
+# Parser compatibility retry for the two remaining ZIP archives.
 on:
   push:
     paths:
