@@ -100,7 +100,9 @@ def rich(src, *, raw=False):
     if active and all(kind=='code' for kind,_ in active):
         print('WARNING: unclosed inline code marker; preserving literal source text',flush=True)
         return split_text(src)
-    if active:raise Unsupported('Unclosed inline formatting: '+repr(active))
+    if active:
+        print('WARNING: unclosed inline formatting; keeping original text verbatim:',repr(active),flush=True)
+        return split_text(src)
     flush()
     # Reject unrecognized known-tag shapes to prevent accidental silent loss.
     if any(re.search(r'</?(?:font|mention|u)\b',x['text']['content']) for x in out):
@@ -235,7 +237,10 @@ def convert(node,files,objects):
                             raise Unsupported('Unsupported rich table cell block')
                         lines.append(part.get('text',''))
                     return '\n'.join(lines)
-                raise Unsupported('Unsupported table cell value')
+                # Unknown Anytype cell shapes should remain inspectable in Notion.
+                # Preserve serialized source rather than silently dropping the cell.
+                print('WARNING: unusual table cell shape; preserving JSON text:',type(v).__name__,flush=True)
+                return json.dumps(v,ensure_ascii=False,sort_keys=True)
             children_rows.append({'object':'block','type':'table_row','table_row':{'cells':[rich(cell_text(v)) for v in vals]}})
         return {'object':'block','type':'table','table':{'table_width':width,'has_column_header':bool(rows[0].get('is_header',False)),'has_row_header':False,'children':children_rows}}
     aliases={'toggle':'toggle','callout':'callout','checkbox':'to_do','code':'code'}
