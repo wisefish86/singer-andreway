@@ -39,3 +39,4 @@ jobs:
           server-dir: /www/singer.andreway.ru/
           exclude: |
             **/images/**
+            **/audio/plus/**
