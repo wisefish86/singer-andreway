@@ -17,13 +17,13 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px}
 .rep-label{display:block;font-weight:650;font-size:.88rem}
 .rep-label input{display:block;width:100%;min-height:48px;border:1px solid rgba(255,255,255,.22);background:#071521;color:var(--text);border-radius:12px;padding:12px;margin-top:8px;font:inherit}
-.rep-label input:focus-visible,:global(.rep-song):focus-within{outline:2px solid var(--accent2);outline-offset:2px}
+.rep-label input:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
 .rep-section-title{font-size:1.35rem;margin:0 0 16px}
 :global(.rep-song){display:flex;gap:13px;padding:14px 9px;margin:0;border-bottom:1px solid var(--line);align-items:center;cursor:pointer;min-width:0}
 :global(.rep-song input[type="checkbox"]){appearance:none;-webkit-appearance:none;display:grid;place-content:center;width:22px;height:22px;flex:0 0 22px;margin:0;border:2px solid rgba(230,239,247,.76);border-radius:5px;background:rgba(255,255,255,.035);cursor:pointer;transition:background .15s,border-color .15s}
-:global(.rep-song input[type="checkbox"]:checked){background:rgba(229,184,95,.16);border-color:var(--accent)}
+:global(.rep-song input[type="checkbox"]:checked){background:rgba(229,184,95,.13);border-color:rgba(230,239,247,.78)}
 :global(.rep-song input[type="checkbox"]:checked::after){content:"";width:6px;height:11px;border:solid var(--accent2);border-width:0 2.5px 2.5px 0;transform:translateY(-2px) rotate(45deg)}
-:global(.rep-song input[type="checkbox"]:focus-visible){outline:2px solid var(--accent2);outline-offset:4px}
+:global(.rep-song input[type="checkbox"]:focus-visible){outline:2px solid rgba(230,239,247,.9);outline-offset:3px}
 :global(.rep-song span){line-height:1.45;min-width:0;overflow-wrap:anywhere}
 :global(.rep-meta){color:var(--muted);font-size:.83rem;margin:8px 0 0}
 .rep-client .rep-action{margin-top:22px;width:100%}
@@ -33,6 +33,50 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-hidden{display:none}
 #status{min-height:25px}
 @media (min-width:800px){.rep-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;align-items:start}.rep-client{position:sticky;top:78px;grid-column:2;grid-row:1}.rep-catalog{grid-column:1;grid-row:1 / span 2}}
+
+.rep-page{padding-bottom:150px}
+.rep-filterbar{padding:12px 0 8px}
+.rep-filter-heading{font-weight:750;margin:19px 0 10px;font-size:.9rem;color:var(--text)}
+.rep-filter-heading:first-child{margin-top:7px}
+.rep-chips{display:flex;flex-wrap:wrap;gap:8px}
+:global(.rep-chip){min-height:38px;display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.035);color:#dce7f0;border-radius:999px;padding:8px 13px;font:inherit;font-size:.84rem;font-weight:650;cursor:pointer;transition:background .14s,border-color .14s}
+:global(.rep-chip:hover){border-color:rgba(229,184,95,.62);background:rgba(229,184,95,.08)}
+:global(.rep-chip[aria-pressed="true"]){border-color:var(--accent);background:rgba(229,184,95,.20);color:var(--accent2)}
+:global(.rep-chip:focus-visible){outline:2px solid var(--text);outline-offset:3px}
+.rep-filter-more{margin:14px 0 12px;border-top:1px solid var(--line);padding-top:14px}
+.rep-filter-more summary{cursor:pointer;color:var(--accent2);font-weight:700;display:inline-flex;align-items:center;min-height:38px}
+.rep-filter-more summary:focus-visible{outline:2px solid var(--text);outline-offset:3px}
+.rep-filter-group{padding-bottom:8px}
+.rep-filter-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding-top:8px}
+.rep-clear{border:none;background:transparent;color:var(--accent2);font:inherit;cursor:pointer;padding:8px 0;text-decoration:underline;text-underline-offset:3px}
+:global(.rep-song){gap:11px}
+:global(.rep-song.is-selected){background:rgba(255,255,255,.03)}
+:global(.rep-song label){flex:1;display:flex;align-items:center;gap:12px;min-width:0;cursor:pointer;line-height:1.45}
+:global(.rep-song-copy){flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
+:global(.rep-song-title){font-weight:700;color:var(--text);overflow-wrap:anywhere}
+:global(.rep-song-artist){color:var(--muted);font-size:.88rem;overflow-wrap:anywhere}
+:global(.rep-song-length){color:var(--muted);font-size:.8rem;white-space:nowrap}
+:global(.rep-preview){flex:0 0 39px;width:39px;height:39px;border-radius:50%;background:rgba(229,184,95,.09);border:1px solid rgba(229,184,95,.43);color:var(--accent2);display:grid;place-items:center;font-size:1.05rem;cursor:pointer}
+:global(.rep-preview:hover){background:rgba(229,184,95,.22)}
+:global(.rep-preview[aria-pressed="true"]){background:var(--accent);color:#101720}
+:global(.rep-preview:focus-visible){outline:2px solid var(--text);outline-offset:3px}
+.rep-player{position:fixed;z-index:50;left:0;right:0;bottom:0;border-top:1px solid rgba(229,184,95,.31);background:rgba(8,20,31,.98);backdrop-filter:blur(18px);box-shadow:0 -14px 40px rgba(0,0,0,.28);padding:12px max(16px,calc((100vw - 1180px)/2))}
+.rep-player-inner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 18px;align-items:center}
+.rep-player-track{min-width:0;display:flex;align-items:center;gap:12px}
+.rep-player-play{flex:0 0 43px;width:43px;height:43px;border:0;border-radius:50%;background:var(--accent);color:#101720;cursor:pointer;font-size:1rem}
+.rep-player-title{min-width:0}
+.rep-player-name{display:block;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rep-player-sub{display:block;color:var(--muted);font-size:.76rem}
+.rep-player-timeline{display:flex;align-items:center;gap:9px;grid-column:1/-1;min-width:0}
+.rep-player-time{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.78rem;min-width:36px;text-align:center}
+.rep-player input[type="range"]{accent-color:var(--accent);cursor:pointer}
+.rep-player-seek{width:100%;min-width:0}
+.rep-player-volume{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.82rem}
+.rep-player-volume input{width:108px}
+.rep-player-close{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:1.2rem;padding:7px;min-width:38px;min-height:38px}
+.rep-player-buttons{display:flex;gap:8px;align-items:center}
+.rep-player .rep-player-play:focus-visible,.rep-player-close:focus-visible{outline:2px solid var(--text);outline-offset:3px}
+@media(max-width:620px){.rep-page{padding-bottom:170px}.rep-player-inner{grid-template-columns:1fr auto;gap:8px}.rep-player-volume{grid-column:1/-1;justify-self:end}.rep-player-volume input{width:90px}.rep-player-timeline{grid-row:2}}
 </style>
 </head>
 <body><header class="topbar"><div class="container topbar-inner"><a class="brand" href="/">ANDREY-SPOET</a><a class="rep-back" href="/">На главную</a></div></header><main class="container rep-page">
@@ -46,6 +90,15 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 </div><button class="rep-action" id="save" disabled>Сохранить подборку</button><p id="status" role="status" aria-live="polite"></p></section>
 <section class="rep-panel rep-catalog">
 <h2 class="rep-section-title">Репертуар</h2><label class="rep-label">Поиск песен <input id="search" type="search" placeholder="Название или исполнитель" /></label>
+<div id="filter-panel" class="rep-filterbar rep-hidden">
+<h3 class="rep-filter-heading">Быстрый выбор</h3>
+<div id="quick-filters" class="rep-chips" aria-label="Быстрые фильтры"></div>
+<h3 class="rep-filter-heading">Для кого и по какому поводу</h3>
+<div id="situation-filters" class="rep-chips" aria-label="События и адресаты"></div>
+<details id="more-filters" class="rep-filter-more"><summary>Все фильтры</summary><div id="advanced-filters"></div></details>
+<div class="rep-filter-actions"><button id="clear-filters" type="button" class="rep-clear">Сбросить фильтры</button></div>
+</div>
+<p id="filter-notice" class="rep-meta rep-hidden">Каталог ещё не обновлён для фильтров и прослушивания. Требуется повторный экспорт.</p>
 <p id="count" class="rep-meta"></p>
 <div id="songs" aria-live="polite"><p>Загрузка репертуара…</p></div>
 </section>
@@ -58,24 +111,160 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 </div>
 </div><p class="rep-meta">Дата сохранения фиксируется автоматически. Телефон сам по себе не открывает сохранённый список.</p>
 </main>
+<section id="player" class="rep-player rep-hidden" aria-label="Музыкальный плеер">
+<div class="rep-player-inner">
+<div class="rep-player-track"><button id="player-toggle" class="rep-player-play" type="button" aria-label="Воспроизвести">▶</button><div class="rep-player-title"><span id="player-name" class="rep-player-name"></span><span class="rep-player-sub">Прослушивание оригинала</span></div></div>
+<div class="rep-player-buttons"><div class="rep-player-volume"><label for="player-volume">Громкость</label><input id="player-volume" type="range" min="0" max="1" step=".05" value=".8" aria-label="Громкость"/></div><button id="player-close" class="rep-player-close" type="button" aria-label="Закрыть плеер">×</button></div>
+<div class="rep-player-timeline"><span id="player-current" class="rep-player-time">0:00</span><input id="player-seek" class="rep-player-seek" type="range" min="0" max="100" step=".1" value="0" aria-label="Перемотка" disabled/><span id="player-duration" class="rep-player-time">—</span></div>
+</div>
+<audio id="track-audio" preload="none"></audio>
+</section>
 <script define:vars={{api}}>
-let catalogue=[],selected=new Set(),token=location.hash.startsWith('#key=')?location.hash.slice(5):'',busy=false;
+let catalogue=[],facets={},selected=new Set(),token=location.hash.startsWith('#key=')?location.hash.slice(5):'',busy=false;
 const $=id=>document.getElementById(id);
 const status=m=>{$('status').textContent=m};
-function format(seconds){if(!Number.isFinite(seconds))return '';const s=Math.round(seconds);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
-function draw(){
- const q=$('search').value.trim().toLocaleLowerCase('ru');const subset=catalogue.filter(s=>(s.name+' '+s.artist).toLocaleLowerCase('ru').includes(q));
- $('songs').replaceChildren();
- for(const s of subset.slice(0,300)){
-  const lab=document.createElement('label');lab.className='rep-song';const cb=document.createElement('input');cb.type='checkbox';cb.checked=selected.has(s.id);
-  cb.addEventListener('change',()=>{cb.checked?selected.add(s.id):selected.delete(s.id);count()});
-  const span=document.createElement('span');span.textContent=s.artist+' — '+s.name+(format(s.duration_seconds)?' · '+format(s.duration_seconds):'');
-  lab.append(cb,span);$('songs').append(lab);
+const selectedFacets=new Map();
+const audio=$('track-audio');audio.volume=.8;
+let activeSong=null;
+const timeString=seconds=>{if(!Number.isFinite(seconds)||seconds<0)return '—';let x=Math.round(seconds);return Math.floor(x/60)+':'+String(x%60).padStart(2,'0')};
+const quick=[
+ {label:'Русские',field:'language',values:['Я-рус']},
+ {label:'Иностранные',field:'language',values:['Я-англ','Я-ин']},
+ {label:'Рок',field:'audience',values:['а-РокЛегк','а-РокТяж']},
+ {label:'Хиты',field:'recognition',values:['уз-1-Хит']},
+ {label:'Танцевальные',field:'energy',values:['к-Танцы&фон','к-Танцы-сред','к-Танцы-драйв']},
+ {label:'Романтика',field:'mood',values:['н-Романтика']}
+];
+const events=[
+ {label:'Свадьба',field:'situations',values:['с-Свадьба']},
+ {label:'День рождения',field:'situations',values:['с-ДР']},
+ {label:'Женщине',field:'situations',values:['с-ДляЖен']},
+ {label:'Мужчине',field:'situations',values:['с-ДляМуж']},
+ {label:'Паре',field:'situations',values:['с-Пара']},
+ {label:'Маме',field:'situations',values:['с-Мама']},
+ {label:'Друзьям',field:'situations',values:['с-Друзья']},
+ {label:'Семье',field:'situations',values:['с-Семья']},
+ {label:'Детям',field:'situations',values:['с-Детям']}
+];
+const extraTitles={language:'Язык',audience:'Стиль и аудитория',energy:'Характер и энергия',mood:'Настроение',recognition:'Узнаваемость',era:'Эпоха',situations:'Другие поводы'};
+const permitted=(field,values)=>values.filter(v=>(facets[field]||[]).some(f=>f.value===v));
+function matches(song){
+ const tags=song.filters||{};
+ for(const [field,values] of selectedFacets)if(values.size){
+  const songValues=Array.isArray(tags[field])?tags[field]:[];
+  if(![...values].some(x=>songValues.includes(x)))return false;
  }
- if(!subset.length)$('songs').textContent='Нет подходящих песен';
- count();
+ return true;
 }
-function count(){$('count').textContent='Выбрано песен: '+selected.size;$('save').disabled=busy||!selected.size||!catalogue.length}
+function toggleFilter(field,values){
+ const valid=permitted(field,values);if(!valid.length)return;
+ const set=selectedFacets.get(field)||new Set();
+ const all=valid.every(x=>set.has(x));
+ for(const x of valid)all?set.delete(x):set.add(x);
+ if(set.size)selectedFacets.set(field,set);else selectedFacets.delete(field);
+ paintChips();draw();
+}
+function buildChips(target,options){
+ target.replaceChildren();
+ for(const item of options){
+  if(!permitted(item.field,item.values).length)continue;
+  const button=document.createElement('button');button.type='button';button.className='rep-chip';
+  button.textContent=item.label;button.dataset.field=item.field;
+  button.dataset.values=JSON.stringify(item.values);button.addEventListener('click',()=>toggleFilter(item.field,item.values));
+  target.append(button);
+ }
+}
+function paintChips(){
+ for(const button of document.querySelectorAll('.rep-chip')){
+  const field=button.dataset.field,values=permitted(field,JSON.parse(button.dataset.values));
+  button.setAttribute('aria-pressed',String(Boolean(values.length)&&values.every(x=>selectedFacets.get(field)?.has(x))));
+ }
+ $('clear-filters').hidden=selectedFacets.size===0;
+}
+function setupFilters(){
+ const supported=catalogue.some(s=>s.filters&&typeof s.filters==='object')&&Object.values(facets).some(x=>Array.isArray(x)&&x.length);
+ $('filter-panel').classList.toggle('rep-hidden',!supported);
+ $('filter-notice').classList.toggle('rep-hidden',supported);
+ if(!supported)return;
+ buildChips($('quick-filters'),quick);buildChips($('situation-filters'),events);
+ const more=$('advanced-filters');more.replaceChildren();
+ for(const [field,title] of Object.entries(extraTitles)){
+  const options=(facets[field]||[]).filter(x=>x&&x.value&&x.label);
+  if(!options.length)continue;
+  const group=document.createElement('div');group.className='rep-filter-group';
+  const head=document.createElement('h3');head.className='rep-filter-heading';head.textContent=title;
+  const chips=document.createElement('div');chips.className='rep-chips';
+  buildChips(chips,options.map(x=>({label:x.label,field,values:[x.value]})));
+  group.append(head,chips);more.append(group);
+ }
+ paintChips();
+}
+function safePreview(song){
+ try{
+  const url=new URL(song.preview_url);
+  if(url.protocol==='https:'&&url.hostname==='singer.andreway.ru'&&url.pathname.startsWith('/audio/plus/')&&!url.search&&!url.hash)return url.href;
+ }catch{}
+ return '';
+}
+function updatePlayerButtons(){
+ const playing=!audio.paused&&!audio.ended;
+ $('player-toggle').textContent=playing?'❚❚':'▶';
+ $('player-toggle').setAttribute('aria-label',playing?'Пауза':'Воспроизвести');
+ for(const btn of document.querySelectorAll('.rep-preview')){
+  const current=activeSong?.id===btn.dataset.songId;
+  btn.setAttribute('aria-pressed',String(current&&playing));
+  btn.textContent=current&&playing?'❚❚':'▶';
+  btn.setAttribute('aria-label',(current&&playing?'Пауза: ':'Прослушать оригинал: ')+btn.dataset.songName);
+ }
+}
+async function playSong(song){
+ const src=safePreview(song);if(!src)return;
+ if(activeSong?.id===song.id){
+  if(audio.paused){try{await audio.play()}catch{status('Не удалось воспроизвести запись')}}else audio.pause();
+ }else{
+  audio.pause();activeSong=song;audio.src=src;audio.load();
+  $('player').classList.remove('rep-hidden');
+  $('player-name').textContent=song.artist+' — '+song.name;
+  $('player-current').textContent='0:00';$('player-duration').textContent='—';
+  $('player-seek').value=0;$('player-seek').disabled=true;
+  try{await audio.play()}catch{status('Не удалось воспроизвести запись')}
+ }
+ updatePlayerButtons();
+}
+function draw(){
+ const q=$('search').value.trim().toLocaleLowerCase('ru');
+ const found=catalogue.filter(s=>(s.name+' '+s.artist).toLocaleLowerCase('ru').includes(q)&&matches(s));
+ const target=$('songs');target.replaceChildren();
+ const fragment=document.createDocumentFragment();
+ for(const song of found){
+  const row=document.createElement('div');row.className='rep-song';row.classList.toggle('is-selected',selected.has(song.id));
+  const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=selected.has(song.id);checkbox.id='song-'+song.id;
+  checkbox.setAttribute('aria-label','Выбрать: '+song.artist+' — '+song.name);
+  checkbox.addEventListener('change',()=>{checkbox.checked?selected.add(song.id):selected.delete(song.id);row.classList.toggle('is-selected',checkbox.checked);updateCount()});
+  const label=document.createElement('label');label.htmlFor=checkbox.id;
+  const text=document.createElement('span');text.className='rep-song-copy';
+  const name=document.createElement('span');name.className='rep-song-title';name.textContent=song.name;
+  const artist=document.createElement('span');artist.className='rep-song-artist';artist.textContent='— '+song.artist;
+  const length=document.createElement('span');length.className='rep-song-length';length.textContent=timeString(song.duration_seconds);
+  text.append(name,artist,length);label.append(text);row.append(checkbox,label);
+  if(safePreview(song)){
+   const preview=document.createElement('button');preview.type='button';preview.className='rep-preview';
+   preview.dataset.songId=song.id;preview.dataset.songName=song.artist+' — '+song.name;
+   preview.textContent='▶';preview.setAttribute('aria-label','Прослушать оригинал: '+preview.dataset.songName);
+   preview.addEventListener('click',()=>playSong(song));row.append(preview);
+  }
+  fragment.append(row);
+ }
+ if(!found.length){const empty=document.createElement('p');empty.className='rep-meta';empty.textContent='Ничего не найдено. Попробуйте убрать один из фильтров.';fragment.append(empty)}
+ target.append(fragment);
+ $('count').textContent='Найдено: '+found.length+' · Выбрано: '+selected.size;
+ updateCount();updatePlayerButtons();
+}
+function updateCount(){
+ $('save').disabled=busy||!selected.size||!catalogue.length;
+ const results=$('count').textContent.match(/^Найдено: \d+/)?.[0]||'Найдено: '+catalogue.length;
+ $('count').textContent=results+' · Выбрано: '+selected.size;
+}
 async function request(body){
  const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  const data=await res.json();if(!res.ok)throw new Error(data.error||'Ошибка сохранения');return data;
@@ -84,31 +273,50 @@ async function start(){
  try{
   const res=await fetch('/data/repertoire.public.json',{cache:'no-store'});
   if(!res.ok)throw Error('Каталог пока не опубликован');
-  const data=await res.json();catalogue=Array.isArray(data.songs)?data.songs:[];
+  const data=await res.json();catalogue=Array.isArray(data.songs)?data.songs:[];facets=data.facets||{};
   if(!catalogue.length)throw Error('Каталог пока пуст');
   if(token){
-    const data=await request({action:'get',token});
-    $('name').value=data.request.customer_name||'';$('phone').value=data.request.phone||'';$('event').value=data.request.event_label||'';
-    selected=new Set(data.request.song_ids||[]);
+    const saved=await request({action:'get',token});
+    $('name').value=saved.request.customer_name||'';$('phone').value=saved.request.phone||'';$('event').value=saved.request.event_label||'';
+    selected=new Set(saved.request.song_ids||[]);
     $('saved').classList.remove('rep-hidden');$('link').value=location.href;
     status('Сохранённая подборка открыта. Можно изменить песни.');
   }
-  draw();
- }catch(e){$('songs').textContent='Репертуар пока недоступен.';status(e.message);const a=document.createElement('a');a.href='https://magazinot.ru/files/andrey-spoet/index.html';a.textContent='Открыть прежний репертуар';a.className='rep-back';$('songs').replaceChildren(a)}
+  setupFilters();draw();
+ }catch(e){
+  $('songs').textContent='Репертуар пока недоступен.';status(e.message);
+  const a=document.createElement('a');a.href='https://magazinot.ru/files/andrey-spoet/index.html';
+  a.textContent='Открыть прежний репертуар';a.className='rep-back';$('songs').replaceChildren(a);
+ }
 }
 $('search').addEventListener('input',draw);
+$('clear-filters').addEventListener('click',()=>{selectedFacets.clear();paintChips();draw()});
+$('player-toggle').addEventListener('click',()=>{if(!activeSong)return;if(audio.paused)audio.play().catch(()=>status('Не удалось воспроизвести запись'));else audio.pause()});
+$('player-close').addEventListener('click',()=>{audio.pause();audio.removeAttribute('src');audio.load();activeSong=null;$('player').classList.add('rep-hidden');updatePlayerButtons()});
+$('player-volume').addEventListener('input',e=>{audio.volume=Number(e.target.value)});
+$('player-seek').addEventListener('input',e=>{if(Number.isFinite(audio.duration)&&audio.duration>0)audio.currentTime=Number(e.target.value)/100*audio.duration});
+function progress(){
+ $('player-current').textContent=timeString(audio.currentTime);
+ const canSeek=Number.isFinite(audio.duration)&&audio.duration>0;
+ $('player-duration').textContent=canSeek?timeString(audio.duration):'—';
+ $('player-seek').disabled=!canSeek;
+ if(canSeek)$('player-seek').value=String(audio.currentTime/audio.duration*100);
+}
+for(const event of ['loadedmetadata','timeupdate','durationchange'])audio.addEventListener(event,progress);
+for(const event of ['pause','play','ended'])audio.addEventListener(event,updatePlayerButtons);
+audio.addEventListener('error',()=>{if(activeSong)status('Ошибка загрузки аудио: попробуйте другую песню');updatePlayerButtons()});
 $('save').addEventListener('click',async()=>{
  if(busy)return;
  if(!$('name').value.trim()){status('Введите имя');$('name').focus();return}
- busy=true;count();status('Сохраняем…');
+ busy=true;updateCount();status('Сохраняем…');
  try{
- const data=await request({action:token?'update':'create',token,name:$('name').value.trim(),phone:$('phone').value.trim(),event:$('event').value.trim(),song_ids:[...selected]});
- if(!token){token=data.token;location.hash='key='+token}
- $('saved').classList.remove('hidden');$('link').value=location.href;
- status('Подборка сохранена. Дата изменения: '+new Date(data.request.updated_at).toLocaleString('ru-RU'));
- }catch(e){status('Не удалось сохранить: '+e.message)}finally{busy=false;count()}
+  const data=await request({action:token?'update':'create',token,name:$('name').value.trim(),phone:$('phone').value.trim(),event:$('event').value.trim(),song_ids:[...selected]});
+  if(!token){token=data.token;location.hash='key='+token}
+  $('saved').classList.remove('rep-hidden');$('link').value=location.href;
+  status('Подборка сохранена. Дата изменения: '+new Date(data.request.updated_at).toLocaleString('ru-RU'));
+ }catch(e){status('Не удалось сохранить: '+e.message)}finally{busy=false;updateCount()}
 });
-$('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('link').value);status('Ссылка скопирована')}catch{ $('link').select();status('Выделите ссылку и скопируйте её')}})
+$('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('link').value);status('Ссылка скопирована')}catch{$('link').select();status('Выделите ссылку и скопируйте её')}});
 start();
 </script>
 </body></html>
