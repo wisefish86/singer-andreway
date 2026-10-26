@@ -1,0 +1,97 @@
+---
+import '../styles/global.css';
+const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-request';
+---
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Выбрать песни — ANDREY-SPOET</title>
+<style>
+body{background:#08121e;color:#f5f6f7;font-family:system-ui,sans-serif;margin:0}main{max-width:900px;margin:auto;padding:24px 18px 70px}
+a{color:#d7bc78}h1{font-size:clamp(1.7rem,5vw,2.5rem)}label{display:block;margin:10px 0}
+input,button{font:inherit}input[type=text],input[type=tel],input[type=search]{width:100%;box-sizing:border-box;padding:13px;color:#fff;background:#142233;border:1px solid #66778a;border-radius:9px}
+button{background:#d7bc78;color:#102035;border:0;border-radius:9px;padding:13px 18px;cursor:pointer;font-weight:600}button:disabled{opacity:.55;cursor:not-allowed}
+.panel{border:1px solid #354659;background:#101d2b;border-radius:15px;padding:18px;margin:20px 0}
+.song{display:flex;gap:12px;padding:12px 4px;border-bottom:1px solid #354659;align-items:center}.song input{width:20px;height:20px}
+.muted{color:#b6c1ca}.hidden{display:none}#status{min-height:1.5rem}
+</style>
+</head>
+<body><main>
+<a href="/">← На главную</a>
+<h1>Выберите песни для выступления</h1>
+<p class="muted">Отметьте композиции, сохраните подборку и получите ссылку для изменений. Регистрация не нужна.</p>
+<section class="panel">
+<label>Как к вам обращаться? <input id="name" type="text" maxlength="100" autocomplete="name" required /></label>
+<label>Название мероприятия (необязательно) <input id="event" type="text" maxlength="150" placeholder="Например, юбилей" /></label>
+<label>Телефон (необязательно) <input id="phone" type="tel" maxlength="32" autocomplete="tel" /></label>
+</section>
+<section class="panel">
+<label>Поиск песен <input id="search" type="search" placeholder="Название или исполнитель" /></label>
+<p id="count" class="muted"></p>
+<div id="songs" aria-live="polite"><p>Загрузка репертуара…</p></div>
+</section>
+<button id="save" disabled>Сохранить подборку</button>
+<p id="status" role="status" aria-live="polite"></p>
+<div id="saved" class="panel hidden">
+<strong>Подборка сохранена</strong>
+<p>Сохраните эту ссылку. По ней можно открыть и изменить список позже. Любой, у кого есть ссылка, сможет редактировать подборку.</p>
+<input id="link" type="text" readonly aria-label="Ссылка на подборку" />
+<button id="copy" type="button">Скопировать ссылку</button>
+</div>
+<p class="muted">Время сохранения фиксируется автоматически. Телефон сам по себе не открывает сохранённый список.</p>
+</main>
+<script define:vars={{api}}>
+let catalogue=[],selected=new Set(),token=location.hash.startsWith('#key=')?location.hash.slice(5):'',busy=false;
+const $=id=>document.getElementById(id);
+const status=m=>{$('status').textContent=m};
+function format(seconds){if(!Number.isFinite(seconds))return '';const s=Math.round(seconds);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function draw(){
+ const q=$('search').value.trim().toLocaleLowerCase('ru');const subset=catalogue.filter(s=>(s.name+' '+s.artist).toLocaleLowerCase('ru').includes(q));
+ $('songs').replaceChildren();
+ for(const s of subset.slice(0,300)){
+  const lab=document.createElement('label');lab.className='song';const cb=document.createElement('input');cb.type='checkbox';cb.checked=selected.has(s.id);
+  cb.addEventListener('change',()=>{cb.checked?selected.add(s.id):selected.delete(s.id);count()});
+  const span=document.createElement('span');span.textContent=s.artist+' — '+s.name+(format(s.duration_seconds)?' · '+format(s.duration_seconds):'');
+  lab.append(cb,span);$('songs').append(lab);
+ }
+ if(!subset.length)$('songs').textContent='Нет подходящих песен';
+ count();
+}
+function count(){$('count').textContent='Выбрано песен: '+selected.size;$('save').disabled=busy||!selected.size||!catalogue.length}
+async function request(body){
+ const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const data=await res.json();if(!res.ok)throw new Error(data.error||'Ошибка сохранения');return data;
+}
+async function start(){
+ try{
+  const res=await fetch('/data/repertoire.public.json',{cache:'no-store'});
+  if(!res.ok)throw Error('Каталог пока не опубликован');
+  const data=await res.json();catalogue=Array.isArray(data.songs)?data.songs:[];
+  if(!catalogue.length)throw Error('Каталог пока пуст');
+  if(token){
+    const data=await request({action:'get',token});
+    $('name').value=data.request.customer_name||'';$('phone').value=data.request.phone||'';$('event').value=data.request.event_label||'';
+    selected=new Set(data.request.song_ids||[]);
+    $('saved').classList.remove('hidden');$('link').value=location.href;
+    status('Сохранённая подборка открыта. Можно изменить песни.');
+  }
+  draw();
+ }catch(e){$('songs').textContent='Репертуар пока недоступен.';status(e.message)}
+}
+$('search').addEventListener('input',draw);
+$('save').addEventListener('click',async()=>{
+ if(busy)return;
+ if(!$('name').value.trim()){status('Введите имя');$('name').focus();return}
+ busy=true;count();status('Сохраняем…');
+ try{
+ const data=await request({action:token?'update':'create',token,name:$('name').value.trim(),phone:$('phone').value.trim(),event:$('event').value.trim(),song_ids:[...selected]});
+ if(!token){token=data.token;location.hash='key='+token}
+ $('saved').classList.remove('hidden');$('link').value=location.href;
+ status('Подборка сохранена. Дата изменения: '+new Date(data.request.updated_at).toLocaleString('ru-RU'));
+ }catch(e){status('Не удалось сохранить: '+e.message)}finally{busy=false;count()}
+});
+$('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('link').value);status('Ссылка скопирована')}catch{ $('link').select();status('Выделите ссылку и скопируйте её')}})
+start();
+</script>
+</body></html>
