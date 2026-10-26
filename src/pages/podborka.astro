@@ -55,7 +55,6 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 :global(.rep-song-copy){flex:1;min-width:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
 :global(.rep-song-title){font-weight:700;color:var(--text);overflow-wrap:anywhere}
 :global(.rep-song-artist){color:var(--muted);font-size:.88rem;overflow-wrap:anywhere}
-:global(.rep-song-length){color:var(--muted);font-size:.8rem;white-space:nowrap}
 :global(.rep-preview){flex:0 0 39px;width:39px;height:39px;border-radius:50%;background:rgba(229,184,95,.09);border:1px solid rgba(229,184,95,.43);color:var(--accent2);display:grid;place-items:center;font-size:1.05rem;cursor:pointer}
 :global(.rep-preview:hover){background:rgba(229,184,95,.22)}
 :global(.rep-preview[aria-pressed="true"]){background:var(--accent);color:#101720}
@@ -68,7 +67,6 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-player-name{display:block;font-weight:750;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rep-player-sub{display:block;color:var(--muted);font-size:.76rem}
 .rep-player-timeline{display:flex;align-items:center;gap:9px;grid-column:1/-1;min-width:0}
-.rep-player-time{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.78rem;min-width:36px;text-align:center}
 .rep-player input[type="range"]{accent-color:var(--accent);cursor:pointer}
 .rep-player-seek{width:100%;min-width:0}
 .rep-player-volume{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:.82rem}
@@ -115,7 +113,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <div class="rep-player-inner">
 <div class="rep-player-track"><button id="player-toggle" class="rep-player-play" type="button" aria-label="Воспроизвести">▶</button><div class="rep-player-title"><span id="player-name" class="rep-player-name"></span><span class="rep-player-sub">Прослушивание оригинала</span></div></div>
 <div class="rep-player-buttons"><div class="rep-player-volume"><label for="player-volume">Громкость</label><input id="player-volume" type="range" min="0" max="1" step=".05" value=".8" aria-label="Громкость"/></div><button id="player-close" class="rep-player-close" type="button" aria-label="Закрыть плеер">×</button></div>
-<div class="rep-player-timeline"><span id="player-current" class="rep-player-time">0:00</span><input id="player-seek" class="rep-player-seek" type="range" min="0" max="100" step=".1" value="0" aria-label="Перемотка" disabled/><span id="player-duration" class="rep-player-time">—</span></div>
+<div class="rep-player-timeline"><input id="player-seek" class="rep-player-seek" type="range" min="0" max="100" step=".1" value="0" aria-label="Перемотка" disabled/></div>
 </div>
 <audio id="track-audio" preload="none"></audio>
 </section>
@@ -126,7 +124,6 @@ const status=m=>{$('status').textContent=m};
 const selectedFacets=new Map();
 const audio=$('track-audio');audio.volume=.8;
 let activeSong=null;
-const timeString=seconds=>{if(!Number.isFinite(seconds)||seconds<0)return '—';let x=Math.round(seconds);return Math.floor(x/60)+':'+String(x%60).padStart(2,'0')};
 const quick=[
  {label:'Русские',field:'language',values:['Я-рус']},
  {label:'Иностранные',field:'language',values:['Я-англ','Я-ин']},
@@ -225,7 +222,6 @@ async function playSong(song){
   audio.pause();activeSong=song;audio.src=src;audio.load();
   $('player').classList.remove('rep-hidden');
   $('player-name').textContent=song.artist+' — '+song.name;
-  $('player-current').textContent='0:00';$('player-duration').textContent='—';
   $('player-seek').value=0;$('player-seek').disabled=true;
   try{await audio.play()}catch{status('Не удалось воспроизвести запись')}
  }
@@ -245,8 +241,7 @@ function draw(){
   const text=document.createElement('span');text.className='rep-song-copy';
   const name=document.createElement('span');name.className='rep-song-title';name.textContent=song.name;
   const artist=document.createElement('span');artist.className='rep-song-artist';artist.textContent='— '+song.artist;
-  const length=document.createElement('span');length.className='rep-song-length';length.textContent=timeString(song.duration_seconds);
-  text.append(name,artist,length);label.append(text);row.append(checkbox,label);
+  text.append(name,artist);label.append(text);row.append(checkbox,label);
   if(safePreview(song)){
    const preview=document.createElement('button');preview.type='button';preview.className='rep-preview';
    preview.dataset.songId=song.id;preview.dataset.songName=song.artist+' — '+song.name;
@@ -296,9 +291,7 @@ $('player-close').addEventListener('click',()=>{audio.pause();audio.removeAttrib
 $('player-volume').addEventListener('input',e=>{audio.volume=Number(e.target.value)});
 $('player-seek').addEventListener('input',e=>{if(Number.isFinite(audio.duration)&&audio.duration>0)audio.currentTime=Number(e.target.value)/100*audio.duration});
 function progress(){
- $('player-current').textContent=timeString(audio.currentTime);
  const canSeek=Number.isFinite(audio.duration)&&audio.duration>0;
- $('player-duration').textContent=canSeek?timeString(audio.duration):'—';
  $('player-seek').disabled=!canSeek;
  if(canSeek)$('player-seek').value=String(audio.currentTime/audio.duration*100);
 }
