@@ -8,38 +8,51 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Выбрать песни — ANDREY-SPOET</title>
 <style>
-body{background:#08121e;color:#f5f6f7;font-family:system-ui,sans-serif;margin:0}main{max-width:900px;margin:auto;padding:24px 18px 70px}
-a{color:#d7bc78}h1{font-size:clamp(1.7rem,5vw,2.5rem)}label{display:block;margin:10px 0}
-input,button{font:inherit}input[type=text],input[type=tel],input[type=search]{width:100%;box-sizing:border-box;padding:13px;color:#fff;background:#142233;border:1px solid #66778a;border-radius:9px}
-button{background:#d7bc78;color:#102035;border:0;border-radius:9px;padding:13px 18px;cursor:pointer;font-weight:600}button:disabled{opacity:.55;cursor:not-allowed}
-.panel{border:1px solid #354659;background:#101d2b;border-radius:15px;padding:18px;margin:20px 0}
-.song{display:flex;gap:12px;padding:12px 4px;border-bottom:1px solid #354659;align-items:center}.song input{width:20px;height:20px}
-.muted{color:#b6c1ca}.hidden{display:none}#status{min-height:1.5rem}
+.rep-page{padding:42px 0 90px;min-height:calc(100vh - 58px)}
+.rep-heading{max-width:740px;margin:14px 0 28px}
+.rep-heading h1{font-size:clamp(2.25rem,7vw,4.8rem);line-height:1.02;letter-spacing:-.045em;margin:13px 0}
+.rep-back{color:var(--accent2);font-size:.88rem}
+.rep-intro{color:var(--muted);line-height:1.6;max-width:620px}
+.rep-panel{background:linear-gradient(145deg,var(--surface2),var(--surface));border:1px solid var(--line);padding:clamp(16px,3vw,26px);border-radius:22px;margin:18px 0}
+.rep-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px}
+.rep-label{display:block;font-weight:650;font-size:.88rem}
+.rep-label input{display:block;width:100%;min-height:48px;border:1px solid rgba(255,255,255,.22);background:#071521;color:var(--text);border-radius:12px;padding:12px;margin-top:8px;font:inherit}
+.rep-label input:focus-visible,.rep-song:focus-within{outline:2px solid var(--accent2);outline-offset:2px}
+.rep-section-title{font-size:1.35rem;margin:0 0 16px}
+.rep-song{display:flex;gap:13px;padding:14px 9px;margin:0;border-bottom:1px solid var(--line);align-items:center;cursor:pointer}
+.rep-song input{accent-color:var(--accent);width:20px;height:20px;flex:none}
+.rep-song span{line-height:1.45}
+.rep-meta{color:var(--muted);font-size:.83rem;margin:8px 0 0}
+.rep-action{display:inline-flex;justify-content:center;align-items:center;min-height:48px;border:0;border-radius:14px;padding:11px 20px;background:linear-gradient(130deg,var(--accent2),var(--accent));color:#17110a;font:inherit;font-weight:800;cursor:pointer}
+.rep-action:disabled{opacity:.48;cursor:not-allowed}
+.rep-link{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);padding:10px;margin:8px 0 14px}
+.rep-hidden{display:none}
+#status{min-height:25px}
+@media (min-width:800px){.rep-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;align-items:start}.rep-client{position:sticky;top:78px;grid-column:2;grid-row:1}.rep-catalog{grid-column:1;grid-row:1 / span 2}}
 </style>
 </head>
-<body><main>
-<a href="/">← На главную</a>
-<h1>Выберите песни для выступления</h1>
-<p class="muted">Отметьте композиции, сохраните подборку и получите ссылку для изменений. Регистрация не нужна.</p>
-<section class="panel">
-<label>Как к вам обращаться? <input id="name" type="text" maxlength="100" autocomplete="name" required /></label>
-<label>Название мероприятия (необязательно) <input id="event" type="text" maxlength="150" placeholder="Например, юбилей" /></label>
-<label>Телефон (необязательно) <input id="phone" type="tel" maxlength="32" autocomplete="tel" /></label>
-</section>
-<section class="panel">
-<label>Поиск песен <input id="search" type="search" placeholder="Название или исполнитель" /></label>
-<p id="count" class="muted"></p>
+<body><header class="topbar"><div class="container topbar-inner"><a class="brand" href="/">ANDREY-SPOET</a><a class="rep-back" href="/">На главную</a></div></header><main class="container rep-page">
+<div class="kicker">Живой вокал · Ваш праздник</div>
+<div class="rep-heading"><h1>Выберите свои песни</h1>
+<p class="rep-intro">Соберите музыку для вашего праздника: отметьте любимые композиции, сохраните подборку и возвращайтесь к ней по личной ссылке. Без регистрации.</p></div><div class="rep-layout">
+<section class="rep-panel rep-client"><h2 class="rep-section-title">Ваша подборка</h2><div class="rep-fields">
+<label class="rep-label">Как к вам обращаться? <input id="name" type="text" maxlength="100" autocomplete="name" required /></label>
+<label class="rep-label">Название мероприятия (необязательно) <input id="event" type="text" maxlength="150" placeholder="Например, юбилей" /></label>
+<label class="rep-label">Телефон (необязательно) <input id="phone" type="tel" maxlength="32" autocomplete="tel" /></label>
+</div><button class="rep-action" id="save" disabled>Сохранить подборку</button><p id="status" role="status" aria-live="polite"></p></section>
+<section class="rep-panel rep-catalog">
+<h2 class="rep-section-title">Репертуар</h2><label class="rep-label">Поиск песен <input id="search" type="search" placeholder="Название или исполнитель" /></label>
+<p id="count" class="rep-meta"></p>
 <div id="songs" aria-live="polite"><p>Загрузка репертуара…</p></div>
 </section>
-<button id="save" disabled>Сохранить подборку</button>
-<p id="status" role="status" aria-live="polite"></p>
-<div id="saved" class="panel hidden">
+
+<div id="saved" class="rep-panel rep-hidden">
 <strong>Подборка сохранена</strong>
 <p>Сохраните эту ссылку. По ней можно открыть и изменить список позже. Любой, у кого есть ссылка, сможет редактировать подборку.</p>
-<input id="link" type="text" readonly aria-label="Ссылка на подборку" />
-<button id="copy" type="button">Скопировать ссылку</button>
+<input id="link" class="rep-link" type="text" readonly aria-label="Ссылка на подборку" />
+<button id="copy" class="rep-action" type="button">Скопировать ссылку</button>
 </div>
-<p class="muted">Время сохранения фиксируется автоматически. Телефон сам по себе не открывает сохранённый список.</p>
+</div><p class="rep-meta">Дата сохранения фиксируется автоматически. Телефон сам по себе не открывает сохранённый список.</p>
 </main>
 <script define:vars={{api}}>
 let catalogue=[],selected=new Set(),token=location.hash.startsWith('#key=')?location.hash.slice(5):'',busy=false;
@@ -50,7 +63,7 @@ function draw(){
  const q=$('search').value.trim().toLocaleLowerCase('ru');const subset=catalogue.filter(s=>(s.name+' '+s.artist).toLocaleLowerCase('ru').includes(q));
  $('songs').replaceChildren();
  for(const s of subset.slice(0,300)){
-  const lab=document.createElement('label');lab.className='song';const cb=document.createElement('input');cb.type='checkbox';cb.checked=selected.has(s.id);
+  const lab=document.createElement('label');lab.className='rep-song';const cb=document.createElement('input');cb.type='checkbox';cb.checked=selected.has(s.id);
   cb.addEventListener('change',()=>{cb.checked?selected.add(s.id):selected.delete(s.id);count()});
   const span=document.createElement('span');span.textContent=s.artist+' — '+s.name+(format(s.duration_seconds)?' · '+format(s.duration_seconds):'');
   lab.append(cb,span);$('songs').append(lab);
@@ -66,14 +79,14 @@ async function request(body){
 async function start(){
  try{
   const res=await fetch('/data/repertoire.public.json',{cache:'no-store'});
-  if(!res.ok)throw Error('Каталог пока не опубликован');
+  if(!res.ok)throw Error('Каталог пока не опубликован. Доступен прежний список: https://magazinot.ru/files/andrey-spoet/index.html');
   const data=await res.json();catalogue=Array.isArray(data.songs)?data.songs:[];
   if(!catalogue.length)throw Error('Каталог пока пуст');
   if(token){
     const data=await request({action:'get',token});
     $('name').value=data.request.customer_name||'';$('phone').value=data.request.phone||'';$('event').value=data.request.event_label||'';
     selected=new Set(data.request.song_ids||[]);
-    $('saved').classList.remove('hidden');$('link').value=location.href;
+    $('saved').classList.remove('rep-hidden');$('link').value=location.href;
     status('Сохранённая подборка открыта. Можно изменить песни.');
   }
   draw();
