@@ -17,12 +17,12 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:16px}
 .rep-label{display:block;font-weight:650;font-size:.88rem}
 .rep-label input{display:block;width:100%;min-height:48px;border:1px solid rgba(255,255,255,.22);background:#071521;color:var(--text);border-radius:12px;padding:12px;margin-top:8px;font:inherit}
-.rep-label input:focus-visible,.rep-song:focus-within{outline:2px solid var(--accent2);outline-offset:2px}
+.rep-label input:focus-visible,:global(.rep-song):focus-within{outline:2px solid var(--accent2);outline-offset:2px}
 .rep-section-title{font-size:1.35rem;margin:0 0 16px}
-.rep-song{display:flex;gap:13px;padding:14px 9px;margin:0;border-bottom:1px solid var(--line);align-items:center;cursor:pointer}
-.rep-song input{accent-color:var(--accent);width:20px;height:20px;flex:none}
-.rep-song span{line-height:1.45}
-.rep-meta{color:var(--muted);font-size:.83rem;margin:8px 0 0}
+:global(.rep-song){display:flex;gap:13px;padding:14px 9px;margin:0;border-bottom:1px solid var(--line);align-items:center;cursor:pointer;min-width:0}
+:global(.rep-song input){accent-color:var(--accent);width:20px;height:20px;flex:0 0 20px}
+:global(.rep-song span){line-height:1.45;min-width:0;overflow-wrap:anywhere}
+:global(.rep-meta){color:var(--muted);font-size:.83rem;margin:8px 0 0}
 .rep-action{display:inline-flex;justify-content:center;align-items:center;min-height:48px;border:0;border-radius:14px;padding:11px 20px;background:linear-gradient(130deg,var(--accent2),var(--accent));color:#17110a;font:inherit;font-weight:800;cursor:pointer}
 .rep-action:disabled{opacity:.48;cursor:not-allowed}
 .rep-link{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);padding:10px;margin:8px 0 14px}
