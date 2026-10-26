@@ -20,9 +20,13 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-label input:focus-visible,:global(.rep-song):focus-within{outline:2px solid var(--accent2);outline-offset:2px}
 .rep-section-title{font-size:1.35rem;margin:0 0 16px}
 :global(.rep-song){display:flex;gap:13px;padding:14px 9px;margin:0;border-bottom:1px solid var(--line);align-items:center;cursor:pointer;min-width:0}
-:global(.rep-song input){accent-color:var(--accent);width:20px;height:20px;flex:0 0 20px}
+:global(.rep-song input[type="checkbox"]){appearance:none;-webkit-appearance:none;display:grid;place-content:center;width:22px;height:22px;flex:0 0 22px;margin:0;border:2px solid rgba(230,239,247,.76);border-radius:5px;background:rgba(255,255,255,.035);cursor:pointer;transition:background .15s,border-color .15s}
+:global(.rep-song input[type="checkbox"]:checked){background:rgba(229,184,95,.16);border-color:var(--accent)}
+:global(.rep-song input[type="checkbox"]:checked::after){content:"";width:6px;height:11px;border:solid var(--accent2);border-width:0 2.5px 2.5px 0;transform:translateY(-2px) rotate(45deg)}
+:global(.rep-song input[type="checkbox"]:focus-visible){outline:2px solid var(--accent2);outline-offset:4px}
 :global(.rep-song span){line-height:1.45;min-width:0;overflow-wrap:anywhere}
 :global(.rep-meta){color:var(--muted);font-size:.83rem;margin:8px 0 0}
+.rep-client .rep-action{margin-top:22px;width:100%}
 .rep-action{display:inline-flex;justify-content:center;align-items:center;min-height:48px;border:0;border-radius:14px;padding:11px 20px;background:linear-gradient(130deg,var(--accent2),var(--accent));color:#17110a;font:inherit;font-weight:800;cursor:pointer}
 .rep-action:disabled{opacity:.48;cursor:not-allowed}
 .rep-link{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);padding:10px;margin:8px 0 14px}
