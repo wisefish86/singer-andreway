@@ -79,7 +79,7 @@ async function request(body){
 async function start(){
  try{
   const res=await fetch('/data/repertoire.public.json',{cache:'no-store'});
-  if(!res.ok)throw Error('Каталог пока не опубликован. Доступен прежний список: https://magazinot.ru/files/andrey-spoet/index.html');
+  if(!res.ok)throw Error('Каталог пока не опубликован');
   const data=await res.json();catalogue=Array.isArray(data.songs)?data.songs:[];
   if(!catalogue.length)throw Error('Каталог пока пуст');
   if(token){
@@ -90,7 +90,7 @@ async function start(){
     status('Сохранённая подборка открыта. Можно изменить песни.');
   }
   draw();
- }catch(e){$('songs').textContent='Репертуар пока недоступен.';status(e.message)}
+ }catch(e){$('songs').textContent='Репертуар пока недоступен.';status(e.message);const a=document.createElement('a');a.href='https://magazinot.ru/files/andrey-spoet/index.html';a.textContent='Открыть прежний репертуар';a.className='rep-back';$('songs').replaceChildren(a)}
 }
 $('search').addEventListener('input',draw);
 $('save').addEventListener('click',async()=>{
