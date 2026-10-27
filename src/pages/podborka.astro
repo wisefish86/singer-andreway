@@ -36,9 +36,9 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 
 .rep-page{padding-bottom:150px}
 .rep-filterbar{padding:12px 0 8px}
-.rep-filter-heading{font-weight:750;margin:19px 0 10px;font-size:.9rem;color:var(--text)}
-.rep-filter-heading:first-child{margin-top:7px}
-.rep-chips{display:flex;flex-wrap:wrap;gap:8px}
+:global(.rep-filter-heading){font-weight:750;margin:19px 0 10px;font-size:.9rem;color:var(--text)}
+:global(.rep-filter-heading:first-child){margin-top:7px}
+:global(.rep-chips){display:flex;flex-wrap:wrap;gap:8px}
 :global(.rep-chip){min-height:38px;display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.035);color:#dce7f0;border-radius:999px;padding:8px 13px;font:inherit;font-size:.84rem;font-weight:650;cursor:pointer;transition:background .14s,border-color .14s}
 :global(.rep-chip:hover){border-color:rgba(229,184,95,.62);background:rgba(229,184,95,.08)}
 :global(.rep-chip[aria-pressed="true"]){border-color:var(--accent);background:rgba(229,184,95,.20);color:var(--accent2)}
@@ -46,7 +46,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-filter-more{margin:14px 0 12px;border-top:1px solid var(--line);padding-top:14px}
 .rep-filter-more summary{cursor:pointer;color:var(--accent2);font-weight:700;display:inline-flex;align-items:center;min-height:38px}
 .rep-filter-more summary:focus-visible{outline:2px solid var(--text);outline-offset:3px}
-.rep-filter-group{padding-bottom:8px}
+:global(.rep-filter-group){padding-bottom:8px}
 .rep-filter-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding-top:8px}
 .rep-clear{border:none;background:transparent;color:var(--accent2);font:inherit;cursor:pointer;padding:8px 0;text-decoration:underline;text-underline-offset:3px}
 :global(.rep-song){gap:10px}
@@ -90,8 +90,8 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-dialog-top h2{margin:0;font-size:1.45rem}
 .rep-dialog-close{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:50%;font-size:1.4rem;cursor:pointer}
 .rep-dialog-sub{font-size:.88rem;color:var(--muted);line-height:1.5}
-.rep-dialog .rep-filter-group{padding:5px 0 12px;border-bottom:1px solid var(--line)}
-.rep-dialog .rep-filter-heading{font-size:.96rem;margin:14px 0 10px}
+.rep-dialog :global(.rep-filter-group){padding:5px 0 12px;border-bottom:1px solid var(--line)}
+.rep-dialog :global(.rep-filter-heading){font-size:.96rem;margin:14px 0 10px}
 .rep-dialog-bottom{position:sticky;bottom:0;display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:13px clamp(16px,4vw,27px);border-top:1px solid var(--line);background:#0d1b29}
 .rep-dialog-bottom .rep-action{min-height:42px;padding:8px 14px;margin-left:auto}
 .rep-dialog-bottom .rep-clear{white-space:nowrap}
