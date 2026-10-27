@@ -379,7 +379,10 @@ $('request-form').addEventListener('submit',async event=>{
   const data=await request({action:token?'update':'create',token,name:$('name').value.trim(),phone:$('phone').value.trim(),event:$('event').value.trim(),song_ids:[...selected]});
   if(!token){token=data.token;location.hash='key='+token}
   $('saved').classList.remove('rep-hidden');$('link').value=location.href;
-  status('Подборка сохранена. Дата изменения: '+new Date(data.request.updated_at).toLocaleString('ru-RU'));
+  const when=new Date(data.request.updated_at).toLocaleString('ru-RU');
+  status(data.owner_notified?
+   'Подборка сохранена и уведомление отправлено исполнителю · '+when:
+   'Подборка сохранена · '+when+'. Автоматическое уведомление исполнителю пока не подтверждено: сохраните ссылку и передайте её самостоятельно.');
  }catch(e){status('Не удалось сохранить: '+e.message)}finally{busy=false;updateCount()}
 });
 $('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('link').value);status('Ссылка скопирована')}catch{$('link').select();status('Выделите ссылку и скопируйте её')}});
