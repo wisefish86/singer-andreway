@@ -7,10 +7,14 @@ async function hash(s:string) {
 function json(data:unknown,status:number,origin:string) {
   return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":origin,"Vary":"Origin","Cache-Control":"no-store","Access-Control-Allow-Headers":"content-type","Access-Control-Allow-Methods":"POST,OPTIONS"}});
 }
-async function notifyOwner(kind:"create"|"update",name:string,phone:string,event:string,ids:string[],secretToken:string):Promise<boolean>{
+async function notifyOwner(kind:"create"|"update",name:string,phone:string,event:string,ids:string[],secretToken:string,db:any):Promise<boolean>{
  const botToken=Deno.env.get("SINGER_TELEGRAM_BOT_TOKEN")||"";
- const chatId=Deno.env.get("SINGER_OWNER_CHAT_ID")||"";
- if(!botToken||!chatId)return false;
+ let chatId=Deno.env.get("SINGER_OWNER_CHAT_ID")||"";
+ if(!chatId){
+  const lookup=await db.rpc("singer_owner_chat_id");
+  if(!lookup.error&&lookup.data)chatId=String(lookup.data);
+ }
+ if(!botToken||!/^[-]?[0-9]{5,20}$/.test(chatId))return false;
  const url="https://singer.andreway.ru/podborka/#key="+secretToken;
  const lines=[
   kind==="create"?"🎶 Новая подборка песен":"✏️ Изменена подборка песен",
@@ -54,7 +58,7 @@ Deno.serve(async req=>{
    const result=await db.rpc("singer_request_get",{p_token_hash:await hash(data.token)});
    if(result.error)return json({error:"server_error"},500,origin);
   if(!result.data)return json({error:"not_found"},404,origin);
-  const ownerNotified=await notifyOwner("update",name,phone,event,ids,data.token);
+  const ownerNotified=await notifyOwner("update",name,phone,event,ids,data.token,db);
   return json({request:result.data,owner_notified:ownerNotified},200,origin);
   }
   const name=typeof data.name==="string"?data.name.trim():"";
@@ -66,7 +70,7 @@ Deno.serve(async req=>{
     const token=Array.from(crypto.getRandomValues(new Uint8Array(32))).map(x=>x.toString(16).padStart(2,"0")).join("");
     const result=await db.rpc("singer_request_create",{p_name:name,p_phone:phone,p_event:event,p_song_ids:ids,p_token_hash:await hash(token)});
     if(result.error)return json({error:"server_error"},500,origin);
-    const ownerNotified=await notifyOwner("create",name,phone,event,ids,token);
+    const ownerNotified=await notifyOwner("create",name,phone,event,ids,token,db);
     return json({request:result.data,token,owner_notified:ownerNotified},201,origin);
   }
   const result=await db.rpc("singer_request_update",{p_token_hash:await hash(data.token),p_name:name,p_phone:phone,p_event:event,p_song_ids:ids});
