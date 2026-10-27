@@ -105,6 +105,8 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-selection-inner{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .rep-selection-count{color:var(--text);font-size:.92rem;font-weight:700}
 .rep-selection-bar .rep-action{white-space:nowrap;min-height:44px}
+.rep-missing{margin:12px 0;color:var(--accent2);font-size:.85rem;line-height:1.5}
+.rep-missing button{margin:7px 0;border:1px solid rgba(229,184,95,.5);background:transparent;color:var(--accent2);padding:7px 10px;border-radius:8px;cursor:pointer;font:inherit}
 .rep-hidden{display:none}
 @media(max-width:480px){.rep-page{padding-top:24px}.rep-heading h1{font-size:2.15rem}.rep-panel{padding:15px}.rep-filter-toolbar{gap:8px}.rep-filter-toolbar .rep-chips{flex-basis:100%}.rep-chips{gap:6px}.rep-open-filters{width:100%}.rep-selection-bar{padding:9px 12px}.rep-selection-count{font-size:.82rem}.rep-selection-bar .rep-action{padding:9px 11px;font-size:.86rem}.rep-dialog-bottom .rep-action{width:100%;margin:0}.rep-dialog-bottom .rep-modal-count{margin-left:auto}}
 
@@ -132,7 +134,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 </dialog>
 </div>
 <p id="filter-notice" class="rep-meta rep-hidden">Каталог ещё не обновлён для фильтров и прослушивания. Требуется повторный экспорт.</p>
-<p id="count" class="rep-meta"></p>
+<p id="count" class="rep-meta"></p><p id="selection-limit" class="rep-meta rep-hidden">Можно выбрать не более 250 песен в одну подборку.</p>
 <div id="songs" aria-live="polite"><p>Загрузка репертуара…</p></div>
 </section>
 
@@ -141,6 +143,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <div class="rep-dialog-content">
 <div class="rep-dialog-top"><h2 id="send-title">Отправить подборку</h2><button id="close-send" type="button" class="rep-dialog-close" aria-label="Закрыть форму">×</button></div>
 <p class="rep-dialog-sub">Укажите имя — так будет проще узнать вашу заявку. Телефон и название мероприятия необязательны.</p>
+<div id="missing-note" class="rep-missing rep-hidden"><span id="missing-count"></span><button id="remove-missing" type="button">Убрать недоступные из подборки</button></div>
 <form id="request-form">
 <div class="rep-send-fields">
 <label class="rep-label">Как к вам обращаться? <input id="name" type="text" maxlength="100" autocomplete="name" required /></label>
@@ -289,7 +292,7 @@ function draw(){
   const row=document.createElement('div');row.className='rep-song';row.classList.toggle('is-selected',selected.has(song.id));
   const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=selected.has(song.id);checkbox.id='song-'+song.id;
   checkbox.setAttribute('aria-label','Выбрать: '+song.artist+' — '+song.name);
-  checkbox.addEventListener('change',()=>{checkbox.checked?selected.add(song.id):selected.delete(song.id);row.classList.toggle('is-selected',checkbox.checked);updateCount()});
+  checkbox.addEventListener('change',()=>{if(checkbox.checked&&selected.size>=250){checkbox.checked=false;$('selection-limit').classList.remove('rep-hidden');return}checkbox.checked?selected.add(song.id):selected.delete(song.id);row.classList.toggle('is-selected',checkbox.checked);updateCount()});
   const label=document.createElement('label');label.htmlFor=checkbox.id;
   const text=document.createElement('span');text.className='rep-song-copy';
   const name=document.createElement('span');name.className='rep-song-title';name.textContent=song.name;
@@ -318,7 +321,11 @@ window.addEventListener('resize',positionSelectionBar);
 function updateCount(){
  $('save').disabled=busy||!selected.size||!catalogue.length;
  $('selection-bar').classList.toggle('rep-hidden',selected.size===0);
- $('selected-total').textContent='Выбрано: '+selected.size;
+ const present=new Set(catalogue.map(song=>song.id));
+ const missing=[...selected].filter(id=>!present.has(id));
+ $('selected-total').textContent='Выбрано: '+selected.size+(missing.length?' · Недоступно: '+missing.length:'');
+ $('missing-note').classList.toggle('rep-hidden',missing.length===0);
+ $('missing-count').textContent=missing.length+' песен из сохранённого списка больше нет в текущем каталоге. Они остаются в заявке, пока вы их не уберёте.';
  $('open-send').textContent=token?'Сохранить изменения':'Отправить подборку';
  positionSelectionBar();
  const results=$('count').textContent.match(/^Найдено: \d+/)?.[0]||'Найдено: '+catalogue.length;
@@ -358,6 +365,11 @@ $('open-send').addEventListener('click',()=>{
  $('send-dialog').showModal();
 });
 $('close-send').addEventListener('click',()=>$('send-dialog').close());
+$('remove-missing').addEventListener('click',()=>{
+ const available=new Set(catalogue.map(song=>song.id));
+ selected=new Set([...selected].filter(id=>available.has(id)));
+ draw();
+});
 $('player-toggle').addEventListener('click',()=>{if(!activeSong)return;if(audio.paused)audio.play().catch(()=>status('Не удалось воспроизвести запись'));else audio.pause()});
 $('player-close').addEventListener('click',()=>{audio.pause();audio.removeAttribute('src');audio.load();activeSong=null;$('player').classList.add('rep-hidden');positionSelectionBar();updatePlayerButtons()});
 $('player-volume').addEventListener('input',e=>{audio.volume=Number(e.target.value)});
