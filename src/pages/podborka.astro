@@ -32,7 +32,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-link{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--text);padding:10px;margin:8px 0 14px}
 .rep-hidden{display:none}
 #status{min-height:25px}
-@media (min-width:800px){.rep-layout{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:18px;align-items:start}.rep-client{position:sticky;top:78px;grid-column:2;grid-row:1}.rep-catalog{grid-column:1;grid-row:1 / span 2}}
+@media (min-width:800px){.rep-layout{display:block}.rep-catalog{width:100%}}
 
 .rep-page{padding-bottom:150px}
 .rep-filterbar{padding:12px 0 8px}
@@ -75,40 +75,94 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-player-buttons{display:flex;gap:8px;align-items:center}
 .rep-player .rep-player-play:focus-visible,.rep-player-close:focus-visible{outline:2px solid var(--text);outline-offset:3px}
 @media(max-width:620px){.rep-page{padding-bottom:170px}.rep-player-inner{grid-template-columns:1fr auto;gap:8px}.rep-player-volume{grid-column:1/-1;justify-self:end}.rep-player-volume input{width:90px}.rep-player-timeline{grid-row:2}}
+
+/* Compact filters and two accessible native dialogs. */
+.rep-filterbar{padding:14px 0 10px}
+.rep-filter-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.rep-filter-toolbar .rep-chips{flex:1;gap:6px}
+:global(.rep-chip){min-height:34px;padding:6px 11px;font-size:.8rem;line-height:1.2}
+.rep-open-filters{border:1px solid rgba(229,184,95,.5);background:rgba(229,184,95,.07);color:var(--accent2);border-radius:11px;padding:9px 12px;font:inherit;font-size:.84rem;font-weight:750;cursor:pointer;min-height:38px;white-space:nowrap}
+.rep-open-filters:focus-visible,.rep-dialog-close:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
+.rep-dialog{width:min(620px,calc(100vw - 24px));max-height:min(86dvh,900px);margin:auto;padding:0;background:#0d1b29;color:var(--text);border:1px solid rgba(229,184,95,.35);border-radius:20px;box-shadow:0 22px 80px rgba(0,0,0,.6);overflow:auto;overscroll-behavior:contain}
+.rep-dialog::backdrop{background:rgba(1,8,14,.78);backdrop-filter:blur(5px)}
+.rep-dialog-content{padding:20px clamp(16px,4vw,27px) 14px}
+.rep-dialog-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.rep-dialog-top h2{margin:0;font-size:1.45rem}
+.rep-dialog-close{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:50%;font-size:1.4rem;cursor:pointer}
+.rep-dialog-sub{font-size:.88rem;color:var(--muted);line-height:1.5}
+.rep-dialog .rep-filter-group{padding:5px 0 12px;border-bottom:1px solid var(--line)}
+.rep-dialog .rep-filter-heading{font-size:.96rem;margin:14px 0 10px}
+.rep-dialog-bottom{position:sticky;bottom:0;display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:13px clamp(16px,4vw,27px);border-top:1px solid var(--line);background:#0d1b29}
+.rep-dialog-bottom .rep-action{min-height:42px;padding:8px 14px;margin-left:auto}
+.rep-dialog-bottom .rep-clear{white-space:nowrap}
+.rep-dialog-bottom .rep-modal-count{color:var(--muted);font-size:.86rem}
+.rep-send-fields{display:grid;gap:13px;margin:17px 0}
+.rep-send-fields .rep-label{font-weight:550}
+.rep-send-fields .rep-label input{font-weight:400}
+.rep-form-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:0 0 7px}
+.rep-form-actions .rep-action{flex:1}
+.rep-selection-bar{position:fixed;z-index:49;left:0;right:0;bottom:0;background:rgba(9,22,34,.97);border-top:1px solid rgba(229,184,95,.35);backdrop-filter:blur(14px);box-shadow:0 -9px 32px rgba(0,0,0,.28);padding:10px max(15px,calc((100vw - 1180px)/2));transition:bottom .15s}
+.rep-selection-inner{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.rep-selection-count{color:var(--text);font-size:.92rem;font-weight:700}
+.rep-selection-bar .rep-action{white-space:nowrap;min-height:44px}
+.rep-hidden{display:none}
+@media(max-width:480px){.rep-page{padding-top:24px}.rep-heading h1{font-size:2.15rem}.rep-panel{padding:15px}.rep-filter-toolbar{gap:8px}.rep-filter-toolbar .rep-chips{flex-basis:100%}.rep-chips{gap:6px}.rep-open-filters{width:100%}.rep-selection-bar{padding:9px 12px}.rep-selection-count{font-size:.82rem}.rep-selection-bar .rep-action{padding:9px 11px;font-size:.86rem}.rep-dialog-bottom .rep-action{width:100%;margin:0}.rep-dialog-bottom .rep-modal-count{margin-left:auto}}
+
 </style>
 </head>
 <body><header class="topbar"><div class="container topbar-inner"><a class="brand" href="/">ANDREY-SPOET</a><a class="rep-back" href="/">На главную</a></div></header><main class="container rep-page">
 <div class="kicker">Живой вокал · Ваш праздник</div>
 <div class="rep-heading"><h1>Выберите свои песни</h1>
-<p class="rep-intro">Соберите музыку для вашего праздника: отметьте любимые композиции, сохраните подборку и возвращайтесь к ней по личной ссылке. Без регистрации.</p></div><div class="rep-layout">
-<section class="rep-panel rep-client"><h2 class="rep-section-title">Ваша подборка</h2><div class="rep-fields">
-<label class="rep-label">Как к вам обращаться? <input id="name" type="text" maxlength="100" autocomplete="name" required /></label>
-<label class="rep-label">Название мероприятия (необязательно) <input id="event" type="text" maxlength="150" placeholder="Например, юбилей" /></label>
-<label class="rep-label">Телефон (необязательно) <input id="phone" type="tel" maxlength="32" autocomplete="tel" /></label>
-</div><button class="rep-action" id="save" disabled>Сохранить подборку</button><p id="status" role="status" aria-live="polite"></p></section>
+<p class="rep-intro">Найдите любимые композиции, добавьте в подборку и отправьте её. Вернуться к выбору можно в любое время по личной ссылке.</p></div>
+<div class="rep-layout">
 <section class="rep-panel rep-catalog">
 <h2 class="rep-section-title">Репертуар</h2><label class="rep-label">Поиск песен <input id="search" type="search" placeholder="Название или исполнитель" /></label>
 <div id="filter-panel" class="rep-filterbar rep-hidden">
-<h3 class="rep-filter-heading">Быстрый выбор</h3>
+<div class="rep-filter-toolbar">
 <div id="quick-filters" class="rep-chips" aria-label="Быстрые фильтры"></div>
-<h3 class="rep-filter-heading">Для кого и по какому поводу</h3>
-<div id="situation-filters" class="rep-chips" aria-label="События и адресаты"></div>
-<details id="more-filters" class="rep-filter-more"><summary>Все фильтры</summary><div id="advanced-filters"></div></details>
-<div class="rep-filter-actions"><button id="clear-filters" type="button" class="rep-clear">Сбросить фильтры</button></div>
+<button id="open-filters" class="rep-open-filters" type="button" aria-haspopup="dialog">⚙ Все фильтры <span id="active-filter-count"></span></button>
+</div>
+<dialog id="filter-dialog" class="rep-dialog" aria-labelledby="filter-title">
+<div class="rep-dialog-content">
+<div class="rep-dialog-top"><h2 id="filter-title">Фильтры репертуара</h2><button type="button" class="rep-dialog-close" id="close-filters" aria-label="Закрыть фильтры">×</button></div>
+<p class="rep-dialog-sub">Выберите язык, повод, стиль, настроение и эпоху. Количество подходящих песен обновляется сразу.</p>
+<div id="advanced-filters"></div>
+</div>
+<div class="rep-dialog-bottom"><button id="clear-filters" type="button" class="rep-clear">Сбросить</button><span id="filter-result-count" class="rep-modal-count" role="status">Подсчёт песен…</span><button id="apply-filters" type="button" class="rep-action">Показать песни</button></div>
+</dialog>
 </div>
 <p id="filter-notice" class="rep-meta rep-hidden">Каталог ещё не обновлён для фильтров и прослушивания. Требуется повторный экспорт.</p>
 <p id="count" class="rep-meta"></p>
 <div id="songs" aria-live="polite"><p>Загрузка репертуара…</p></div>
 </section>
 
+</div>
+<dialog id="send-dialog" class="rep-dialog" aria-labelledby="send-title">
+<div class="rep-dialog-content">
+<div class="rep-dialog-top"><h2 id="send-title">Отправить подборку</h2><button id="close-send" type="button" class="rep-dialog-close" aria-label="Закрыть форму">×</button></div>
+<p class="rep-dialog-sub">Укажите имя — так будет проще узнать вашу заявку. Телефон и название мероприятия необязательны.</p>
+<form id="request-form">
+<div class="rep-send-fields">
+<label class="rep-label">Как к вам обращаться? <input id="name" type="text" maxlength="100" autocomplete="name" required /></label>
+<label class="rep-label">Название мероприятия (необязательно) <input id="event" type="text" maxlength="150" placeholder="Например, юбилей" /></label>
+<label class="rep-label">Телефон (необязательно) <input id="phone" type="tel" maxlength="32" autocomplete="tel" /></label>
+</div>
+<div class="rep-form-actions"><button type="submit" id="save" class="rep-action" disabled>Сохранить подборку</button></div>
+<p id="status" class="rep-meta" role="status" aria-live="polite"></p>
+</form>
 <div id="saved" class="rep-panel rep-hidden">
 <strong>Подборка сохранена</strong>
-<p>Сохраните эту ссылку. По ней можно открыть и изменить список позже. Любой, у кого есть ссылка, сможет редактировать подборку.</p>
-<input id="link" class="rep-link" type="text" readonly aria-label="Ссылка на подборку" />
+<p class="rep-dialog-sub">Сохраните ссылку — по ней можно открыть и изменить песни в следующий раз. Любой, у кого есть эта ссылка, сможет редактировать подборку.</p>
+<input id="link" class="rep-link" type="text" readonly aria-label="Ссылка на подборку"/>
 <button id="copy" class="rep-action" type="button">Скопировать ссылку</button>
 </div>
-</div><p class="rep-meta">Дата сохранения фиксируется автоматически. Телефон сам по себе не открывает сохранённый список.</p>
+</div>
+</dialog>
 </main>
+<section id="selection-bar" class="rep-selection-bar rep-hidden" aria-label="Выбранные песни">
+<div class="rep-selection-inner"><span id="selected-total" class="rep-selection-count"></span><button id="open-send" type="button" class="rep-action">Отправить подборку</button></div>
+</section>
+
 <section id="player" class="rep-player rep-hidden" aria-label="Музыкальный плеер">
 <div class="rep-player-inner">
 <div class="rep-player-track"><button id="player-toggle" class="rep-player-play" type="button" aria-label="Воспроизвести">▶</button><div class="rep-player-title"><span id="player-name" class="rep-player-name"></span><span id="player-artist" class="rep-player-sub"></span></div></div>
@@ -127,10 +181,7 @@ let activeSong=null;
 const quick=[
  {label:'Русские',field:'language',values:['Я-рус']},
  {label:'Иностранные',field:'language',values:['Я-англ','Я-ин']},
- {label:'Рок',field:'audience',values:['а-РокЛегк','а-РокТяж']},
- {label:'Хиты',field:'recognition',values:['уз-1-Хит']},
- {label:'Танцевальные',field:'energy',values:['к-Танцы&фон','к-Танцы-сред','к-Танцы-драйв']},
- {label:'Романтика',field:'mood',values:['н-Романтика']}
+ {label:'Хиты',field:'recognition',values:['уз-1-Хит']}
 ];
 const events=[
  {label:'Свадьба',field:'situations',values:['с-Свадьба']},
@@ -177,13 +228,14 @@ function paintChips(){
   button.setAttribute('aria-pressed',String(Boolean(values.length)&&values.every(x=>selectedFacets.get(field)?.has(x))));
  }
  $('clear-filters').hidden=selectedFacets.size===0;
+ $('active-filter-count').textContent=selectedFacets.size?'· '+[...selectedFacets.values()].reduce((n,x)=>n+x.size,0):'';
 }
 function setupFilters(){
  const supported=catalogue.some(s=>s.filters&&typeof s.filters==='object')&&Object.values(facets).some(x=>Array.isArray(x)&&x.length);
  $('filter-panel').classList.toggle('rep-hidden',!supported);
  $('filter-notice').classList.toggle('rep-hidden',supported);
  if(!supported)return;
- buildChips($('quick-filters'),quick);buildChips($('situation-filters'),events);
+ buildChips($('quick-filters'),quick);
  const more=$('advanced-filters');more.replaceChildren();
  for(const [field,title] of Object.entries(extraTitles)){
   const options=(facets[field]||[]).filter(x=>x&&x.value&&x.label);
@@ -220,7 +272,7 @@ async function playSong(song){
   if(audio.paused){try{await audio.play()}catch{status('Не удалось воспроизвести запись')}}else audio.pause();
  }else{
   audio.pause();activeSong=song;audio.src=src;audio.load();
-  $('player').classList.remove('rep-hidden');
+  $('player').classList.remove('rep-hidden');positionSelectionBar();
   $('player-name').textContent=song.name;
   $('player-artist').textContent=song.artist;
   $('player-seek').value=0;$('player-seek').disabled=true;
@@ -254,10 +306,21 @@ function draw(){
  if(!found.length){const empty=document.createElement('p');empty.className='rep-meta';empty.textContent='Ничего не найдено. Попробуйте убрать один из фильтров.';fragment.append(empty)}
  target.append(fragment);
  $('count').textContent='Найдено: '+found.length+' · Выбрано: '+selected.size;
+ $('filter-result-count').textContent='Найдено: '+found.length;
  updateCount();updatePlayerButtons();
 }
+function positionSelectionBar(){
+ const player=$('player');
+ const active=!player.classList.contains('rep-hidden');
+ $('selection-bar').style.bottom=active?Math.ceil(player.getBoundingClientRect().height)+'px':'0';
+}
+window.addEventListener('resize',positionSelectionBar);
 function updateCount(){
  $('save').disabled=busy||!selected.size||!catalogue.length;
+ $('selection-bar').classList.toggle('rep-hidden',selected.size===0);
+ $('selected-total').textContent='Выбрано: '+selected.size;
+ $('open-send').textContent=token?'Сохранить изменения':'Отправить подборку';
+ positionSelectionBar();
  const results=$('count').textContent.match(/^Найдено: \d+/)?.[0]||'Найдено: '+catalogue.length;
  $('count').textContent=results+' · Выбрано: '+selected.size;
 }
@@ -275,8 +338,7 @@ async function start(){
     const saved=await request({action:'get',token});
     $('name').value=saved.request.customer_name||'';$('phone').value=saved.request.phone||'';$('event').value=saved.request.event_label||'';
     selected=new Set(saved.request.song_ids||[]);
-    $('saved').classList.remove('rep-hidden');$('link').value=location.href;
-    status('Сохранённая подборка открыта. Можно изменить песни.');
+    $('saved').classList.add('rep-hidden');$('link').value=location.href;
   }
   setupFilters();draw();
  }catch(e){
@@ -287,8 +349,17 @@ async function start(){
 }
 $('search').addEventListener('input',draw);
 $('clear-filters').addEventListener('click',()=>{selectedFacets.clear();paintChips();draw()});
+$('open-filters').addEventListener('click',()=>$('filter-dialog').showModal());
+$('close-filters').addEventListener('click',()=>$('filter-dialog').close());
+$('apply-filters').addEventListener('click',()=>$('filter-dialog').close());
+$('open-send').addEventListener('click',()=>{
+ $('send-title').textContent=token?'Изменить подборку':'Отправить подборку';
+ $('save').textContent=token?'Сохранить изменения':'Сохранить подборку';
+ $('send-dialog').showModal();
+});
+$('close-send').addEventListener('click',()=>$('send-dialog').close());
 $('player-toggle').addEventListener('click',()=>{if(!activeSong)return;if(audio.paused)audio.play().catch(()=>status('Не удалось воспроизвести запись'));else audio.pause()});
-$('player-close').addEventListener('click',()=>{audio.pause();audio.removeAttribute('src');audio.load();activeSong=null;$('player').classList.add('rep-hidden');updatePlayerButtons()});
+$('player-close').addEventListener('click',()=>{audio.pause();audio.removeAttribute('src');audio.load();activeSong=null;$('player').classList.add('rep-hidden');positionSelectionBar();updatePlayerButtons()});
 $('player-volume').addEventListener('input',e=>{audio.volume=Number(e.target.value)});
 $('player-seek').addEventListener('input',e=>{if(Number.isFinite(audio.duration)&&audio.duration>0)audio.currentTime=Number(e.target.value)/100*audio.duration});
 function progress(){
@@ -299,7 +370,8 @@ function progress(){
 for(const event of ['loadedmetadata','timeupdate','durationchange'])audio.addEventListener(event,progress);
 for(const event of ['pause','play','ended'])audio.addEventListener(event,updatePlayerButtons);
 audio.addEventListener('error',()=>{if(activeSong)status('Ошибка загрузки аудио: попробуйте другую песню');updatePlayerButtons()});
-$('save').addEventListener('click',async()=>{
+$('request-form').addEventListener('submit',async event=>{
+ event.preventDefault();
  if(busy)return;
  if(!$('name').value.trim()){status('Введите имя');$('name').focus();return}
  busy=true;updateCount();status('Сохраняем…');
