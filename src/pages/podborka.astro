@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import SiteFavicons from '../components/SiteFavicons.astro';
+import { whatsapp, telegramWeb } from '../config/contact-links';
 const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-request';
 ---
 <!doctype html>
@@ -104,6 +105,12 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-send-fields .rep-label input{font-weight:400}
 .rep-form-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:0 0 7px}
 .rep-form-actions .rep-action{flex:1}
+.rep-manual-send{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 10px}
+.rep-manual-send a{flex:1 1 165px;display:flex;align-items:center;justify-content:center;text-decoration:none;
+  min-height:48px;border:1px solid rgba(229,184,95,.5);border-radius:12px;padding:10px 13px;
+  font-size:.95rem;font-weight:750;background:rgba(229,184,95,.1);color:var(--accent2)}
+.rep-manual-send a:hover{background:rgba(229,184,95,.19)}
+.rep-manual-send a:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
 .rep-selection-bar{position:fixed;z-index:49;left:0;right:0;bottom:0;background:rgba(9,22,34,.97);border-top:1px solid rgba(229,184,95,.35);backdrop-filter:blur(14px);box-shadow:0 -9px 32px rgba(0,0,0,.28);padding:10px max(15px,calc((100vw - 1180px)/2));transition:bottom .15s}
 .rep-selection-inner{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .rep-selection-count{color:var(--text);font-size:.92rem;font-weight:700}
@@ -153,12 +160,21 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <label class="rep-label">Название мероприятия (необязательно) <input id="event" type="text" maxlength="150" placeholder="Например, юбилей" /></label>
 <label class="rep-label">Телефон (необязательно) <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="+7 (999) 123-45-67" aria-describedby="phone-hint" /><small id="phone-hint" class="rep-phone-hint">Можно ввести с 8 или +7 либо вставить номер целиком.</small></label>
 </div>
-<div class="rep-form-actions"><button type="submit" id="save" class="rep-action" disabled>Сохранить подборку</button></div>
+<div class="rep-form-actions"><button type="submit" id="save" class="rep-action" disabled>Отправить Андрею</button></div>
 <p id="status" class="rep-meta" role="status" aria-live="polite"></p>
 </form>
-<div id="saved" class="rep-panel rep-hidden">
-<strong>Подборка сохранена</strong>
-<p class="rep-dialog-sub">Сохраните ссылку — по ней можно открыть и изменить песни в следующий раз. Любой, у кого есть эта ссылка, сможет редактировать подборку.</p>
+<div id="saved" class="rep-panel rep-hidden" aria-live="polite">
+<strong id="saved-title">Подборка сохранена</strong>
+<p id="saved-description" class="rep-dialog-sub">Сохраните ссылку, чтобы позже вернуться и изменить песни.</p>
+<div id="manual-send" class="rep-hidden">
+<p class="rep-dialog-sub">Автоматическое уведомление Андрею не подтверждено. Отправьте подборку самостоятельно:</p>
+<div class="rep-manual-send" role="group" aria-label="Отправить подборку через мессенджер">
+<a id="share-whatsapp" href="#" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+<a id="share-telegram" href="#" target="_blank" rel="noopener noreferrer">Telegram</a>
+</div>
+<p id="telegram-instruction" class="rep-meta"></p>
+</div>
+<p class="rep-dialog-sub">Ссылка для возврата к подборке и изменения песен:</p>
 <input id="link" class="rep-link" type="text" readonly aria-label="Ссылка на подборку"/>
 <button id="copy" class="rep-action" type="button">Скопировать ссылку</button>
 </div>
@@ -178,7 +194,8 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <audio id="track-audio" preload="none"></audio>
 </section>
 <script is:inline src="/js/phone-mask.js"></script>
-<script define:vars={{api}}>
+<script is:inline src="/js/request-share.js"></script>
+<script define:vars={{api, whatsapp, telegramWeb}}>
 let catalogue=[],facets={},selected=new Set(),token=location.hash.startsWith('#key=')?location.hash.slice(5):'',busy=false;
 const $=id=>document.getElementById(id);
 const status=m=>{$('status').textContent=m};
@@ -366,7 +383,7 @@ $('close-filters').addEventListener('click',()=>$('filter-dialog').close());
 $('apply-filters').addEventListener('click',()=>$('filter-dialog').close());
 $('open-send').addEventListener('click',()=>{
  $('send-title').textContent=token?'Изменить подборку':'Отправить подборку';
- $('save').textContent=token?'Сохранить изменения':'Сохранить подборку';
+ $('save').textContent=token?'Отправить изменения Андрею':'Отправить Андрею';
  $('send-dialog').showModal();
 });
 $('close-send').addEventListener('click',()=>$('send-dialog').close());
@@ -396,11 +413,34 @@ $('request-form').addEventListener('submit',async event=>{
  try{
   const data=await request({action:token?'update':'create',token,name:$('name').value.trim(),phone:$('phone').value.trim(),event:$('event').value.trim(),song_ids:[...selected]});
   if(!token){token=data.token;location.hash='key='+token}
-  $('saved').classList.remove('rep-hidden');$('link').value=location.href;
+  // The server persists the selection before returning. A messenger fallback is
+  // offered only when automatic owner notification was NOT confirmed.
+  const savedLink=location.origin+location.pathname+'#key='+token;
+  $('saved').classList.remove('rep-hidden');
+  $('link').value=savedLink;
+  const confirmed=window.SingerRequestShare.isConfirmed(data.owner_notified);
+  $('saved-title').textContent=confirmed?'Уведомление Андрею отправлено':'Подборка сохранена';
+  $('saved-description').textContent=confirmed
+   ? 'Подборка передана в Telegram Андрея. Сохраните ссылку, чтобы позднее изменить песни.'
+   : 'Песни сохранены, но автоматическая отправка не подтверждена.';
+  $('manual-send').classList.toggle('rep-hidden',confirmed);
+  if(!confirmed){
+   try{
+    const links=window.SingerRequestShare.build({
+     link:savedLink,name:$('name').value,event:$('event').value,
+     phone:$('phone').value,whatsappUrl:whatsapp,telegramWeb
+    });
+    $('share-whatsapp').href=links.whatsapp;
+    $('share-telegram').href=links.telegram;
+    $('telegram-instruction').textContent='В Telegram выберите чат Андрея ('+
+      links.telegramUsername+') и нажмите «Отправить».';
+   }catch(error){
+    $('manual-send').classList.add('rep-hidden');
+    $('saved-description').textContent='Автоматическая отправка не подтверждена. Скопируйте ссылку и отправьте её Андрею вручную.';
+   }
+  }
   const when=new Date(data.request.updated_at).toLocaleString('ru-RU');
-  status(data.owner_notified?
-   'Подборка сохранена и уведомление отправлено исполнителю · '+when:
-   'Подборка сохранена · '+when+'. Автоматическое уведомление исполнителю пока не подтверждено: сохраните ссылку и передайте её самостоятельно.');
+  status('Подборка сохранена · '+when);
  }catch(e){status('Не удалось сохранить: '+e.message)}finally{busy=false;updateCount()}
 });
 $('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('link').value);status('Ссылка скопирована')}catch{$('link').select();status('Выделите ссылку и скопируйте её')}});
