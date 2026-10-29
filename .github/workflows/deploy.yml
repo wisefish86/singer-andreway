@@ -27,6 +27,9 @@ jobs:
       - name: Build Astro
         run: npm run build
 
+      - name: Verify favicons on every generated page
+        run: node .github/scripts/verify-favicons.mjs
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
