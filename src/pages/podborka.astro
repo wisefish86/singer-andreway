@@ -414,14 +414,15 @@ function positionSelectionBar(){
 }
 window.addEventListener('resize',positionSelectionBar);
 function updateCount(){
- $('save').disabled=busy||!selected.size||!catalogue.length;
+ $('save-link').disabled=busy||!selected.size||!catalogue.length;
+ for(const button of document.querySelectorAll('[data-share]'))button.disabled=busy||!selected.size||!catalogue.length;
  $('selection-bar').classList.toggle('rep-hidden',selected.size===0);
  const present=new Set(catalogue.map(song=>song.id));
  const missing=[...selected].filter(id=>!present.has(id));
  $('selected-total').textContent='Выбрано: '+selected.size+(missing.length?' · Недоступно: '+missing.length:'');
  $('missing-note').classList.toggle('rep-hidden',missing.length===0);
  $('missing-count').textContent=missing.length+' песен из сохранённого списка больше нет в текущем каталоге. Они остаются в заявке, пока вы их не уберёте.';
- $('open-send').textContent=token?'Сохранить изменения':'Отправить подборку';
+ $('open-send').textContent='Отправить подборку';
  positionSelectionBar();
  const results=$('count').textContent.match(/^Найдено: \d+/)?.[0]||'Найдено: '+catalogue.length;
  $('count').textContent=results+' · Выбрано: '+selected.size;
@@ -473,10 +474,35 @@ $('open-filters').addEventListener('click',()=>$('filter-dialog').showModal());
 $('close-filters').addEventListener('click',()=>$('filter-dialog').close());
 $('apply-filters').addEventListener('click',()=>$('filter-dialog').close());
 $('open-send').addEventListener('click',()=>{
- $('send-title').textContent=token?'Изменить подборку':'Отправить подборку';
- $('save').textContent=token?'Сохранить изменения':'Сохранить и отправить';
+ $('send-title').textContent='Отправить подборку';
+ $('saved').classList.add('rep-hidden');
  $('send-dialog').showModal();
 });
+function renderSelected(){
+ const list=$('selected-list');
+ list.replaceChildren();
+ const index=new Map(catalogue.map(song=>[song.id,song]));
+ $('selected-description').textContent='Всего в подборке: '+selected.size+'. Можно убрать песни прямо здесь.';
+ for(const id of selected){
+  const song=index.get(id),row=document.createElement('li'),label=document.createElement('span');
+  const title=document.createElement('strong');
+  title.textContent=song?.name||'Песня больше не найдена в каталоге';
+  const artist=document.createElement('small');
+  artist.textContent=song?.artist||'Недоступная композиция';
+  label.append(title,artist);
+  const remove=document.createElement('button');remove.type='button';
+  remove.className='rep-selection-remove';remove.textContent='Убрать';
+  remove.setAttribute('aria-label','Убрать из подборки: '+title.textContent);
+  remove.addEventListener('click',()=>{
+   selected.delete(id);draw();renderSelected();
+   if(!selected.size)$('selected-dialog').close();
+  });
+  row.append(label,remove);list.append(row);
+ }
+}
+$('show-selected').addEventListener('click',()=>{renderSelected();$('selected-dialog').showModal()});
+$('close-selected').addEventListener('click',()=>$('selected-dialog').close());
+$('selected-done').addEventListener('click',()=>$('selected-dialog').close());
 $('close-send').addEventListener('click',()=>$('send-dialog').close());
 $('remove-missing').addEventListener('click',()=>{
  const available=new Set(catalogue.map(song=>song.id));
@@ -497,35 +523,88 @@ for(const event of ['pause','play','ended'])audio.addEventListener(event,updateP
 for(const event of ['waiting','stalled'])audio.addEventListener(event,()=>{if(activeSong)$('player-state').textContent='Загрузка аудио…'});
 audio.addEventListener('playing',()=>{$('player-state').textContent=''});
 audio.addEventListener('error',()=>{if(activeSong)$('player-state').textContent='Не удалось загрузить аудио';updatePlayerButtons()});
-$('request-form').addEventListener('submit',async event=>{
- event.preventDefault();
- if(busy)return;
- if(!$('name').value.trim()){status('Введите имя');$('name').focus();return}
- if(!window.SingerPhoneMask.validate($('phone')))return;
- busy=true;updateCount();status('Сохраняем…');
+function currentPurpose(){
+ return document.querySelector('input[name="purpose"]:checked')?.value||'wishes';
+}
+function savedLink(){
+ return location.origin+location.pathname+'#key='+token;
+}
+async function saveSelection(){
+ if(busy||!selected.size)return null;
+ if(!window.SingerPhoneMask.validate($('phone')))return null;
+ busy=true;updateCount();status('Сохраняем подборку…');
  try{
-  const data=await request({action:token?'update':'create',token,name:$('name').value.trim(),phone:$('phone').value.trim(),event:$('event').value.trim(),song_ids:[...selected]});
+  const data=await request({
+   action:token?'update':'create',token,
+   name:$('name').value.trim()||'Гость',
+   phone:$('phone').value.trim(),event:$('event').value.trim(),song_ids:[...selected]
+  });
   if(!token){token=data.token;location.hash='key='+token}
-  // Saving a selection does not mean a personal message has been sent.
-  const savedLink=location.origin+location.pathname+'#key='+token;
-  $('saved').classList.remove('rep-hidden');$('link').value=savedLink;
-  $('saved-title').textContent='Подборка сохранена';
-  $('saved-description').textContent='Напишите Андрею напрямую — текст сообщения уже подготовлен. В мессенджере останется нажать «Отправить».';
-  $('manual-send').classList.remove('rep-hidden');
-  try{
-   const links=window.SingerRequestShare.build({
-    link:savedLink,name:$('name').value,event:$('event').value,
-    phone:$('phone').value,purpose:$('purpose').value,whatsappUrl:whatsapp,telegramWeb
-   });
-   $('share-whatsapp').href=links.whatsapp;$('share-telegram').href=links.telegram;
-   $('telegram-instruction').textContent='Откроется чат с Андреем. Проверьте сообщение и нажмите «Отправить».';
-  }catch(error){
-   $('manual-send').classList.add('rep-hidden');
-   $('saved-description').textContent='Подборка сохранена. Скопируйте ссылку и отправьте её Андрею удобным способом.';
-  }
+  $('link').value=savedLink();
+  $('saved').classList.remove('rep-hidden');
   const when=new Date(data.request.updated_at).toLocaleString('ru-RU');
   status('Подборка сохранена · '+when);
- }catch(e){status('Не удалось сохранить: '+e.message)}finally{busy=false;updateCount()}
+  return savedLink();
+ }catch(error){
+  status('Не удалось сохранить подборку: '+error.message);
+  return null;
+ }finally{busy=false;updateCount()}
+}
+async function shareSelection(service){
+ // Create the new tab in the direct user-click handler, before awaiting the API.
+ const popup=window.open('about:blank','_blank');
+ if(popup){
+  popup.opener=null;
+  try{
+   popup.document.title='Подготовка сообщения';
+   popup.document.body.textContent='Сохраняем подборку. Открываем мессенджер…';
+  }catch{}
+ }
+ const link=await saveSelection();
+ if(!link){if(popup)popup.close();return}
+ $('saved-title').textContent='Подборка сохранена';
+ $('saved-description').textContent='Ссылка пригодится, чтобы вернуться и изменить песни позже.';
+ let url;
+ try{
+  const links=window.SingerRequestShare.build({
+   link,name:$('name').value,event:$('event').value,
+   phone:$('phone').value,purpose:currentPurpose(),whatsappUrl:whatsapp,telegramWeb
+  });
+  url=links[service];
+  if(!url)throw Error('Мессенджер недоступен');
+ }catch(error){
+  if(popup)popup.close();
+  status('Подборка сохранена, но не удалось подготовить сообщение. Скопируйте ссылку.');
+  return;
+ }
+ if(popup&&!popup.closed){
+  popup.location.replace(url);
+  status(service==='max'
+   ? 'Подборка сохранена. В MAX выберите чат Андрея и отправьте сообщение.'
+   : 'Подборка сохранена. В мессенджере нажмите «Отправить».');
+ }else{
+  // Popup blocked: preserve the request and show an accessible manual link.
+  let fallback=$('share-fallback');
+  if(!fallback){
+   fallback=document.createElement('a');fallback.id='share-fallback';
+   fallback.className='rep-save-link';
+   fallback.target='_blank';fallback.rel='noopener noreferrer';
+   $('saved').append(fallback);
+  }
+  fallback.href=url;
+  fallback.textContent='Открыть '+(service==='max'?'MAX':service==='telegram'?'Telegram':'WhatsApp');
+  status('Браузер заблокировал открытие. Нажмите ссылку на мессенджер ниже.');
+ }
+}
+document.querySelectorAll('[data-share]').forEach(button=>
+ button.addEventListener('click',()=>{if(!busy)void shareSelection(button.dataset.share)}));
+$('request-form').addEventListener('submit',async event=>{
+ event.preventDefault();
+ const link=await saveSelection();
+ if(link){
+  $('saved-title').textContent='Подборка сохранена';
+  $('saved-description').textContent='Скопируйте ссылку, чтобы вернуться и изменить песни позже. Сообщение в мессенджере не отправлялось.';
+ }
 });
 $('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('link').value);status('Ссылка скопирована')}catch{$('link').select();status('Выделите ссылку и скопируйте её')}});
 start();
