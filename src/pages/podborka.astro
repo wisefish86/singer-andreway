@@ -20,6 +20,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-label{display:block;font-weight:650;font-size:.88rem}
 .rep-label input{display:block;width:100%;min-height:48px;border:1px solid rgba(255,255,255,.22);background:#071521;color:var(--text);border-radius:12px;padding:12px;margin-top:8px;font:inherit}
 .rep-label input:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+.rep-phone-hint{display:block;margin-top:5px;color:var(--muted);font-size:.76rem;line-height:1.4;font-weight:400}
 .rep-section-title{font-size:1.35rem;margin:0 0 16px}
 :global(.rep-song){display:flex;gap:10px;padding:8px 8px;margin:0;border-bottom:1px solid var(--line);align-items:center;min-height:54px;min-width:0}
 :global(.rep-song input[type="checkbox"]){appearance:none;-webkit-appearance:none;display:grid;place-content:center;width:22px;height:22px;flex:0 0 22px;margin:0;border:2px solid rgba(230,239,247,.76);border-radius:5px;background:rgba(255,255,255,.035);cursor:pointer;transition:background .15s,border-color .15s}
@@ -150,7 +151,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <div class="rep-send-fields">
 <label class="rep-label">Как к вам обращаться? <input id="name" type="text" maxlength="100" autocomplete="name" required /></label>
 <label class="rep-label">Название мероприятия (необязательно) <input id="event" type="text" maxlength="150" placeholder="Например, юбилей" /></label>
-<label class="rep-label">Телефон (необязательно) <input id="phone" type="tel" maxlength="32" autocomplete="tel" /></label>
+<label class="rep-label">Телефон (необязательно) <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="+7 (999) 123-45-67" aria-describedby="phone-hint" /><small id="phone-hint" class="rep-phone-hint">Можно ввести с 8 или +7 либо вставить номер целиком.</small></label>
 </div>
 <div class="rep-form-actions"><button type="submit" id="save" class="rep-action" disabled>Сохранить подборку</button></div>
 <p id="status" class="rep-meta" role="status" aria-live="polite"></p>
@@ -176,6 +177,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 </div>
 <audio id="track-audio" preload="none"></audio>
 </section>
+<script src="/js/phone-mask.js"></script>
 <script define:vars={{api}}>
 let catalogue=[],facets={},selected=new Set(),token=location.hash.startsWith('#key=')?location.hash.slice(5):'',busy=false;
 const $=id=>document.getElementById(id);
@@ -345,7 +347,7 @@ async function start(){
   if(!catalogue.length)throw Error('Каталог пока пуст');
   if(token){
     const saved=await request({action:'get',token});
-    $('name').value=saved.request.customer_name||'';$('phone').value=saved.request.phone||'';$('event').value=saved.request.event_label||'';
+    $('name').value=saved.request.customer_name||'';$('phone').value=window.SingerPhoneMask.formatPhone(saved.request.phone||'');$('event').value=saved.request.event_label||'';
     selected=new Set(saved.request.song_ids||[]);
     $('saved').classList.add('rep-hidden');$('link').value=location.href;
   }
@@ -356,6 +358,7 @@ async function start(){
   a.textContent='Открыть прежний репертуар';a.className='rep-back';$('songs').replaceChildren(a);
  }
 }
+window.SingerPhoneMask.setup($('phone'));
 $('search').addEventListener('input',draw);
 $('clear-filters').addEventListener('click',()=>{selectedFacets.clear();paintChips();draw()});
 $('open-filters').addEventListener('click',()=>$('filter-dialog').showModal());
@@ -388,6 +391,7 @@ $('request-form').addEventListener('submit',async event=>{
  event.preventDefault();
  if(busy)return;
  if(!$('name').value.trim()){status('Введите имя');$('name').focus();return}
+ if(!window.SingerPhoneMask.validate($('phone')))return;
  busy=true;updateCount();status('Сохраняем…');
  try{
   const data=await request({action:token?'update':'create',token,name:$('name').value.trim(),phone:$('phone').value.trim(),event:$('event').value.trim(),song_ids:[...selected]});
