@@ -177,7 +177,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 </div>
 <audio id="track-audio" preload="none"></audio>
 </section>
-<script src="/js/phone-mask.js"></script>
+<script is:inline src="/js/phone-mask.js"></script>
 <script define:vars={{api}}>
 let catalogue=[],facets={},selected=new Set(),token=location.hash.startsWith('#key=')?location.hash.slice(5):'',busy=false;
 const $=id=>document.getElementById(id);
