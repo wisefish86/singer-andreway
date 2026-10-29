@@ -22,6 +22,9 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-label input{display:block;width:100%;min-height:48px;border:1px solid rgba(255,255,255,.22);background:#071521;color:var(--text);border-radius:12px;padding:12px;margin-top:8px;font:inherit}
 .rep-label input:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
 .rep-phone-hint{display:block;margin-top:5px;color:var(--muted);font-size:.76rem;line-height:1.4;font-weight:400}
+.rep-label select{display:block;width:100%;min-height:48px;border:1px solid rgba(255,255,255,.22);background:#071521;color:var(--text);border-radius:12px;padding:10px 12px;margin-top:8px;font:inherit}
+.rep-label select:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+.rep-player-state{display:block;color:var(--accent2);font-size:.76rem;min-height:1em}
 .rep-section-title{font-size:1.35rem;margin:0 0 16px}
 :global(.rep-song){display:flex;gap:10px;padding:8px 8px;margin:0;border-bottom:1px solid var(--line);align-items:center;min-height:54px;min-width:0}
 :global(.rep-song input[type="checkbox"]){appearance:none;-webkit-appearance:none;display:grid;place-content:center;width:22px;height:22px;flex:0 0 22px;margin:0;border:2px solid rgba(230,239,247,.76);border-radius:5px;background:rgba(255,255,255,.035);cursor:pointer;transition:background .15s,border-color .15s}
@@ -157,22 +160,29 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <form id="request-form">
 <div class="rep-send-fields">
 <label class="rep-label">Как к вам обращаться? <input id="name" type="text" maxlength="100" autocomplete="name" required /></label>
+<label class="rep-label">Для чего подборка?
+<select id="purpose" aria-describedby="purpose-hint">
+<option value="wishes">Пожелания к программе мероприятия</option>
+<option value="order">Заказать исполнение песен — уточнить стоимость</option>
+</select>
+<small id="purpose-hint" class="rep-phone-hint">Пожелания заранее бесплатны. Стоимость отдельного заказа обсуждается с Андреем.</small>
+</label>
 <label class="rep-label">Название мероприятия (необязательно) <input id="event" type="text" maxlength="150" placeholder="Например, юбилей" /></label>
 <label class="rep-label">Телефон (необязательно) <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="+7 (999) 123-45-67" aria-describedby="phone-hint" /><small id="phone-hint" class="rep-phone-hint">Можно ввести с 8 или +7 либо вставить номер целиком.</small></label>
 </div>
-<div class="rep-form-actions"><button type="submit" id="save" class="rep-action" disabled>Отправить Андрею</button></div>
+<div class="rep-form-actions"><button type="submit" id="save" class="rep-action" disabled>Сохранить и отправить</button></div>
 <p id="status" class="rep-meta" role="status" aria-live="polite"></p>
 </form>
 <div id="saved" class="rep-panel rep-hidden" aria-live="polite">
 <strong id="saved-title">Подборка сохранена</strong>
 <p id="saved-description" class="rep-dialog-sub">Сохраните ссылку, чтобы позже вернуться и изменить песни.</p>
 <div id="manual-send" class="rep-hidden">
-<p class="rep-dialog-sub">Автоматическое уведомление Андрею не подтверждено. Отправьте подборку самостоятельно:</p>
+<p class="rep-dialog-sub">Сообщение со ссылкой готово. Выберите удобный мессенджер:</p>
 <div class="rep-manual-send" role="group" aria-label="Отправить подборку через мессенджер">
 <a id="share-whatsapp" href="#" target="_blank" rel="noopener noreferrer">WhatsApp</a>
 <a id="share-telegram" href="#" target="_blank" rel="noopener noreferrer">Telegram</a>
 </div>
-<p id="telegram-instruction" class="rep-meta"></p>
+<p id="telegram-instruction" class="rep-meta">В мессенджере останется нажать «Отправить».</p>
 </div>
 <p class="rep-dialog-sub">Ссылка для возврата к подборке и изменения песен:</p>
 <input id="link" class="rep-link" type="text" readonly aria-label="Ссылка на подборку"/>
@@ -188,14 +198,15 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 
 <section id="player" class="rep-player rep-hidden" aria-label="Музыкальный плеер">
 <div class="rep-player-inner">
-<div class="rep-player-track"><button id="player-toggle" class="rep-player-play" type="button" aria-label="Воспроизвести">▶</button><div class="rep-player-title"><span id="player-name" class="rep-player-name"></span><span id="player-artist" class="rep-player-sub"></span></div></div>
+<div class="rep-player-track"><button id="player-toggle" class="rep-player-play" type="button" aria-label="Воспроизвести">▶</button><div class="rep-player-title"><span id="player-name" class="rep-player-name"></span><span id="player-artist" class="rep-player-sub"></span><span id="player-state" class="rep-player-state" role="status" aria-live="polite"></span></div></div>
 <div class="rep-player-buttons"><div class="rep-player-volume"><label for="player-volume">Громкость</label><input id="player-volume" type="range" min="0" max="1" step=".05" value=".8" aria-label="Громкость"/></div><button id="player-close" class="rep-player-close" type="button" aria-label="Закрыть плеер">×</button></div>
 <div class="rep-player-timeline"><input id="player-seek" class="rep-player-seek" type="range" min="0" max="100" step=".1" value="0" aria-label="Перемотка" disabled/></div>
 </div>
-<audio id="track-audio" preload="none"></audio>
+<audio id="track-audio" preload="metadata"></audio>
 </section>
 <script is:inline src="/js/phone-mask.js"></script>
 <script is:inline src="/js/request-share.js"></script>
+<script is:inline src="/js/repertoire-cache.js"></script>
 <script define:vars={{api, whatsapp, telegramWeb}}>
 let catalogue=[],facets={},selected=new Set(),token=location.hash.startsWith('#key=')?location.hash.slice(5):'',busy=false;
 const $=id=>document.getElementById(id);
@@ -203,6 +214,18 @@ const status=m=>{$('status').textContent=m};
 const selectedFacets=new Map();
 const audio=$('track-audio');audio.volume=.8;
 let activeSong=null;
+let warmTimer=null;
+function preparePreview(song){
+ clearTimeout(warmTimer);
+ if(activeSong||document.visibilityState==='hidden')return;
+ const src=safePreview(song);if(!src)return;
+ warmTimer=setTimeout(()=>{
+  if(!activeSong&&audio.src!==src){
+   // Only the hovered/focused song's metadata is preloaded.
+   audio.preload='metadata';audio.src=src;
+  }
+ },180);
+}
 const quick=[
  {label:'Русские',field:'language',values:['Я-рус']},
  {label:'Иностранные',field:'language',values:['Я-англ','Я-ин']},
@@ -292,16 +315,20 @@ function updatePlayerButtons(){
  }
 }
 async function playSong(song){
+ clearTimeout(warmTimer);
  const src=safePreview(song);if(!src)return;
  if(activeSong?.id===song.id){
-  if(audio.paused){try{await audio.play()}catch{status('Не удалось воспроизвести запись')}}else audio.pause();
+  if(audio.paused){try{await audio.play()}catch{$('player-state').textContent='Не удалось воспроизвести запись'}}else audio.pause();
  }else{
-  audio.pause();activeSong=song;audio.src=src;audio.load();
+  audio.pause();activeSong=song;
+  // A source already warming up should not be restarted by load().
+  if(audio.src!==src)audio.src=src;
   $('player').classList.remove('rep-hidden');positionSelectionBar();
   $('player-name').textContent=song.name;
   $('player-artist').textContent=song.artist;
+  $('player-state').textContent='Загрузка аудио…';
   $('player-seek').value=0;$('player-seek').disabled=true;
-  try{await audio.play()}catch{status('Не удалось воспроизвести запись')}
+  try{await audio.play()}catch{if(activeSong?.id===song.id)$('player-state').textContent='Не удалось воспроизвести запись'}
  }
  updatePlayerButtons();
 }
@@ -324,7 +351,10 @@ function draw(){
    const preview=document.createElement('button');preview.type='button';preview.className='rep-preview';
    preview.dataset.songId=song.id;preview.dataset.songName=song.artist+' — '+song.name;
    preview.textContent='▶';preview.setAttribute('aria-label','Прослушать оригинал: '+preview.dataset.songName);
-   preview.addEventListener('click',()=>playSong(song));row.append(preview);
+   preview.addEventListener('pointerenter',()=>preparePreview(song));
+    preview.addEventListener('pointerleave',()=>clearTimeout(warmTimer));
+    preview.addEventListener('focus',()=>preparePreview(song));
+    preview.addEventListener('click',()=>playSong(song));row.append(preview);
   }
   fragment.append(row);
  }
@@ -357,24 +387,41 @@ async function request(body){
  const res=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  const data=await res.json();if(!res.ok)throw new Error(data.error||'Ошибка сохранения');return data;
 }
+function showCatalogue(data){
+ if(!window.SingerRepertoireCache.valid(data))throw Error('Каталог пока пуст');
+ catalogue=data.songs;facets=data.facets;setupFilters();draw();
+}
+function showCatalogueUnavailable(error){
+ $('songs').textContent='Репертуар пока недоступен.';status(error.message);
+ const a=document.createElement('a');a.href='https://magazinot.ru/files/andrey-spoet/index.html';
+ a.textContent='Открыть прежний репертуар';a.className='rep-back';$('songs').replaceChildren(a);
+}
 async function start(){
- try{
-  const res=await fetch('/data/repertoire.public.json',{cache:'no-store'});
-  if(!res.ok)throw Error('Каталог пока не опубликован');
-  const data=await res.json();catalogue=Array.isArray(data.songs)?data.songs:[];facets=data.facets||{};
-  if(!catalogue.length)throw Error('Каталог пока пуст');
-  if(token){
-    const saved=await request({action:'get',token});
-    $('name').value=saved.request.customer_name||'';$('phone').value=window.SingerPhoneMask.formatPhone(saved.request.phone||'');$('event').value=saved.request.event_label||'';
-    selected=new Set(saved.request.song_ids||[]);
-    $('saved').classList.add('rep-hidden');$('link').value=location.href;
+ const cache=window.SingerRepertoireCache;
+ const cached=cache.read();
+ if(cached)showCatalogue(cached); // Instant list on repeat visits.
+ const refresh=(async()=>{
+  try{
+   const response=await fetch('/data/repertoire.public.json',{cache:'no-cache'});
+   if(!response.ok)throw Error('Каталог пока не опубликован');
+   const fresh=await response.json();
+   if(!cache.valid(fresh))throw Error('Каталог пока пуст');
+   if(cache.updated(cached,fresh))showCatalogue(fresh);
+   cache.write(fresh);
+  }catch(error){
+   if(!catalogue.length)showCatalogueUnavailable(error);
+   else status('Показана сохранённая версия каталога — обновление пока недоступно.');
   }
-  setupFilters();draw();
- }catch(e){
-  $('songs').textContent='Репертуар пока недоступен.';status(e.message);
-  const a=document.createElement('a');a.href='https://magazinot.ru/files/andrey-spoet/index.html';
-  a.textContent='Открыть прежний репертуар';a.className='rep-back';$('songs').replaceChildren(a);
- }
+ })();
+ const savedRequest=token?request({action:'get',token}).then(saved=>{
+  $('name').value=saved.request.customer_name||'';
+  $('phone').value=window.SingerPhoneMask.formatPhone(saved.request.phone||'');
+  $('event').value=saved.request.event_label||'';
+  selected=new Set(saved.request.song_ids||[]);
+  $('saved').classList.add('rep-hidden');$('link').value=location.href;
+  if(catalogue.length)draw();
+ }).catch(()=>status('Сохранённую подборку пока не удалось открыть. Попробуйте позже.')):Promise.resolve();
+ await Promise.allSettled([refresh,savedRequest]);
 }
 window.SingerPhoneMask.setup($('phone'));
 $('search').addEventListener('input',draw);
@@ -384,7 +431,7 @@ $('close-filters').addEventListener('click',()=>$('filter-dialog').close());
 $('apply-filters').addEventListener('click',()=>$('filter-dialog').close());
 $('open-send').addEventListener('click',()=>{
  $('send-title').textContent=token?'Изменить подборку':'Отправить подборку';
- $('save').textContent=token?'Отправить изменения Андрею':'Отправить Андрею';
+ $('save').textContent=token?'Сохранить изменения':'Сохранить и отправить';
  $('send-dialog').showModal();
 });
 $('close-send').addEventListener('click',()=>$('send-dialog').close());
@@ -393,8 +440,8 @@ $('remove-missing').addEventListener('click',()=>{
  selected=new Set([...selected].filter(id=>available.has(id)));
  draw();
 });
-$('player-toggle').addEventListener('click',()=>{if(!activeSong)return;if(audio.paused)audio.play().catch(()=>status('Не удалось воспроизвести запись'));else audio.pause()});
-$('player-close').addEventListener('click',()=>{audio.pause();audio.removeAttribute('src');audio.load();activeSong=null;$('player').classList.add('rep-hidden');positionSelectionBar();updatePlayerButtons()});
+$('player-toggle').addEventListener('click',()=>{if(!activeSong)return;if(audio.paused)audio.play().catch(()=>{$('player-state').textContent='Не удалось воспроизвести запись'});else audio.pause()});
+$('player-close').addEventListener('click',()=>{clearTimeout(warmTimer);audio.pause();audio.removeAttribute('src');audio.load();activeSong=null;$('player-state').textContent='';$('player').classList.add('rep-hidden');positionSelectionBar();updatePlayerButtons()});
 $('player-volume').addEventListener('input',e=>{audio.volume=Number(e.target.value)});
 $('player-seek').addEventListener('input',e=>{if(Number.isFinite(audio.duration)&&audio.duration>0)audio.currentTime=Number(e.target.value)/100*audio.duration});
 function progress(){
@@ -404,7 +451,9 @@ function progress(){
 }
 for(const event of ['loadedmetadata','timeupdate','durationchange'])audio.addEventListener(event,progress);
 for(const event of ['pause','play','ended'])audio.addEventListener(event,updatePlayerButtons);
-audio.addEventListener('error',()=>{if(activeSong)status('Ошибка загрузки аудио: попробуйте другую песню');updatePlayerButtons()});
+for(const event of ['waiting','stalled'])audio.addEventListener(event,()=>{if(activeSong)$('player-state').textContent='Загрузка аудио…'});
+audio.addEventListener('playing',()=>{$('player-state').textContent=''});
+audio.addEventListener('error',()=>{if(activeSong)$('player-state').textContent='Не удалось загрузить аудио';updatePlayerButtons()});
 $('request-form').addEventListener('submit',async event=>{
  event.preventDefault();
  if(busy)return;
@@ -414,31 +463,22 @@ $('request-form').addEventListener('submit',async event=>{
  try{
   const data=await request({action:token?'update':'create',token,name:$('name').value.trim(),phone:$('phone').value.trim(),event:$('event').value.trim(),song_ids:[...selected]});
   if(!token){token=data.token;location.hash='key='+token}
-  // The server persists the selection before returning. A messenger fallback is
-  // offered only when automatic owner notification was NOT confirmed.
+  // Saving a selection does not mean a personal message has been sent.
   const savedLink=location.origin+location.pathname+'#key='+token;
-  $('saved').classList.remove('rep-hidden');
-  $('link').value=savedLink;
-  const confirmed=window.SingerRequestShare.isConfirmed(data.owner_notified);
-  $('saved-title').textContent=confirmed?'Уведомление Андрею отправлено':'Подборка сохранена';
-  $('saved-description').textContent=confirmed
-   ? 'Подборка передана в Telegram Андрея. Сохраните ссылку, чтобы позднее изменить песни.'
-   : 'Песни сохранены, но автоматическая отправка не подтверждена.';
-  $('manual-send').classList.toggle('rep-hidden',confirmed);
-  if(!confirmed){
-   try{
-    const links=window.SingerRequestShare.build({
-     link:savedLink,name:$('name').value,event:$('event').value,
-     phone:$('phone').value,whatsappUrl:whatsapp,telegramWeb
-    });
-    $('share-whatsapp').href=links.whatsapp;
-    $('share-telegram').href=links.telegram;
-    $('telegram-instruction').textContent='В Telegram выберите чат Андрея ('+
-      links.telegramUsername+') и нажмите «Отправить».';
-   }catch(error){
-    $('manual-send').classList.add('rep-hidden');
-    $('saved-description').textContent='Автоматическая отправка не подтверждена. Скопируйте ссылку и отправьте её Андрею вручную.';
-   }
+  $('saved').classList.remove('rep-hidden');$('link').value=savedLink;
+  $('saved-title').textContent='Подборка сохранена';
+  $('saved-description').textContent='Напишите Андрею напрямую — текст сообщения уже подготовлен. В мессенджере останется нажать «Отправить».';
+  $('manual-send').classList.remove('rep-hidden');
+  try{
+   const links=window.SingerRequestShare.build({
+    link:savedLink,name:$('name').value,event:$('event').value,
+    phone:$('phone').value,purpose:$('purpose').value,whatsappUrl:whatsapp,telegramWeb
+   });
+   $('share-whatsapp').href=links.whatsapp;$('share-telegram').href=links.telegram;
+   $('telegram-instruction').textContent='Откроется чат с Андреем. Проверьте сообщение и нажмите «Отправить».';
+  }catch(error){
+   $('manual-send').classList.add('rep-hidden');
+   $('saved-description').textContent='Подборка сохранена. Скопируйте ссылку и отправьте её Андрею удобным способом.';
   }
   const when=new Date(data.request.updated_at).toLocaleString('ru-RU');
   status('Подборка сохранена · '+when);
