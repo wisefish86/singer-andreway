@@ -1,6 +1,8 @@
 ---
 import '../styles/global.css';
 import SiteFavicons from '../components/SiteFavicons.astro';
+import Icon from '../components/Icon.astro';
+import BrandIcon from '../components/BrandIcon.astro';
 import { whatsapp, telegramWeb } from '../config/contact-links';
 const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-request';
 ---
@@ -91,7 +93,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-filter-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .rep-filter-toolbar .rep-chips{flex:1;gap:6px}
 :global(.rep-chip){min-height:34px;padding:6px 11px;font-size:.8rem;line-height:1.2}
-.rep-open-filters{border:1px solid rgba(229,184,95,.5);background:rgba(229,184,95,.07);color:var(--accent2);border-radius:11px;padding:9px 12px;font:inherit;font-size:.84rem;font-weight:750;cursor:pointer;min-height:38px;white-space:nowrap}
+.rep-open-filters{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(229,184,95,.5);background:rgba(229,184,95,.07);color:var(--accent2);border-radius:11px;padding:9px 13px;font:inherit;font-size:.84rem;font-weight:750;cursor:pointer;min-height:38px;white-space:nowrap}
 .rep-open-filters:focus-visible,.rep-dialog-close:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
 .rep-dialog{width:min(620px,calc(100vw - 24px));max-height:min(86dvh,900px);margin:auto;padding:0;background:#0d1b29;color:var(--text);border:1px solid rgba(229,184,95,.35);border-radius:20px;box-shadow:0 22px 80px rgba(0,0,0,.6);overflow:auto;overscroll-behavior:contain}
 .rep-dialog::backdrop{background:rgba(1,8,14,.78);backdrop-filter:blur(5px)}
@@ -123,6 +125,31 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-selection-bar .rep-action{white-space:nowrap;min-height:44px}
 .rep-missing{margin:12px 0;color:var(--accent2);font-size:.85rem;line-height:1.5}
 .rep-missing button{margin:7px 0;border:1px solid rgba(229,184,95,.5);background:transparent;color:var(--accent2);padding:7px 10px;border-radius:8px;cursor:pointer;font:inherit}
+.rep-selection-left{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px}
+.rep-selection-show{border:0;background:none;color:var(--accent2);font:inherit;font-size:.85rem;padding:8px 0;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.rep-selection-show:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
+.rep-selection-items{list-style:none;padding:0;margin:16px 0 4px;max-height:58vh;overflow:auto}
+.rep-selection-items li{padding:10px 3px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+.rep-selection-items li span{flex:1;min-width:0}
+.rep-selection-items li small{display:block;color:var(--muted);font-size:.82rem;margin-top:3px}
+.rep-selection-remove{font:inherit;border:1px solid var(--line);background:var(--surface2);color:var(--text);border-radius:9px;padding:7px 10px;cursor:pointer}
+.rep-purpose{border:0;padding:0;margin:0;min-width:0}
+.rep-purpose legend{font-size:.94rem;font-weight:750;margin-bottom:9px}
+.rep-purpose-option{display:flex;align-items:flex-start;gap:12px;border:1px solid var(--line);border-radius:13px;padding:12px 14px;margin-bottom:9px;cursor:pointer;line-height:1.35}
+.rep-purpose-option:has(input:checked){border-color:rgba(229,184,95,.78);background:rgba(229,184,95,.09)}
+.rep-purpose-option input{width:19px;height:19px;flex:0 0 19px;accent-color:var(--accent);margin:2px 0 0}
+.rep-purpose-option strong{display:block;font-size:.9rem}
+.rep-purpose-option small{display:block;color:var(--muted);font-size:.8rem;line-height:1.45;margin-top:5px;font-weight:400}
+.rep-purpose-option:focus-within{outline:2px solid var(--accent2);outline-offset:2px}
+.rep-share-heading{font-size:1.07rem;font-weight:750;margin:16px 0 6px}
+.rep-share-actions{display:flex;flex-wrap:wrap;gap:9px;margin:13px 0 10px}
+.rep-share-actions button{flex:1 1 140px;display:flex;align-items:center;justify-content:center;gap:10px;min-height:49px;padding:10px 13px;background:rgba(229,184,95,.1);border:1px solid rgba(229,184,95,.5);border-radius:12px;color:var(--accent2);font:inherit;font-weight:750;cursor:pointer}
+.rep-share-actions button:focus-visible,.rep-save-link:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
+.rep-share-actions button:disabled,.rep-save-link:disabled{opacity:.55;cursor:wait}
+.rep-share-actions button:hover{background:rgba(229,184,95,.2)}
+.rep-save-link{border:1px solid rgba(229,184,95,.45);background:transparent;color:var(--accent2);font:inherit;font-size:.93rem;font-weight:700;border-radius:12px;min-height:45px;padding:9px 16px;cursor:pointer}
+.rep-save-area{border-top:1px solid var(--line);margin-top:20px;padding-top:17px}
+.rep-saving-notice{font-size:.82rem;color:var(--muted);line-height:1.45}
 .rep-hidden{display:none}
 @media(max-width:480px){.rep-page{padding-top:24px}.rep-heading h1{font-size:2.15rem}.rep-panel{padding:15px}.rep-filter-toolbar{gap:8px}.rep-filter-toolbar .rep-chips{flex-basis:100%}.rep-chips{gap:6px}.rep-open-filters{width:100%}.rep-selection-bar{padding:9px 12px}.rep-selection-count{font-size:.82rem}.rep-selection-bar .rep-action{padding:9px 11px;font-size:.86rem}.rep-dialog-bottom .rep-action{width:100%;margin:0}.rep-dialog-bottom .rep-modal-count{margin-left:auto}}
 
@@ -138,7 +165,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <div id="filter-panel" class="rep-filterbar rep-hidden">
 <div class="rep-filter-toolbar">
 <div id="quick-filters" class="rep-chips" aria-label="Быстрые фильтры"></div>
-<button id="open-filters" class="rep-open-filters" type="button" aria-haspopup="dialog">⚙ Все фильтры <span id="active-filter-count"></span></button>
+<button id="open-filters" class="rep-open-filters" type="button" aria-haspopup="dialog"><Icon name="filter" size={18}/><span>Все фильтры</span><span id="active-filter-count"></span></button>
 </div>
 <dialog id="filter-dialog" class="rep-dialog" aria-labelledby="filter-title">
 <div class="rep-dialog-content">
@@ -158,36 +185,38 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <dialog id="send-dialog" class="rep-dialog" aria-labelledby="send-title">
 <div class="rep-dialog-content">
 <div class="rep-dialog-top"><h2 id="send-title">Отправить подборку</h2><button id="close-send" type="button" class="rep-dialog-close" aria-label="Закрыть форму">×</button></div>
-<p class="rep-dialog-sub">Укажите имя — так будет проще узнать вашу заявку. Телефон и название мероприятия необязательны.</p>
+<p class="rep-dialog-sub">Подборка сохранится автоматически перед открытием мессенджера. Останется проверить сообщение и нажать «Отправить».</p>
 <div id="missing-note" class="rep-missing rep-hidden"><span id="missing-count"></span><button id="remove-missing" type="button">Убрать недоступные из подборки</button></div>
 <form id="request-form">
 <div class="rep-send-fields">
-<label class="rep-label">Как к вам обращаться? <input id="name" type="text" maxlength="100" autocomplete="name" required /></label>
-<label class="rep-label">Для чего подборка?
-<select id="purpose" aria-describedby="purpose-hint">
-<option value="wishes">Пожелания к программе мероприятия</option>
-<option value="order">Заказать исполнение песен — уточнить стоимость</option>
-</select>
-<small id="purpose-hint" class="rep-phone-hint">Пожелания заранее бесплатны. Стоимость отдельного заказа обсуждается с Андреем.</small>
-</label>
+<fieldset class="rep-purpose" aria-describedby="purpose-hint">
+<legend>Для чего нужна подборка?</legend>
+<label class="rep-purpose-option"><input type="radio" name="purpose" value="wishes" checked/><span><strong>Для предстоящего мероприятия</strong><small>Пожелания к программе заранее — бесплатно. Например, к свадьбе или дню рождения.</small></span></label>
+<label class="rep-purpose-option"><input type="radio" name="purpose" value="order"/><span><strong>Заказать песню во время выступления</strong><small>Уточнить стоимость исполнения выбранных песен у Андрея.</small></span></label>
+<small id="purpose-hint" class="rep-phone-hint">Выбор цели влияет только на текст подготовленного сообщения.</small>
+</fieldset>
+<label class="rep-label">Как к вам обращаться? (необязательно) <input id="name" type="text" maxlength="100" autocomplete="name" placeholder="Имя" /></label>
 <label class="rep-label">Название мероприятия (необязательно) <input id="event" type="text" maxlength="150" placeholder="Например, юбилей" /></label>
 <label class="rep-label">Телефон (необязательно) <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="+7 (999) 123-45-67" aria-describedby="phone-hint" /><small id="phone-hint" class="rep-phone-hint">Можно ввести с 8 или +7 либо вставить номер целиком.</small></label>
 </div>
-<div class="rep-form-actions"><button type="submit" id="save" class="rep-action" disabled>Сохранить и отправить</button></div>
+<h3 class="rep-share-heading">Отправить подборку Андрею</h3>
+<p class="rep-dialog-sub">Выберите удобный мессенджер. Сообщение со ссылкой создастся автоматически.</p>
+<div class="rep-share-actions" role="group" aria-label="Отправить подборку Андрею">
+<button type="button" data-share="telegram"><BrandIcon name="telegram" size={22}/>Telegram</button>
+<button type="button" data-share="whatsapp"><BrandIcon name="whatsapp" size={22}/>WhatsApp</button>
+<button type="button" data-share="max"><BrandIcon name="max" size={22}/>MAX</button>
+</div>
+<p class="rep-saving-notice">Telegram и WhatsApp открывают чат с Андреем. В MAX потребуется выбрать чат Андрея из списка.</p>
+<div class="rep-save-area">
+<button type="submit" id="save-link" class="rep-save-link">Сохранить себе подборку</button>
+<p class="rep-saving-notice">Можно сохранить ссылку и вернуться к выбору песен позже, без отправки сообщения.</p>
+</div>
 <p id="status" class="rep-meta" role="status" aria-live="polite"></p>
 </form>
 <div id="saved" class="rep-panel rep-hidden" aria-live="polite">
 <strong id="saved-title">Подборка сохранена</strong>
-<p id="saved-description" class="rep-dialog-sub">Сохраните ссылку, чтобы позже вернуться и изменить песни.</p>
-<div id="manual-send" class="rep-hidden">
-<p class="rep-dialog-sub">Сообщение со ссылкой готово. Выберите удобный мессенджер:</p>
-<div class="rep-manual-send" role="group" aria-label="Отправить подборку через мессенджер">
-<a id="share-whatsapp" href="#" target="_blank" rel="noopener noreferrer">WhatsApp</a>
-<a id="share-telegram" href="#" target="_blank" rel="noopener noreferrer">Telegram</a>
-</div>
-<p id="telegram-instruction" class="rep-meta">В мессенджере останется нажать «Отправить».</p>
-</div>
-<p class="rep-dialog-sub">Ссылка для возврата к подборке и изменения песен:</p>
+<p id="saved-description" class="rep-dialog-sub">Ссылка позволит вернуться и изменить выбор позже.</p>
+<label class="rep-label" for="link">Ссылка для возврата к подборке</label>
 <input id="link" class="rep-link" type="text" readonly aria-label="Ссылка на подборку"/>
 <button id="copy" class="rep-action" type="button">Скопировать ссылку</button>
 <p class="rep-meta">Не публикуйте ссылку: любой, у кого она есть, сможет изменить вашу подборку.</p>
@@ -196,9 +225,20 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 </dialog>
 </main>
 <section id="selection-bar" class="rep-selection-bar rep-hidden" aria-label="Выбранные песни">
-<div class="rep-selection-inner"><span id="selected-total" class="rep-selection-count"></span><button id="open-send" type="button" class="rep-action">Отправить подборку</button></div>
+<div class="rep-selection-inner">
+<div class="rep-selection-left"><span id="selected-total" class="rep-selection-count"></span><button id="show-selected" type="button" class="rep-selection-show" aria-haspopup="dialog">Показать выбранные</button></div>
+<button id="open-send" type="button" class="rep-action">Отправить подборку</button>
+</div>
 </section>
 
+<dialog id="selected-dialog" class="rep-dialog" aria-labelledby="selected-title">
+<div class="rep-dialog-content">
+<div class="rep-dialog-top"><h2 id="selected-title">Выбранные песни</h2><button type="button" id="close-selected" class="rep-dialog-close" aria-label="Закрыть список выбранных">×</button></div>
+<p class="rep-dialog-sub" id="selected-description"></p>
+<ul id="selected-list" class="rep-selection-items"></ul>
+</div>
+<div class="rep-dialog-bottom"><button type="button" id="selected-done" class="rep-action">Готово</button></div>
+</dialog>
 <section id="player" class="rep-player rep-hidden" aria-label="Музыкальный плеер">
 <div class="rep-player-inner">
 <div class="rep-player-track"><button id="player-toggle" class="rep-player-play" type="button" aria-label="Воспроизвести" data-playing="false"></button><div class="rep-player-title"><span id="player-name" class="rep-player-name"></span><span id="player-artist" class="rep-player-sub"></span><span id="player-state" class="rep-player-state" role="status" aria-live="polite"></span></div></div>
