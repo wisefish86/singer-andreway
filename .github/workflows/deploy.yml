@@ -35,6 +35,9 @@ jobs:
 
       - name: Test notification fallback and messenger links
         run: node .github/scripts/verify-request-share.mjs
+      
+      - name: Test cached repertoire and progressive preview markup
+        run: node .github/scripts/verify-repertoire-cache.mjs
 
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
