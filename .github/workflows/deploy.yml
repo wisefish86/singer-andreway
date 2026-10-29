@@ -30,6 +30,9 @@ jobs:
       - name: Verify favicons on every generated page
         run: node .github/scripts/verify-favicons.mjs
 
+      - name: Test phone mask and compiled repertoire form
+        run: node .github/scripts/verify-phone-mask.mjs
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
