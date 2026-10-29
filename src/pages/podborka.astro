@@ -529,7 +529,7 @@ function currentPurpose(){
 function savedLink(){
  return location.origin+location.pathname+'#key='+token;
 }
-async function saveSelection(){
+async function saveSelection(mode='save'){ 
  if(busy||!selected.size)return null;
  if(!window.SingerPhoneMask.validate($('phone')))return null;
  busy=true;updateCount();status('Сохраняем подборку…');
@@ -537,7 +537,8 @@ async function saveSelection(){
   const data=await request({
    action:token?'update':'create',token,
    name:$('name').value.trim()||'Гость',
-   phone:$('phone').value.trim(),event:$('event').value.trim(),song_ids:[...selected]
+   phone:$('phone').value.trim(),event:$('event').value.trim(),song_ids:[...selected],
+   notify_owner:mode==='share'
   });
   if(!token){token=data.token;location.hash='key='+token}
   $('link').value=savedLink();
@@ -560,7 +561,7 @@ async function shareSelection(service){
    popup.document.body.textContent='Сохраняем подборку. Открываем мессенджер…';
   }catch{}
  }
- const link=await saveSelection();
+ const link=await saveSelection('share');
  if(!link){if(popup)popup.close();return}
  $('saved-title').textContent='Подборка сохранена';
  $('saved-description').textContent='Ссылка пригодится, чтобы вернуться и изменить песни позже.';
