@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Icon from '../components/Icon.astro';
 import BrandIcon from '../components/BrandIcon.astro';
+import SiteFavicons from '../components/SiteFavicons.astro';
 
 const phoneDisplay = '+7 918 114-26-93';
 const phoneLink = 'tel:+79181142693';
@@ -27,12 +28,7 @@ const repertoireUrl = '/podborka/';
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#06101a" />
-  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-  <link rel="manifest" href="/site.webmanifest" />
-  <meta name="application-name" content="ANDREY-SPOET" />
-  <meta name="apple-mobile-web-app-title" content="ANDREY-SPOET" />
+  <SiteFavicons />
   <title>{seoTitle}</title>
   <meta name="description" content={seoDescription} />
   <link rel="canonical" href={canonical} />
