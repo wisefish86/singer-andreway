@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.0";
+import { makeM3U8 } from "./playlist.ts";
 const allowed = new Set(["https://singer.andreway.ru","http://localhost:4321","http://127.0.0.1:4321"]);
 const encoder = new TextEncoder();
 async function hash(s:string) {
@@ -6,6 +7,30 @@ async function hash(s:string) {
 }
 function json(data:unknown,status:number,origin:string) {
   return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":origin,"Vary":"Origin","Cache-Control":"no-store","Access-Control-Allow-Headers":"content-type","Access-Control-Allow-Methods":"POST,OPTIONS"}});
+}
+async function ownerChatId(db:any):Promise<string>{
+ const configured=Deno.env.get("SINGER_OWNER_CHAT_ID")||"";
+ if(configured)return configured;
+ const lookup=await db.rpc("singer_owner_chat_id");
+ return !lookup.error&&lookup.data?String(lookup.data):"";
+}
+async function sendPlaylist(botToken:string,chatId:string,ids:string[]):Promise<boolean>{
+ const libraryRoot=Deno.env.get("SINGER_MP3_ROOT");
+ if(!libraryRoot){console.warn("Singer playlist root is not configured");return false;}
+ try{
+  const catalogueResult=await fetch("https://singer.andreway.ru/data/repertoire.public.json",{
+   cache:"no-store",signal:AbortSignal.timeout(8000)
+  });
+  if(!catalogueResult.ok)throw new Error("Catalogue unavailable");
+  const playlist=makeM3U8(ids,await catalogueResult.json(),libraryRoot);
+  const data=new FormData();
+  data.append("chat_id",chatId);
+  data.append("document",new Blob([playlist],{type:"application/octet-stream"}),"Подборка.m3u8");
+  const response=await fetch("https://api.telegram.org/bot"+botToken+"/sendDocument",{
+   method:"POST",body:data,signal:AbortSignal.timeout(12000)
+  });
+  return response.ok&&Boolean((await response.json())?.ok);
+ }catch(error){console.error("Singer playlist delivery failed",error instanceof Error?error.message:"unknown");return false;}
 }
 async function notifyOwner(kind:"create"|"update",name:string,phone:string,event:string,ids:string[],secretToken:string,db:any):Promise<boolean>{
  const botToken=Deno.env.get("SINGER_TELEGRAM_BOT_TOKEN")||"";
@@ -58,8 +83,7 @@ Deno.serve(async req=>{
    const result=await db.rpc("singer_request_get",{p_token_hash:await hash(data.token)});
    if(result.error)return json({error:"server_error"},500,origin);
   if(!result.data)return json({error:"not_found"},404,origin);
-  const ownerNotified=await notifyOwner("update",name,phone,event,ids,data.token,db);
-  return json({request:result.data,owner_notified:ownerNotified},200,origin);
+  return json({request:result.data},200,origin);
   }
   const name=typeof data.name==="string"?data.name.trim():"";
   const phone=typeof data.phone==="string"?data.phone.trim():"";
@@ -71,9 +95,14 @@ Deno.serve(async req=>{
     const result=await db.rpc("singer_request_create",{p_name:name,p_phone:phone,p_event:event,p_song_ids:ids,p_token_hash:await hash(token)});
     if(result.error)return json({error:"server_error"},500,origin);
     const ownerNotified=await notifyOwner("create",name,phone,event,ids,token,db);
-    return json({request:result.data,token,owner_notified:ownerNotified},201,origin);
+    const playlistSent=ownerNotified?await sendPlaylist(Deno.env.get("SINGER_TELEGRAM_BOT_TOKEN")||"",await ownerChatId(db),ids):false;
+    return json({request:result.data,token,owner_notified:ownerNotified,playlist_sent:playlistSent},201,origin);
   }
   const result=await db.rpc("singer_request_update",{p_token_hash:await hash(data.token),p_name:name,p_phone:phone,p_event:event,p_song_ids:ids});
-  return result.error?json({error:"server_error"},500,origin):result.data?json({request:result.data},200,origin):json({error:"not_found"},404,origin);
+  if(result.error)return json({error:"server_error"},500,origin);
+  if(!result.data)return json({error:"not_found"},404,origin);
+  const ownerNotified=await notifyOwner("update",name,phone,event,ids,data.token,db);
+  const playlistSent=ownerNotified?await sendPlaylist(Deno.env.get("SINGER_TELEGRAM_BOT_TOKEN")||"",await ownerChatId(db),ids):false;
+  return json({request:result.data,owner_notified:ownerNotified,playlist_sent:playlistSent},200,origin);
  } catch {return json({error:"bad_request"},400,origin);}
 });
