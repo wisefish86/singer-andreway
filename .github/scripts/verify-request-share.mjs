@@ -35,7 +35,7 @@ for(const purpose of ['wishes','order']){
  assert.equal(max.pathname,'/:share');
  assert.equal(max.searchParams.get('text'),result.message);
  if(purpose==='wishes'){
-  assert.match(result.message,/пожелания к программе/i);
+  assert.match(result.message,/пожелания к (музыкальной )?программе/i);
   assert.doesNotMatch(result.message,/стоимост/i);
  }else{
   assert.match(result.message,/стоимост/i);
