@@ -34,7 +34,7 @@ assert.equal(isolated.SingerRepertoireCache.write(catalogue),false);
 const dist=new URL('../../dist/',import.meta.url).pathname;
 assert.ok(existsSync(dist+'js/repertoire-cache.js'));
 const page=readFileSync(dist+'podborka/index.html','utf8');
-for(const text of ['src="/js/repertoire-cache.js"','id="player-state"','id="purpose"','preload="metadata"']) {
+for(const text of ['src="/js/repertoire-cache.js"','id="player-state"','name="purpose"','preload="metadata"']) {
  assert.ok(page.includes(text),'Missing optimization '+text);
 }
 assert.ok(!page.includes("cache:'no-store'"),'Catalogue must not bypass HTTP cache');
