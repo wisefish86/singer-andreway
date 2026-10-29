@@ -23,8 +23,8 @@
       throw new Error('Unknown request purpose');
     }
     const intro = purpose === 'order'
-      ? 'Интересует исполнение выбранных песен во время выступления. Подскажите, пожалуйста, стоимость.'
-      : 'Направляю пожелания к программе мероприятия. Прошу по возможности учесть эти песни при подготовке.';
+      ? 'Хочу заказать исполнение этих песен во время вашего выступления. Подскажите, пожалуйста, стоимость.'
+      : 'Направляю пожелания к музыкальной программе предстоящего мероприятия. Будет здорово, если получится учесть эти песни.';
     const message = [
       'Андрей, здравствуйте!',
       '',
@@ -42,6 +42,8 @@
       // Official Telegram public-username deep link, unlike share/url,
       // opens the owner's chat rather than asking the visitor to select one.
       telegram: telegram.origin + '/' + recipient + '?text=' + encodeURIComponent(message),
+      // MAX supports prefilled sharing, but requires selecting the recipient.
+      max: 'https://max.ru/:share?text=' + encodeURIComponent(message),
       telegramUsername: '@' + recipient,
       message,
     };
