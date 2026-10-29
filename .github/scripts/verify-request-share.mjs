@@ -30,6 +30,10 @@ for(const purpose of ['wishes','order']){
  assert.ok(result.message.includes('+7 (918) 123-45-67'));
  assert.ok(!result.message.includes('выбрал(а)'));
  assert.equal(result.telegramUsername,'@shevtsov_andrey');
+ const max=new URL(result.max);
+ assert.equal(max.origin,'https://max.ru');
+ assert.equal(max.pathname,'/:share');
+ assert.equal(max.searchParams.get('text'),result.message);
  if(purpose==='wishes'){
   assert.match(result.message,/пожелания к программе/i);
   assert.doesNotMatch(result.message,/стоимост/i);
@@ -46,10 +50,13 @@ const html=readFileSync(dist+'podborka/index.html','utf8');
 for(const term of [
  'src="/js/request-share.js"',
  'src="/js/repertoire-cache.js"',
- 'id="purpose"',
- 'id="share-whatsapp"',
- 'id="share-telegram"',
- 'id="manual-send"',
- 'Сохранить и отправить',
+ 'name="purpose"',
+ 'data-share="telegram"',
+ 'data-share="whatsapp"',
+ 'data-share="max"',
+ 'id="save-link"',
+ 'id="selected-dialog"',
+ 'id="show-selected"',
+ 'Сохранить себе подборку',
 ])assert.ok(html.includes(term),'Repertoire page missing '+term);
-console.log('Request sharing passed: direct Telegram, WhatsApp, free wishes/paid order, safe link, built page');
+console.log('Request sharing passed: Telegram, WhatsApp, MAX and one-action form');
