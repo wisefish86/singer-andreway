@@ -1,4 +1,4 @@
-/* Build opt-in messenger links for a saved repertoire request. No automatic sends. */
+/* Open a direct conversation with a prepared, gender-neutral repertoire message. */
 (() => {
   'use strict';
 
@@ -6,29 +6,44 @@
     return ownerNotified === true;
   }
 
-  function build({ link, name, event, phone, whatsappUrl, telegramWeb }) {
+  function build({ link, name, event, phone, purpose = 'wishes', whatsappUrl, telegramWeb }) {
     if (!/^https:\/\/wa\.me\/\d+$/.test(whatsappUrl)) {
       throw new Error('Invalid WhatsApp destination');
     }
-    const recipient = new URL(telegramWeb).pathname.replace(/^\/+|\/+$/g, '');
-    if (!/^[A-Za-z0-9_]{5,32}$/.test(recipient)) {
+    const telegram = new URL(telegramWeb);
+    const recipient = telegram.pathname.replace(/^\/+|\/+$/g, '');
+    if (telegram.protocol !== 'https:' || telegram.hostname !== 't.me' ||
+        !/^[A-Za-z0-9_]{5,32}$/.test(recipient)) {
       throw new Error('Invalid Telegram destination');
     }
     if (!/^https:\/\/singer\.andreway\.ru\/podborka\/#key=[a-f0-9]{64}$/.test(link)) {
       throw new Error('Request link is unavailable');
     }
-    const lines = [
-      'Здравствуйте, Андрей! Хочу отправить подборку песен.',
-      'Имя: ' + name.trim(),
+    if (!['wishes', 'order'].includes(purpose)) {
+      throw new Error('Unknown request purpose');
+    }
+    const intro = purpose === 'order'
+      ? 'Интересует исполнение выбранных песен во время выступления. Подскажите, пожалуйста, стоимость.'
+      : 'Направляю пожелания к программе мероприятия. Прошу по возможности учесть эти песни при подготовке.';
+    const message = [
+      'Андрей, здравствуйте!',
+      '',
+      intro,
+      '',
+      '🎵 Подборка песен:',
+      link,
+      '',
       event.trim() ? 'Мероприятие: ' + event.trim() : '',
-      phone.trim() ? 'Телефон: ' + phone.trim() : '',
-    ].filter(Boolean);
-    const intro = lines.join('\n');
+      name.trim() ? 'Имя: ' + name.trim() : '',
+      phone.trim() ? 'Телефон для связи: ' + phone.trim() : '',
+    ].filter(line => line !== null && line !== undefined).join('\n').trim();
     return {
-      whatsapp: whatsappUrl + '?text=' + encodeURIComponent(intro + '\nПодборка: ' + link),
-      telegram: 'https://t.me/share/url?url=' + encodeURIComponent(link) +
-        '&text=' + encodeURIComponent(intro),
+      whatsapp: whatsappUrl + '?text=' + encodeURIComponent(message),
+      // Official Telegram public-username deep link, unlike share/url,
+      // opens the owner's chat rather than asking the visitor to select one.
+      telegram: telegram.origin + '/' + recipient + '?text=' + encodeURIComponent(message),
       telegramUsername: '@' + recipient,
+      message,
     };
   }
 
