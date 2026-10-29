@@ -33,6 +33,9 @@ jobs:
       - name: Test phone mask and compiled repertoire form
         run: node .github/scripts/verify-phone-mask.mjs
 
+      - name: Test notification fallback and messenger links
+        run: node .github/scripts/verify-request-share.mjs
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
