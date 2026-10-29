@@ -89,19 +89,20 @@ Deno.serve(async req=>{
   const phone=typeof data.phone==="string"?data.phone.trim():"";
   const event=typeof data.event==="string"?data.event.trim():"";
   const ids=data.song_ids;
+  const notifyRequested=data.notify_owner!==false; // Save-for-later has no owner notification.
   if(name.length<1||name.length>100||phone.length>32||event.length>150||!Array.isArray(ids)||ids.length>250||ids.some((x:unknown)=>typeof x!=="string"||!(/^[a-f0-9]{16}$/.test(x)))) return json({error:"invalid_selection"},400,origin);
   if(op==="create"){
     const token=Array.from(crypto.getRandomValues(new Uint8Array(32))).map(x=>x.toString(16).padStart(2,"0")).join("");
     const result=await db.rpc("singer_request_create",{p_name:name,p_phone:phone,p_event:event,p_song_ids:ids,p_token_hash:await hash(token)});
     if(result.error)return json({error:"server_error"},500,origin);
-    const ownerNotified=await notifyOwner("create",name,phone,event,ids,token,db);
+    const ownerNotified=notifyRequested?await notifyOwner("create",name,phone,event,ids,token,db):false;
     const playlistSent=ownerNotified?await sendPlaylist(Deno.env.get("SINGER_TELEGRAM_BOT_TOKEN")||"",await ownerChatId(db),ids):false;
     return json({request:result.data,token,owner_notified:ownerNotified,playlist_sent:playlistSent},201,origin);
   }
   const result=await db.rpc("singer_request_update",{p_token_hash:await hash(data.token),p_name:name,p_phone:phone,p_event:event,p_song_ids:ids});
   if(result.error)return json({error:"server_error"},500,origin);
   if(!result.data)return json({error:"not_found"},404,origin);
-  const ownerNotified=await notifyOwner("update",name,phone,event,ids,data.token,db);
+  const ownerNotified=notifyRequested?await notifyOwner("update",name,phone,event,ids,data.token,db):false;
   const playlistSent=ownerNotified?await sendPlaylist(Deno.env.get("SINGER_TELEGRAM_BOT_TOKEN")||"",await ownerChatId(db),ids):false;
   return json({request:result.data,owner_notified:ownerNotified,playlist_sent:playlistSent},200,origin);
  } catch {return json({error:"bad_request"},400,origin);}
