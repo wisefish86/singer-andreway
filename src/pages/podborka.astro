@@ -276,6 +276,10 @@ let catalogue=[],facets={},selected=new Set(),token=location.hash.startsWith('#k
 const $=id=>document.getElementById(id);
 const status=m=>{$('status').textContent=m};
 const selectedFacets=new Map();
+const sharedFilter=new URLSearchParams(location.search);
+const presetField=sharedFilter.get('field');
+const presetValue=sharedFilter.get('tag');
+
 const audio=$('track-audio');audio.volume=.8;
 let activeSong=null;
 let warmTimer=null;
@@ -454,7 +458,9 @@ async function request(body){
 }
 function showCatalogue(data){
  if(!window.SingerRepertoireCache.valid(data))throw Error('Каталог пока пуст');
- catalogue=data.songs;facets=data.facets;setupFilters();draw();
+ catalogue=data.songs;facets=data.facets;setupFilters();
+ if(presetField&&presetValue&&permitted(presetField,[presetValue]).length){selectedFacets.set(presetField,new Set([presetValue]));paintChips()}
+ draw();
 }
 function showCatalogueUnavailable(error){
  $('songs').textContent='Репертуар пока недоступен.';status(error.message);
