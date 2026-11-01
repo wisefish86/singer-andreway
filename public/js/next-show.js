@@ -20,6 +20,7 @@ if(eventCard){
    const image=safeUrl(show.image_url);
    if(image){const img=document.createElement('img');img.src=image;img.alt='Фото площадки';img.loading='lazy';img.onerror=()=>img.remove();media.append(img)}
    const destination=safeUrl(show.booking_url)||safeUrl(show.website)||safeUrl(show.map_link);
+   buttons[1].href='#events';buttons[1].addEventListener('click',e=>{e.preventDefault();window.downloadSingerEvent(show,start)});
    if(destination){buttons[0].href=destination;buttons[0].textContent=show.booking_url?'Забронировать столик ↗':'Подробнее о площадке ↗'}
   }catch{date.textContent='Следите за афишей';place.textContent='Актуальное расписание — в Telegram-канале'}
  }
