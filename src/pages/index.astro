@@ -158,7 +158,7 @@ const repertoireUrl = '/podborka/';
     <section class="section" id="live">
       <div class="container">
         <div class="section-head">
-          <div><h2>Здесь и сейчас</h2><p class="lead">Во время выступления можно</p></div>
+          <div><h2>Для гостей</h2><p class="lead">Закажите песню, передайте пожелание или поделитесь моментом выступления</p></div>
         </div>
         <div class="live-actions">
           <button class="action-wide js-contact-sheet" type="button"
@@ -173,24 +173,13 @@ const repertoireUrl = '/podborka/';
             data-template="Хочу передать пару слов:">
             <div class="action-icon"><Icon name="message" size={24} /></div><div class="action-copy"><strong>Сказать пару слов</strong><small>текстом, голосом или видео</small></div><Icon name="arrow" size={20} />
           </button>
+          <button class="action-wide js-contact-sheet" type="button"
+            data-title="Отправить видео"
+            data-copy="Выберите удобный мессенджер и прикрепите снятое видео в чате."
+            data-template="Здравствуйте, Андрей! Делюсь видео с Вашего выступления ❤️">
+            <div class="action-icon"><Icon name="share" size={24} /></div><div class="action-copy"><strong>Отправить видео</strong><small>поделиться моментом выступления</small></div><Icon name="arrow" size={20} />
+          </button>
           <a class="action-wide tip-action" href="#"><div class="action-icon"><Icon name="heart" size={24} /></div><div class="action-copy"><strong>Поблагодарить</strong><small>чаевыми / переводом</small></div><Icon name="arrow" size={20} /></a>
-        </div>
-        <div class="after-live">
-          <div class="after-live-label">После выступления</div>
-          <div class="after-live-grid">
-            <button class="after-action js-contact-sheet" type="button"
-              data-title="Поделиться видео"
-              data-copy="Выберите удобный мессенджер. Видео прикрепите уже в открывшемся чате."
-              data-template="Здравствуйте, Андрей! Делюсь видео с Вашего выступления ❤️">
-              <Icon name="share" size={20} /><span>Поделиться видео</span>
-            </button>
-            <button class="after-action js-contact-sheet" type="button"
-              data-title="Оставить отзыв"
-              data-copy="Спасибо! Выберите, куда удобнее отправить отзыв."
-              data-template="Здравствуйте, Андрей! Хочу оставить отзыв о выступлении:">
-              <Icon name="star" size={20} /><span>Оставить отзыв</span>
-            </button>
-          </div>
         </div>
       </div>
     </section>
