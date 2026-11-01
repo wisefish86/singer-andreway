@@ -270,7 +270,7 @@ const repertoireUrl = '/podborka/';
   </dialog>
 
   <dialog class="contact-sheet" id="contact-sheet">
-    <div class="sheet-handle" aria-hidden="true"></div>
+    <button class="sheet-handle sheet-dismiss" type="button" aria-label="Свернуть окно"></button>
     <div class="sheet-head">
       <div>
         <h3 id="sheet-title">Написать Андрею</h3>
@@ -432,7 +432,8 @@ const repertoireUrl = '/podborka/';
       });
     });
 
-    document.querySelector('.sheet-close')?.addEventListener('click', () => sheet.close());
+    sheet?.querySelector('.sheet-close')?.addEventListener('click', () => sheet.close());
+    sheet?.querySelector('.sheet-dismiss')?.addEventListener('click', () => sheet.close());
     sheet?.addEventListener('click', (event) => {
       if (event.target === sheet) sheet.close();
     });
