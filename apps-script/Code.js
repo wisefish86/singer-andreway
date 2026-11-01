@@ -114,6 +114,7 @@ function eventDetails_(event) {
     venue: read('Заведение|Площадка|Место|Venue') || publicEventHeading_(event).venue,
     address: compactAddress_(read('Адрес|Address') || event.location),
     website,
+    imageUrl: unwrap(linkedUrl('Фото площадки|Фото заведения|Фото|Изображение|Image')),
     bookingUrl: unwrap(linkedUrl('Бронирование столика|Ссылка на бронирование|Бронирование|Забронировать столик')),
     mapLink: /^https?:\/\/(?:yandex\.ru|www\.yandex\.ru|yandex\.com|maps\.yandex\.[a-z]+)\//i.test(mapLink) ? mapLink : '',
     phone: read('Телефон|Тел\\.?|Phone') || (phoneMatch ? phoneMatch[0].trim() : ''),
@@ -212,7 +213,7 @@ function syncSingerNextShow_(events) {
   const body = {show_at: next ? new Date(next.instant).toISOString() : null,
     show: next ? {
       title: next.event.title, date: h.date, time: h.time, venue: d.venue,
-      address: d.address, website: d.website, booking_url: d.bookingUrl, map_link: d.mapLink, phone: d.phone
+      address: d.address, website: d.website, image_url: d.imageUrl, booking_url: d.bookingUrl, map_link: d.mapLink, phone: d.phone
     } : null};
   const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
   if (!token) throw new Error('Missing TELEGRAM_BOT_TOKEN');
