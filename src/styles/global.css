@@ -66,6 +66,10 @@ h1{font-size:clamp(2.7rem,11vw,6.5rem);line-height:.92;letter-spacing:-.045em;ma
 .event-media{min-height:180px;background:
 radial-gradient(circle at 72% 26%,rgba(229,184,95,.28),transparent 32%),
 linear-gradient(155deg,#18374f,#09141e 72%)}
+.event-media{position:relative;display:grid;place-items:center;overflow:hidden}
+.event-media::before{content:"🎤";font-size:4.5rem;opacity:.7}
+.event-media:has(img)::before{display:none}
+.event-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .event-body{padding:18px}
 .event-date{display:inline-flex;gap:10px;align-items:baseline;color:var(--accent2);font-weight:800}
 .event-date strong{font-size:2rem}\n.event-date-soon strong{font-size:1.35rem;letter-spacing:.04em}
