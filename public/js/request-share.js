@@ -42,6 +42,10 @@
       // Official Telegram public-username deep link, unlike share/url,
       // opens the owner's chat rather than asking the visitor to select one.
       telegram: telegram.origin + '/' + recipient + '?text=' + encodeURIComponent(message),
+      telegramApp: 'tg://resolve?domain=' + recipient + '&text=' + encodeURIComponent(message),
+      whatsappApp: 'whatsapp://send?phone=' + new URL(whatsappUrl).pathname.slice(1) + '&text=' + encodeURIComponent(message),
+      // Verified public profile URL; MAX cannot prefill a particular recipient chat.
+      maxDirect: 'https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHMK3ejGSQ',
       // MAX supports prefilled sharing, but requires selecting the recipient.
       max: 'https://max.ru/:share?text=' + encodeURIComponent(message),
       telegramUsername: '@' + recipient,
