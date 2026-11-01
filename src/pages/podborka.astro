@@ -565,7 +565,7 @@ async function saveSelection(mode='save'){
    action:token?'update':'create',token,
    name:$('name').value.trim()||'Гость',
    phone:$('phone').value.trim(),event:$('event').value.trim(),song_ids:[...selected],
-   notify_owner:mode==='share'
+   notify_owner:false // Sharing stays user-controlled; no slow Telegram bot delivery before messenger launch.
   });
   if(!token){token=data.token;location.hash='key='+token}
   $('link').value=savedLink();
