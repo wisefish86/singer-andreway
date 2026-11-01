@@ -128,18 +128,6 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-selection-left{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px}
 .rep-selection-show{border:0;background:none;color:var(--accent2);font:inherit;font-size:.85rem;padding:8px 0;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .rep-selection-show:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
-.rep-selection-items{list-style:none;padding:0;margin:16px 0 4px;max-height:58vh;overflow:auto}
-.rep-selection-items li{display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line)}
-.rep-selection-items .rep-selected-copy{display:flex;align-items:baseline;flex-wrap:wrap;gap:0;flex:1;min-width:0;line-height:1.5;overflow-wrap:anywhere}
-.rep-selection-items .rep-selected-number{flex:none;min-width:2em;margin-right:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-.rep-selection-items .rep-selected-title{font-weight:700;color:var(--text)}
-.rep-selection-items .rep-selected-divider{flex:none;margin:0 10px;color:var(--muted)}
-.rep-selection-items .rep-selected-artist{color:var(--muted);font-size:.9em}
-.rep-selection-remove{display:flex;align-items:center;justify-content:center;flex:none;width:44px;height:44px;border:1px solid var(--line);background:var(--surface2);color:var(--muted);border-radius:10px;padding:10px;cursor:pointer}
-.rep-selection-remove svg{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.rep-selection-remove:hover{color:#ffd3d3;background:rgba(212,76,76,.14);border-color:rgba(212,76,76,.45)}
-.rep-selection-remove:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
-@media(max-width:520px){.rep-selection-items li{gap:8px}.rep-selection-items .rep-selected-number{margin-right:8px}.rep-selection-items .rep-selected-divider{margin:0 8px}}
 .rep-purpose{border:0;padding:0;margin:0;min-width:0}
 .rep-purpose legend{font-size:.94rem;font-weight:750;margin-bottom:9px}
 .rep-purpose-option{display:flex;align-items:flex-start;gap:12px;border:1px solid var(--line);border-radius:13px;padding:12px 14px;margin-bottom:9px;cursor:pointer;line-height:1.35}
@@ -160,6 +148,20 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-hidden{display:none}
 @media(max-width:480px){.rep-page{padding-top:24px}.rep-heading h1{font-size:2.15rem}.rep-panel{padding:15px}.rep-filter-toolbar{gap:8px}.rep-filter-toolbar .rep-chips{flex-basis:100%}.rep-chips{gap:6px}.rep-open-filters{width:100%}.rep-selection-bar{padding:9px 12px}.rep-selection-count{font-size:.82rem}.rep-selection-bar .rep-action{padding:9px 11px;font-size:.86rem}.rep-dialog-bottom .rep-action{width:100%;margin:0}.rep-dialog-bottom .rep-modal-count{margin-left:auto}}
 
+</style>
+<style is:global>
+.rep-selection-items{list-style:none;padding:0;margin:16px 0 4px;max-height:58vh;overflow:auto}
+.rep-selection-items li{display:flex;align-items:center;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line);list-style:none}
+.rep-selection-items .rep-selected-copy{display:flex;align-items:baseline;flex-wrap:wrap;flex:1;min-width:0;line-height:1.5;overflow-wrap:anywhere}
+.rep-selection-items .rep-selected-number{flex:none;min-width:2em;margin-right:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rep-selection-items .rep-selected-title{font-weight:700;color:var(--text)}
+.rep-selection-items .rep-selected-divider{flex:none;margin:0 10px;color:var(--muted)}
+.rep-selection-items .rep-selected-artist{color:var(--muted);font-size:.9em}
+.rep-selection-items .rep-selection-remove{display:flex;align-items:center;justify-content:center;flex:none;width:44px;height:44px;border:1px solid var(--line);background:var(--surface2);color:var(--muted);border-radius:10px;padding:10px;cursor:pointer}
+.rep-selection-items .rep-selection-remove svg{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rep-selection-items .rep-selection-remove:hover{color:#ffd3d3;background:rgba(212,76,76,.14);border-color:rgba(212,76,76,.45)}
+.rep-selection-items .rep-selection-remove:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
+@media(max-width:520px){.rep-selection-items li{gap:8px}.rep-selection-items .rep-selected-number{margin-right:8px}.rep-selection-items .rep-selected-divider{margin:0 8px}}
 </style>
 </head>
 <body><header class="topbar"><div class="container topbar-inner"><a class="brand" href="/">ANDREY-SPOET</a><a class="rep-back" href="/">На главную</a></div></header><main class="container rep-page">
