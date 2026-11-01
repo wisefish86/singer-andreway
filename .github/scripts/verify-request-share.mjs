@@ -25,6 +25,16 @@ for(const purpose of ['wishes','order']){
  assert.equal(tg.origin,'https://t.me');
  assert.equal(tg.pathname,'/shevtsov_andrey','Must open direct owner chat');
  assert.equal(tg.searchParams.get('text'),result.message);
+ const nativeTg=new URL(result.telegramApp);
+ assert.equal(nativeTg.protocol,'tg:');
+ assert.equal(nativeTg.hostname,'resolve');
+ assert.equal(nativeTg.searchParams.get('domain'),'shevtsov_andrey');
+ assert.equal(nativeTg.searchParams.get('text'),result.message);
+ const nativeWa=new URL(result.whatsappApp);
+ assert.equal(nativeWa.protocol,'whatsapp:');
+ assert.equal(nativeWa.searchParams.get('phone'),'79181142693');
+ assert.equal(nativeWa.searchParams.get('text'),result.message);
+ assert.ok(result.maxDirect.startsWith('https://max.ru/u/'));
  assert.ok(result.message.includes('Подборка песен:')&&result.message.includes(link));
  assert.ok(result.message.includes('Юбилей'));
  assert.ok(result.message.includes('+7 (918) 123-45-67'));
@@ -57,6 +67,9 @@ for(const term of [
  'id="save-link"',
  'id="selected-dialog"',
  'id="show-selected"',
+ 'id="share-result"',
+ 'id="share-copy"',
+ 'id="share-max-send"',
  'Сохранить себе подборку',
 ])assert.ok(html.includes(term),'Repertoire page missing '+term);
 console.log('Request sharing passed: Telegram, WhatsApp, MAX and one-action form');
