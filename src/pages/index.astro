@@ -439,5 +439,35 @@ const repertoireUrl = '/podborka/';
 
   </script>
 
+  <script is:inline data-modal-scroll-lock>
+    (() => {
+      const dialogs = [...document.querySelectorAll('dialog')];
+      let savedY = null;
+      const sync = () => {
+        const opened = dialogs.some(dialog => dialog.open);
+        if (opened && savedY === null) {
+          savedY = window.scrollY;
+          document.body.style.position = 'fixed';
+          document.body.style.top = '-' + savedY + 'px';
+          document.body.style.left = '0';
+          document.body.style.right = '0';
+          document.body.style.width = '100%';
+        } else if (!opened && savedY !== null) {
+          const y = savedY;
+          savedY = null;
+          document.body.style.position = '';
+          document.body.style.top = '';
+          document.body.style.left = '';
+          document.body.style.right = '';
+          document.body.style.width = '';
+          window.scrollTo(0, y);
+        }
+      };
+      dialogs.forEach(dialog => {
+        dialog.addEventListener('toggle', sync);
+        dialog.addEventListener('close', sync);
+      });
+    })();
+  </script>
 </body>
 </html>
