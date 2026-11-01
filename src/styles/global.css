@@ -173,7 +173,7 @@ button.action-wide,button.after-action{font:inherit;color:inherit;cursor:pointer
 .after-action{min-height:54px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;align-items:center;justify-content:flex-start;gap:9px;background:rgba(255,255,255,.025);text-align:left}
 .contact-sheet{width:min(100% - 16px,580px);max-height:min(82vh,680px);margin:auto auto 8px;border:1px solid rgba(255,255,255,.13);border-radius:24px 24px 18px 18px;padding:12px 14px 16px;background:#0b1824;color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.55)}
 .contact-sheet::backdrop{background:rgba(1,7,12,.72);backdrop-filter:blur(6px)}
-.sheet-handle{width:42px;height:4px;border-radius:99px;background:rgba(255,255,255,.22);margin:0 auto 13px}
+.sheet-handle{display:block;width:48px;height:6px;border:0;border-radius:99px;background:rgba(255,255,255,.34);margin:0 auto 13px;padding:0;cursor:pointer;touch-action:pan-y} .sheet-handle:focus-visible{outline:2px solid var(--accent2);outline-offset:5px}
 .sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
 .sheet-head h3{margin:0;font-size:1.28rem;letter-spacing:-.02em}
 .sheet-head p{margin:5px 0 0;color:var(--muted);font-size:.84rem}
