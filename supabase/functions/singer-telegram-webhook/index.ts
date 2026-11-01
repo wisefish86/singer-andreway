@@ -162,7 +162,7 @@ Deno.serve(async (request: Request): Promise<Response> => {
       if (input !== null && (!input || typeof input !== "object")) {
         return new Response("Invalid show", {status:400});
       }
-      const fields = ["title","date","time","venue","address","website","booking_url","map_link","phone"];
+      const fields = ["title","date","time","venue","address","website","image_url","booking_url","map_link","phone"];
       const details: Record<string,string> = {};
       for (const key of fields) {
         if (input && input[key] !== undefined && typeof input[key] !== "string") return new Response("Invalid field", {status:400});
