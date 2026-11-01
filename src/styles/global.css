@@ -162,7 +162,7 @@ linear-gradient(145deg,#17334a,#08121b 72%)}
   .video-card{min-width:0}
   .rep-grid{grid-template-columns:repeat(5,1fr)}
   .rep-card{min-height:190px}
-  .live-actions{grid-template-columns:repeat(3,1fr)}
+  .live-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
   .contact{display:grid;grid-template-columns:.9fr 1.1fr}
   .contact-media{min-height:100%}
   .contact-body{padding:30px}
