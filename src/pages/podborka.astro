@@ -132,12 +132,16 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-selection-items li{padding:9px 2px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;list-style:none}
 .rep-selection-items li::marker{content:""}
 .rep-selection-items .rep-selected-copy{flex:1;min-width:0;line-height:1.45;overflow-wrap:anywhere}
-.rep-selected-copy strong{font-weight:700}
+.rep-selected-copy strong{font-weight:700;color:var(--text)}
+.rep-selected-number{display:inline-block;min-width:2.1em;margin-right:8px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rep-selected-copy{display:block}
+.rep-selected-artist{display:inline;color:var(--muted);font-weight:400}
+@media(max-width:520px){.rep-selection-items li{gap:8px}.rep-selected-number{min-width:1.7em;margin-right:6px}.rep-selected-divider{padding:0 6px}}
 .rep-selected-divider{color:var(--accent2);padding:0 8px;user-select:none}
 .rep-selected-artist{color:var(--muted);font-size:.9em}
-.rep-selection-items li span{flex:1;min-width:0}
+.rep-selection-items .rep-selected-copy{flex:1;min-width:0}
 .rep-selection-items li small{display:block;color:var(--muted);font-size:.82rem;margin-top:3px}
-.rep-selection-remove{order:-1;display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;border:1px solid var(--line);background:var(--surface2);color:var(--muted);border-radius:11px;padding:10px;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+ .rep-selection-remove{display:inline-flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;border:1px solid var(--line);background:var(--surface2);color:var(--muted);border-radius:11px;padding:10px;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
 .rep-selection-remove svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .rep-selection-remove:hover{color:#ffd3d3;background:rgba(212,76,76,.14);border-color:rgba(212,76,76,.45)}
 .rep-selection-remove:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
@@ -491,7 +495,9 @@ function renderSelected(){
  list.replaceChildren();
  const index=new Map(catalogue.map(song=>[song.id,song]));
  $('selected-description').textContent='Всего в подборке: '+selected.size+'. Можно убрать песни прямо здесь.';
+ let position=0;
  for(const id of selected){
+  position++;
   const song=index.get(id),row=document.createElement('li'),label=document.createElement('span');
   label.className='rep-selected-copy';
   const title=document.createElement('strong');
@@ -499,7 +505,8 @@ function renderSelected(){
   const separator=document.createElement('span');separator.className='rep-selected-divider';separator.textContent='·';separator.setAttribute('aria-hidden','true');
   const artist=document.createElement('span');artist.className='rep-selected-artist';
   artist.textContent=song?.artist||'Недоступная композиция';
-  label.append(title,separator,artist);
+  const number=document.createElement('span');number.className='rep-selected-number';number.textContent=position+'.';
+  label.append(number,title,separator,artist);
   const remove=document.createElement('button');remove.type='button';
   remove.className='rep-selection-remove';
   remove.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2m3 0-1 14H6L5 6m5 4v7m4-7v7"/></svg>';
@@ -508,7 +515,7 @@ function renderSelected(){
    selected.delete(id);draw();renderSelected();
    if(!selected.size)$('selected-dialog').close();
   });
-  row.append(remove,label);list.append(row);
+  row.append(label,remove);list.append(row);
  }
 }
 $('show-selected').addEventListener('click',()=>{renderSelected();$('selected-dialog').showModal()});
