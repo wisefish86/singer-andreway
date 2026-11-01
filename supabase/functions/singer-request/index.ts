@@ -6,7 +6,7 @@ async function hash(s:string) {
   return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(s)))).map(x=>x.toString(16).padStart(2,"0")).join("");
 }
 function json(data:unknown,status:number,origin:string) {
-  return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":origin,"Vary":"Origin","Cache-Control":"no-store","Access-Control-Allow-Headers":"content-type","Access-Control-Allow-Methods":"POST,OPTIONS"}});
+  return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":origin,"Vary":"Origin","Cache-Control":"no-store","Access-Control-Allow-Headers":"content-type","Access-Control-Allow-Methods":"GET,POST,OPTIONS"}});
 }
 async function ownerChatId(db:any):Promise<string>{
  const configured=Deno.env.get("SINGER_OWNER_CHAT_ID")||"";
@@ -68,6 +68,15 @@ Deno.serve(async req=>{
  const origin=req.headers.get("origin")||"";
  if(!allowed.has(origin)) return new Response("Forbidden",{status:403});
  if(req.method==="OPTIONS") return json({},200,origin);
+ if(req.method==="GET" && new URL(req.url).searchParams.get("public_show")==="1") {
+  try {
+   const db=createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,{auth:{persistSession:false}});
+   const {data,error}=await db.from("singer_next_show").select("show_at,details").eq("id",1).maybeSingle();
+   if(error)return json({error:"unavailable"},503,origin);
+   const upcoming=data?.show_at && Date.parse(data.show_at)>Date.now();
+   return json({show:upcoming?{...data.details,show_at:data.show_at}:null},200,origin);
+  } catch {return json({error:"unavailable"},503,origin);}
+ }
  if(req.method!=="POST") return json({error:"method_not_allowed"},405,origin);
  if(Number(req.headers.get("content-length")||0)>20000) return json({error:"too_large"},413,origin);
  try {
