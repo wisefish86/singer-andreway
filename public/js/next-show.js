@@ -1,1 +1,27 @@
-// Public upcoming performance card.
+const eventCard=document.querySelector('#events .event-card');
+if(eventCard){
+ const date=eventCard.querySelector('.event-date');
+ const title=eventCard.querySelector('.event-title');
+ const place=eventCard.querySelector('.event-place');
+ const media=eventCard.querySelector('.event-media');
+ const buttons=eventCard.querySelectorAll('.event-actions .btn');
+ const safeUrl=value=>{try{const url=new URL(value);return url.protocol==='https:'?url.href:''}catch{return ''}};
+ async function loadNextShow(){
+  try{
+   const response=await fetch('https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-request?public_show=1');
+   if(!response.ok)throw Error('unavailable');
+   const {show}=await response.json();
+   if(!show){date.textContent='Следите за афишей';place.textContent='Новые даты появятся здесь';return}
+   const start=new Date(show.show_at);
+   if(!Number.isFinite(start.getTime()))throw Error('invalid date');
+   date.textContent=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',weekday:'short'}).format(start)+(show.time?' · '+show.time:'');
+   title.textContent=show.venue||'Выступление Андрея';
+   place.textContent=show.address||'Место выступления уточняется';
+   const image=safeUrl(show.image_url);
+   if(image){const img=document.createElement('img');img.src=image;img.alt='Фото площадки';img.loading='lazy';img.onerror=()=>img.remove();media.append(img)}
+   const destination=safeUrl(show.booking_url)||safeUrl(show.website)||safeUrl(show.map_link);
+   if(destination){buttons[0].href=destination;buttons[0].textContent=show.booking_url?'Забронировать столик ↗':'Подробнее о площадке ↗'}
+  }catch{date.textContent='Следите за афишей';place.textContent='Актуальное расписание — в Telegram-канале'}
+ }
+ loadNextShow();
+}
