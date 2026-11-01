@@ -434,6 +434,15 @@ const repertoireUrl = '/podborka/';
 
     sheet?.querySelector('.sheet-close')?.addEventListener('click', () => sheet.close());
     sheet?.querySelector('.sheet-dismiss')?.addEventListener('click', () => sheet.close());
+    const dismissHandle = sheet?.querySelector('.sheet-dismiss');
+    let swipeStartY = null;
+    dismissHandle?.addEventListener('touchstart', (event) => {
+      swipeStartY = event.touches[0]?.clientY ?? null;
+    }, { passive: true });
+    dismissHandle?.addEventListener('touchend', (event) => {
+      if (swipeStartY !== null && (event.changedTouches[0]?.clientY ?? swipeStartY) - swipeStartY > 45) sheet.close();
+      swipeStartY = null;
+    }, { passive: true });
     sheet?.addEventListener('click', (event) => {
       if (event.target === sheet) sheet.close();
     });
