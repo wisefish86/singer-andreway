@@ -310,3 +310,45 @@ dialog::backdrop{touch-action:none}
 .telegram-sheet[data-platform="max"] .telegram-qr-frame{box-shadow:0 0 0 1px rgba(120,163,239,.42),0 12px 38px rgba(66,122,222,.12)}
 .telegram-sheet[data-platform="vk"] .telegram-open-app{background:linear-gradient(125deg,#8fc4ff,#4b95e9);color:#071a30}
 .telegram-sheet[data-platform="vk"] .telegram-qr-frame{box-shadow:0 0 0 1px rgba(70,149,230,.4),0 12px 38px rgba(50,115,202,.12)}
+
+
+/* Contact stage photo: original vertical portrait, adaptive framing.
+   Image is uploaded manually to /images/ because FTP deployment excludes that directory. */
+.contact-media{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  background:#101b23;
+  min-height:420px;
+}
+.contact-media::before,
+.contact-media::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:url('/images/contact-stage.webp');
+  background-repeat:no-repeat;
+  pointer-events:none;
+}
+.contact-media::before{
+  background-size:cover;
+  background-position:center;
+  filter:blur(20px) brightness(.48);
+  transform:scale(1.12);
+  z-index:-2;
+}
+.contact-media::after{
+  background-size:contain;
+  background-position:center center;
+  z-index:-1;
+}
+@media (min-width: 769px){
+  .contact-media{min-height:100%;}
+}
+@media (max-width: 768px){
+  .contact-media{min-height:0;aspect-ratio:16 / 9;}
+  .contact-media::after{
+    background-size:auto 133%;
+    background-position:center 25%;
+  }
+}
