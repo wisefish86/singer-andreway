@@ -338,7 +338,7 @@ dialog::backdrop{touch-action:none}
   z-index:-2;
 }
 .contact-media::after{
-  background-size:contain;
+  background-size:cover;
   background-position:center center;
   z-index:-1;
 }
