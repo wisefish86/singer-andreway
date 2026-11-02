@@ -348,7 +348,7 @@ dialog::backdrop{touch-action:none}
 @media (max-width: 768px){
   .contact-media{min-height:0;aspect-ratio:16 / 9;}
   .contact-media::after{
-    background-size:auto 133%;
-    background-position:center 25%;
+    background-size:auto 170%;
+    background-position:center top;
   }
 }
