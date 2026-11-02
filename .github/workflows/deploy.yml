@@ -39,6 +39,9 @@ jobs:
       - name: Test cached repertoire and progressive preview markup
         run: node .github/scripts/verify-repertoire-cache.mjs
 
+      - name: Verify desktop social QR links and MAX profile format
+        run: node .github/scripts/verify-social-qr.mjs
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
