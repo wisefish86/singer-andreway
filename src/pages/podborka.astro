@@ -223,8 +223,9 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <div class="rep-share-actions" role="group" aria-label="Отправить подборку Андрею">
 <button type="button" data-share="telegram"><BrandIcon name="telegram" size={22}/>Telegram</button>
 <button type="button" data-share="whatsapp"><BrandIcon name="whatsapp" size={22}/>WhatsApp</button>
+<button type="button" data-share="sms">SMS</button>
 </div>
-<p class="rep-saving-notice">Telegram и WhatsApp подготовят сообщение для чата с Андреем. Отправку подтвердите в мессенджере.</p>
+<p class="rep-saving-notice">Telegram и WhatsApp откроют чат с готовым сообщением. SMS откроет приложение сообщений с короткой ссылкой на подборку (может взиматься плата по тарифу).</p>
 <div class="rep-save-area">
 <button type="submit" id="save-link" class="rep-save-link">Сохранить себе подборку</button>
 <p class="rep-saving-notice">Можно сохранить ссылку и вернуться к выбору песен позже, без отправки сообщения.</p>
@@ -604,17 +605,19 @@ async function shareSelection(service){
   status('Подборка сохранена, но сообщение не удалось подготовить. Скопируйте ссылку ниже.');
   return;
  }
- pendingShareMessage=links.message;
+ pendingShareMessage=service==='sms'?links.smsMessage:links.message;
  const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
- const app=service==='telegram'?links.telegramApp:links.whatsappApp;
+ const app=service==='telegram'?links.telegramApp:service==='sms'?links.sms:links.whatsappApp;
  const web=links[service];
  const open=$('share-open');
  // Avoid a temporary page and an async popup redirect; user explicitly opens the app after save.
- open.href=mobile?app:web;
- open.target=mobile?'_self':'_blank';
- open.textContent='Открыть '+(service==='telegram'?'Telegram':'WhatsApp')+' с сообщением';
+ open.href=service==='sms'?links.sms:(mobile?app:web);
+ open.target=service==='sms'||mobile?'_self':'_blank';
+ open.textContent=service==='sms'?'Открыть SMS с подборкой':'Открыть '+(service==='telegram'?'Telegram':'WhatsApp')+' с сообщением';
  $('share-result-title').textContent='Подборка сохранена — осталось отправить';
- $('share-result-help').textContent='Нажмите кнопку ниже: на телефоне откроется приложение с подготовленным сообщением. Проверьте текст и нажмите «Отправить». Если приложение не открылось, скопируйте сообщение.';
+ $('share-result-help').textContent=service==='sms'
+  ? 'На телефоне откроется приложение SMS. Проверьте, что короткое сообщение со ссылкой заполнено, затем нажмите «Отправить». На некоторых устройствах (особенно iPhone) текст может не подставиться — тогда используйте «Скопировать сообщение». SMS может быть платным.'
+  : 'Нажмите кнопку ниже: на телефоне откроется приложение с подготовленным сообщением. Проверьте текст и нажмите «Отправить». Если приложение не открылось, скопируйте сообщение.';
  $('share-result').hidden=false;
  $('share-result').scrollIntoView({behavior:'smooth',block:'nearest'});
  status('Подборка сохранена. Выберите действие ниже.');
