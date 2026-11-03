@@ -220,6 +220,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <label class="rep-label">Название мероприятия (необязательно) <input id="event" type="text" maxlength="150" placeholder="Например, юбилей" /></label>
 <label class="rep-label">Телефон (необязательно) <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="+7 (999) 123-45-67" aria-describedby="phone-hint" /><small id="phone-hint" class="rep-phone-hint">Можно ввести с 8 или +7 либо вставить номер целиком.</small></label>
 </div>
+<p class="rep-dialog-sub">Если вы сейчас на выступлении, можете просто подойти к Андрею во время перерыва и договориться лично — отправлять сообщение необязательно.</p>
 <h3 class="rep-share-heading">Отправить подборку Андрею</h3>
 <p class="rep-dialog-sub">Выберите способ связи. Сообщение со ссылкой создастся автоматически.</p>
 <div class="rep-share-actions" role="group" aria-label="Отправить подборку Андрею">
@@ -230,11 +231,11 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <p class="rep-saving-notice">Telegram и WhatsApp откроют чат с готовым сообщением. SMS откроет приложение сообщений с короткой ссылкой на подборку.</p>
 <div class="rep-save-area">
 <button type="submit" id="save-link" class="rep-save-link">Сохранить себе подборку</button>
-<p class="rep-saving-notice">Можно сохранить ссылку и вернуться к выбору песен позже, без отправки сообщения.</p>
+<p class="rep-saving-notice">Сохраним подборку и попробуем скопировать ссылку. Вставьте её в заметки или отправьте себе, чтобы позже вернуться к песням. Андрею ничего не отправится.</p>
 </div>
 <p id="status" class="rep-meta" role="status" aria-live="polite"></p>
 <div id="share-result" class="rep-share-result" hidden aria-live="polite"><strong id="share-result-title">Подборка сохранена</strong><p id="share-result-help"></p><a id="share-open" href="#" rel="noopener">Открыть мессенджер</a><button type="button" id="share-copy">Скопировать сообщение</button></div>
-<p class="rep-dialog-sub">Если вы сейчас на выступлении, можно подойти к Андрею во время перерыва и договориться лично. Это удобно, например, когда хочется устроить сюрприз. Или отправьте пожелания сообщением.</p>
+
 </form>
 <div id="saved" class="rep-panel rep-hidden" aria-live="polite">
 <strong id="saved-title">Подборка сохранена</strong>
@@ -644,9 +645,14 @@ document.querySelectorAll('[data-share]').forEach(button=>
 $('request-form').addEventListener('submit',async event=>{
  event.preventDefault();
  const link=await saveSelection();
- if(link){
-  $('saved-title').textContent='Подборка сохранена';
-  $('saved-description').textContent='Скопируйте ссылку, чтобы вернуться и изменить песни позже. Сообщение в мессенджере не отправлялось.';
+ if(!link)return;
+ $('saved-title').textContent='Подборка сохранена';
+ $('saved-description').textContent='Вставьте ссылку в заметки или отправьте себе, чтобы вернуться к выбранным песням. Андрею сообщение не отправлялось.';
+ try{
+  await navigator.clipboard.writeText(link);
+  status('Ссылка скопирована. Вставьте её в заметки или отправьте себе.');
+ }catch{
+  status('Подборка сохранена. Нажмите «Скопировать ссылку» ниже, чтобы сохранить её себе.');
  }
 });
 $('copy').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('link').value);status('Ссылка скопирована')}catch{$('link').select();status('Выделите ссылку и скопируйте её')}});
