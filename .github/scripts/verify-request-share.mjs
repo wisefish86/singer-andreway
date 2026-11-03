@@ -32,6 +32,12 @@ for(const purpose of ['wishes','order']){
  assert.equal(wa.origin,'https://wa.me');
  assert.equal(wa.pathname,'/79181142693');
  assert.equal(wa.searchParams.get('text'),result.message);
+ const sms=new URL(result.sms);
+ assert.equal(sms.protocol,'sms:');
+ assert.equal(sms.pathname,'+79181142693');
+ assert.equal(sms.searchParams.get('body'),result.smsMessage);
+ assert.equal(result.smsMessage,'Подборка песен: '+link);
+ assert.ok(!result.smsMessage.includes('Юбилей'));
  const tg=new URL(result.telegram);
  assert.equal(tg.origin,'https://t.me');
  assert.equal(tg.pathname,'/shevtsov_andrey','Must open direct owner chat');
@@ -74,6 +80,7 @@ for(const term of [
  'name="purpose"',
  'data-share="telegram"',
  'data-share="whatsapp"',
+ 'data-share="sms"',
  'id="save-link"',
  'id="selected-dialog"',
  'id="show-selected"',
@@ -84,4 +91,4 @@ for(const term of [
 assert.ok(!html.includes('data-share="max"'));
 assert.ok(!html.includes('id="share-max-send"'));
 assert.ok(html.includes('SingerRequestShare.defaultPurpose()'));
-console.log('Request sharing passed: Telegram, WhatsApp and Krasnodar-time purpose selection');
+console.log('Request sharing passed: Telegram, WhatsApp, SMS and Krasnodar-time purpose selection');
