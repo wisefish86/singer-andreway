@@ -53,5 +53,17 @@
     };
   }
 
-  window.SingerRequestShare = Object.freeze({ build, isConfirmed });
+  // Use the venue's Krasnodar clock, not the visitor's device time zone.
+  function defaultPurpose(now = new Date()) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Moscow', weekday: 'short', hour: '2-digit',
+      hourCycle: 'h23'
+    }).formatToParts(now);
+    const weekday = parts.find(part => part.type === 'weekday')?.value;
+    const hour = Number(parts.find(part => part.type === 'hour')?.value);
+    return (weekday === 'Fri' || weekday === 'Sat') && hour >= 20 && hour < 23
+      ? 'order' : 'wishes';
+  }
+
+  window.SingerRequestShare = Object.freeze({ build, isConfirmed, defaultPurpose });
 })();
