@@ -38,6 +38,8 @@
       phone.trim() ? 'Телефон для связи: ' + phone.trim() : '',
     ].filter(line => line !== null && line !== undefined).join('\n').trim();
     return {
+      smsMessage: 'Подборка песен: ' + link,
+      sms: 'sms:+79181142693?body=' + encodeURIComponent('Подборка песен: ' + link),
       whatsapp: whatsappUrl + '?text=' + encodeURIComponent(message),
       // Official Telegram public-username deep link, unlike share/url,
       // opens the owner's chat rather than asking the visitor to select one.
