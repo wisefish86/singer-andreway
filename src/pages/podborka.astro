@@ -96,9 +96,10 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-filter-toolbar #quick-buttons,.rep-filter-toolbar #active-filter-tags{display:flex;flex:0 1 auto;flex-wrap:wrap;gap:6px}
 .rep-show-all{min-height:34px;border:1px solid rgba(229,184,95,.5);border-radius:999px;background:transparent;color:var(--accent2);font:inherit;font-weight:700;font-size:.8rem;padding:6px 11px;white-space:nowrap;cursor:pointer}
 .rep-show-all[aria-pressed="true"],.rep-filter-toolbar .rep-chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#152330}
-.rep-active-tag{min-height:34px;display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(229,184,95,.68);background:rgba(229,184,95,.15);border-radius:999px;padding:6px 11px;color:var(--text);font:inherit;font-size:.8rem;font-weight:650;cursor:pointer}
-.rep-active-tag span{font-size:1rem;line-height:1;color:var(--accent2)}
-.rep-active-tag:focus-visible,.rep-show-all:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
+:global(.rep-active-tag){min-height:34px;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--accent);background:var(--accent);border-radius:999px;padding:6px 11px;color:#152330;font:inherit;font-size:.8rem;font-weight:650;line-height:1.2;cursor:pointer;white-space:nowrap;transition:filter .14s}
+:global(.rep-active-tag span){font-size:1rem;line-height:1;color:#152330;font-weight:800}
+:global(.rep-active-tag:focus-visible),.rep-show-all:focus-visible{outline:2px solid var(--text);outline-offset:3px}
+:global(.rep-active-tag:hover){filter:brightness(1.1)}
 :global(.rep-chip){min-height:34px;padding:6px 11px;font-size:.8rem;line-height:1.2}
 .rep-open-filters{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(229,184,95,.5);background:rgba(229,184,95,.07);color:var(--accent2);border-radius:11px;padding:9px 13px;font:inherit;font-size:.84rem;font-weight:750;cursor:pointer;min-height:38px;white-space:nowrap}
 .rep-open-filters:focus-visible,.rep-dialog-close:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
@@ -382,9 +383,9 @@ function renderActiveFilters(){
   const labels=selectedValues.map(value=>(facets[field]||[]).find(f=>f.value===value)?.label||value);
   const tag=document.createElement('button');
   tag.type='button';tag.className='rep-active-tag';
-  const label=document.createTextNode((extraTitles[field]||'Фильтр')+': '+labels.join(', '));
+  const label=document.createTextNode(labels.join(', '));
   const close=document.createElement('span');close.textContent='×';close.setAttribute('aria-hidden','true');
-  tag.append(label,close);tag.setAttribute('aria-label','Убрать фильтр: '+labels.join(', '));
+  tag.append(label,close);tag.setAttribute('aria-label','Убрать фильтр '+(extraTitles[field]||'')+': '+labels.join(', '));
   tag.addEventListener('click',()=>{clearPresetFromUrl();selectedFacets.delete(field);paintChips();draw()});
   target.append(tag);
  }
