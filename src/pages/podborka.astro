@@ -592,9 +592,21 @@ async function saveSelection(mode='save'){
 }
 let pendingShareMessage='';
 async function shareSelection(service){
+ // Open the destination tab while the user gesture is still active;
+ // opening one after awaiting the save is often blocked by popup protection.
+ const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+ const destinationTab=!mobile && service!=='sms' ? window.open('about:blank','_blank') : null;
+ if(destinationTab){
+  destinationTab.opener=null;
+  destinationTab.document.title='Подготавливаем подборку';
+  destinationTab.document.body.textContent='Подготавливаем сообщение…';
+ }
  $('share-result').hidden=true;
  const link=await saveSelection('share');
- if(!link)return;
+ if(!link){
+  if(destinationTab && !destinationTab.closed)destinationTab.close();
+  return;
+ }
  let links;
  try{
   links=window.SingerRequestShare.build({
@@ -602,25 +614,36 @@ async function shareSelection(service){
    phone:$('phone').value,purpose:currentPurpose(),whatsappUrl:whatsapp,telegramWeb
   });
  }catch{
+  if(destinationTab && !destinationTab.closed)destinationTab.close();
   status('Подборка сохранена, но сообщение не удалось подготовить. Скопируйте ссылку ниже.');
   return;
  }
  pendingShareMessage=service==='sms'?links.smsMessage:links.message;
- const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
- const app=service==='telegram'?links.telegramApp:service==='sms'?links.sms:links.whatsappApp;
- const web=links[service];
+ // HTTPS links are more reliable after an asynchronous save than custom app
+ // schemes, which some mobile browsers reject without a direct user gesture.
+ const destination=service==='sms'?links.sms:links[service];
+ if(destinationTab && !destinationTab.closed){
+  destinationTab.location.replace(destination);
+  status('Подборка сохранена. Проверьте сообщение в открывшемся чате и отправьте.');
+  return;
+ }
+ if(mobile){
+  status('Подборка сохранена. Открываем сообщение…');
+  window.location.assign(destination);
+  return;
+ }
+ // Fallback for desktops blocking pop-ups and SMS links:
+ // keep a functional direct action rather than silently losing the request.
  const open=$('share-open');
- // Avoid a temporary page and an async popup redirect; user explicitly opens the app after save.
- open.href=service==='sms'?links.sms:(mobile?app:web);
- open.target=service==='sms'||mobile?'_self':'_blank';
+ open.href=destination;
+ open.target=service==='sms'?'_self':'_blank';
  open.textContent=service==='sms'?'Открыть SMS с подборкой':'Открыть '+(service==='telegram'?'Telegram':'WhatsApp')+' с сообщением';
- $('share-result-title').textContent='Подборка сохранена — осталось отправить';
+ $('share-result-title').textContent='Подборка сохранена';
  $('share-result-help').textContent=service==='sms'
-  ? 'На телефоне откроется приложение SMS. Проверьте, что короткое сообщение со ссылкой заполнено, затем нажмите «Отправить». На некоторых устройствах (особенно iPhone) текст может не подставиться — тогда используйте «Скопировать сообщение». SMS может быть платным.'
-  : 'Нажмите кнопку ниже: на телефоне откроется приложение с подготовленным сообщением. Проверьте текст и нажмите «Отправить». Если приложение не открылось, скопируйте сообщение.';
+  ? 'На этом устройстве SMS не открылось автоматически. Нажмите кнопку ниже или скопируйте сообщение.'
+  : 'Браузер заблокировал автоматическое открытие чата. Нажмите кнопку ниже.';
  $('share-result').hidden=false;
  $('share-result').scrollIntoView({behavior:'smooth',block:'nearest'});
- status('Подборка сохранена. Выберите действие ниже.');
 }
 $('share-copy').addEventListener('click',async()=>{
  try{await navigator.clipboard.writeText(pendingShareMessage);status('Сообщение скопировано. Вставьте его в чат Андрея.')}
