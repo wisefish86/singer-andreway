@@ -92,6 +92,14 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-filterbar{padding:14px 0 10px}
 .rep-filter-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .rep-filter-toolbar .rep-chips{flex:1;gap:6px}
+.rep-active-filters{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 0}
+.rep-active-filters[hidden]{display:none!important}
+.rep-active-label{color:var(--muted);font-size:.83rem}
+.rep-active-tags{display:contents}
+.rep-active-tag{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(229,184,95,.68);background:rgba(229,184,95,.13);border-radius:999px;padding:7px 10px;color:var(--text);font:inherit;font-size:.8rem;cursor:pointer}
+.rep-active-tag span{font-size:1rem;line-height:1;color:var(--accent2)}
+.rep-show-all{min-height:36px;border:1px solid rgba(229,184,95,.52);border-radius:10px;background:rgba(229,184,95,.08);color:var(--accent2);font:inherit;font-weight:750;font-size:.84rem;padding:7px 12px;cursor:pointer}
+.rep-active-tag:focus-visible,.rep-show-all:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
 :global(.rep-chip){min-height:34px;padding:6px 11px;font-size:.8rem;line-height:1.2}
 .rep-open-filters{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(229,184,95,.5);background:rgba(229,184,95,.07);color:var(--accent2);border-radius:11px;padding:9px 13px;font:inherit;font-size:.84rem;font-weight:750;cursor:pointer;min-height:38px;white-space:nowrap}
 .rep-open-filters:focus-visible,.rep-dialog-close:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
@@ -188,6 +196,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <div id="quick-filters" class="rep-chips" aria-label="Быстрые фильтры"></div>
 <button id="open-filters" class="rep-open-filters" type="button" aria-haspopup="dialog"><Icon name="filter" size={18}/><span>Все фильтры</span><span id="active-filter-count"></span></button>
 </div>
+<div id="active-filters" class="rep-active-filters" aria-label="Применённые фильтры" hidden><span class="rep-active-label">Сейчас показаны:</span><span id="active-filter-tags" class="rep-active-tags"></span><button id="show-all" type="button" class="rep-show-all">Показать все песни</button></div>
 <dialog id="filter-dialog" class="rep-dialog" aria-labelledby="filter-title">
 <div class="rep-dialog-content">
 <div class="rep-dialog-top"><h2 id="filter-title">Фильтры репертуара</h2><button type="button" class="rep-dialog-close" id="close-filters" aria-label="Закрыть фильтры">×</button></div>
@@ -353,7 +362,32 @@ function paintChips(){
   button.setAttribute('aria-pressed',String(Boolean(values.length)&&values.every(x=>selectedFacets.get(field)?.has(x))));
  }
  $('clear-filters').hidden=selectedFacets.size===0;
- $('active-filter-count').textContent=selectedFacets.size?'· '+[...selectedFacets.values()].reduce((n,x)=>n+x.size,0):'';
+ renderActiveFilters();
+  $('active-filter-count').textContent=selectedFacets.size?'· '+[...selectedFacets.values()].reduce((n,x)=>n+x.size,0):'';
+}
+function renderActiveFilters(){
+ const target=$('active-filter-tags');
+ target.replaceChildren();
+ for(const [field,values] of selectedFacets){
+  const labels=[...values].map(value=>(facets[field]||[]).find(f=>f.value===value)?.label||value);
+  const tag=document.createElement('button');
+  tag.type='button';tag.className='rep-active-tag';
+  const label=document.createTextNode((extraTitles[field]||'Фильтр')+': '+labels.join(', '));
+  const close=document.createElement('span');close.textContent='×';close.setAttribute('aria-hidden','true');
+  tag.append(label,close);tag.setAttribute('aria-label','Убрать фильтр: '+labels.join(', '));
+  tag.addEventListener('click',()=>{selectedFacets.delete(field);paintChips();draw()});
+  target.append(tag);
+ }
+ $('active-filters').hidden=selectedFacets.size===0;
+}
+function clearAllFilters(){
+ selectedFacets.clear();
+ $('search').value='';
+ const url=new URL(location.href);
+ url.searchParams.delete('field');
+ url.searchParams.delete('tag');
+ history.replaceState(null,'',url.pathname+url.search+url.hash);
+ paintChips();draw();
 }
 function setupFilters(){
  const supported=catalogue.some(s=>s.filters&&typeof s.filters==='object')&&Object.values(facets).some(x=>Array.isArray(x)&&x.length);
@@ -505,7 +539,8 @@ async function start(){
 }
 window.SingerPhoneMask.setup($('phone'));
 $('search').addEventListener('input',draw);
-$('clear-filters').addEventListener('click',()=>{selectedFacets.clear();paintChips();draw()});
+$('clear-filters').addEventListener('click',clearAllFilters);
+$('show-all').addEventListener('click',clearAllFilters);
 $('open-filters').addEventListener('click',()=>$('filter-dialog').showModal());
 $('close-filters').addEventListener('click',()=>$('filter-dialog').close());
 $('apply-filters').addEventListener('click',()=>$('filter-dialog').close());
