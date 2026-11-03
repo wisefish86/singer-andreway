@@ -219,19 +219,18 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <label class="rep-label">Телефон (необязательно) <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="+7 (999) 123-45-67" aria-describedby="phone-hint" /><small id="phone-hint" class="rep-phone-hint">Можно ввести с 8 или +7 либо вставить номер целиком.</small></label>
 </div>
 <h3 class="rep-share-heading">Отправить подборку Андрею</h3>
-<p class="rep-dialog-sub">Выберите удобный мессенджер. Сообщение со ссылкой создастся автоматически.</p>
+<p class="rep-dialog-sub">Выберите способ связи. Сообщение со ссылкой создастся автоматически.</p>
 <div class="rep-share-actions" role="group" aria-label="Отправить подборку Андрею">
 <button type="button" data-share="telegram"><BrandIcon name="telegram" size={22}/>Telegram</button>
 <button type="button" data-share="whatsapp"><BrandIcon name="whatsapp" size={22}/>WhatsApp</button>
-<button type="button" data-share="max"><BrandIcon name="max" size={22}/>MAX</button>
 </div>
-<p class="rep-saving-notice">Telegram и WhatsApp откроют личный чат с подготовленным сообщением. В MAX можно открыть чат Андрея напрямую и вставить текст либо поделиться через выбор получателя.</p>
+<p class="rep-saving-notice">Telegram и WhatsApp подготовят сообщение для чата с Андреем. Отправку подтвердите в мессенджере.</p>
 <div class="rep-save-area">
 <button type="submit" id="save-link" class="rep-save-link">Сохранить себе подборку</button>
 <p class="rep-saving-notice">Можно сохранить ссылку и вернуться к выбору песен позже, без отправки сообщения.</p>
 </div>
 <p id="status" class="rep-meta" role="status" aria-live="polite"></p>
-<div id="share-result" class="rep-share-result" hidden aria-live="polite"><strong id="share-result-title">Подборка сохранена</strong><p id="share-result-help"></p><a id="share-open" href="#" rel="noopener">Открыть мессенджер</a><button type="button" id="share-copy">Скопировать сообщение</button><a id="share-max-send" href="#" target="_blank" rel="noopener" hidden>Поделиться через MAX с выбором чата</a></div>
+<div id="share-result" class="rep-share-result" hidden aria-live="polite"><strong id="share-result-title">Подборка сохранена</strong><p id="share-result-help"></p><a id="share-open" href="#" rel="noopener">Открыть мессенджер</a><button type="button" id="share-copy">Скопировать сообщение</button></div>
 <p class="rep-dialog-sub">Если вы сейчас на выступлении, можно подойти к Андрею во время перерыва и договориться лично. Это удобно, например, когда хочется устроить сюрприз. Или отправьте пожелания сообщением.</p>
 </form>
 <div id="saved" class="rep-panel rep-hidden" aria-live="polite">
@@ -274,6 +273,12 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <script define:vars={{api, whatsapp, telegramWeb}}>
 let catalogue=[],facets={},selected=new Set(),token=location.hash.startsWith('#key=')?location.hash.slice(5):'',busy=false;
 const $=id=>document.getElementById(id);
+// The preferred option is first; only preselect once on initial load.
+const preferredPurpose=window.SingerRequestShare.defaultPurpose();
+const purposeFieldset=document.querySelector('.rep-purpose');
+const preferredRadio=purposeFieldset.querySelector('input[name="purpose"][value="'+preferredPurpose+'"]');
+preferredRadio.checked=true;
+purposeFieldset.insertBefore(preferredRadio.closest('.rep-purpose-option'),purposeFieldset.querySelector('.rep-purpose-option'));
 const status=m=>{$('status').textContent=m};
 const selectedFacets=new Map();
 const sharedFilter=new URLSearchParams(location.search);
@@ -601,20 +606,15 @@ async function shareSelection(service){
  }
  pendingShareMessage=links.message;
  const mobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
- const app=service==='telegram'?links.telegramApp:service==='whatsapp'?links.whatsappApp:links.maxDirect;
+ const app=service==='telegram'?links.telegramApp:links.whatsappApp;
  const web=links[service];
  const open=$('share-open');
  // Avoid a temporary page and an async popup redirect; user explicitly opens the app after save.
  open.href=mobile?app:web;
  open.target=mobile?'_self':'_blank';
- open.textContent=service==='max'?'Открыть чат Андрея в MAX':'Открыть '+(service==='telegram'?'Telegram':'WhatsApp')+' с сообщением';
+ open.textContent='Открыть '+(service==='telegram'?'Telegram':'WhatsApp')+' с сообщением';
  $('share-result-title').textContent='Подборка сохранена — осталось отправить';
- $('share-result-help').textContent=service==='max'
-  ? 'MAX пока не умеет открывать конкретный чат с заполненным сообщением. Нажмите «Скопировать сообщение», затем откройте чат Андрея и вставьте текст.'
-  : 'Нажмите кнопку ниже: на телефоне откроется приложение с подготовленным сообщением. Проверьте текст и нажмите «Отправить». Если приложение не открылось, скопируйте сообщение.';
- const maxSend=$('share-max-send');
- maxSend.hidden=service!=='max';
- if(service==='max')maxSend.href=links.max;
+ $('share-result-help').textContent='Нажмите кнопку ниже: на телефоне откроется приложение с подготовленным сообщением. Проверьте текст и нажмите «Отправить». Если приложение не открылось, скопируйте сообщение.';
  $('share-result').hidden=false;
  $('share-result').scrollIntoView({behavior:'smooth',block:'nearest'});
  status('Подборка сохранена. Выберите действие ниже.');
