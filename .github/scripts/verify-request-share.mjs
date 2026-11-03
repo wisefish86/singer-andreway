@@ -91,4 +91,9 @@ for(const term of [
 assert.ok(!html.includes('data-share="max"'));
 assert.ok(!html.includes('id="share-max-send"'));
 assert.ok(html.includes('SingerRequestShare.defaultPurpose()'));
+// Confirm direct navigation follows saving and the old mandatory second-click screen is gone.
+assert.ok(html.includes("destinationTab.location.replace(destination)"));
+assert.ok(html.includes("window.location.assign(destination)"));
+assert.ok(html.includes("window.open('about:blank','_blank')"));
+assert.ok(!html.includes('Подборка сохранена — осталось отправить'));
 console.log('Request sharing passed: Telegram, WhatsApp, SMS and Krasnodar-time purpose selection');
