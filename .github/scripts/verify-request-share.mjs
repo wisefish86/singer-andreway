@@ -8,6 +8,17 @@ runInNewContext(source,{window,URL,encodeURIComponent});
 const share=window.SingerRequestShare;
 assert.ok(share,'Request share helper must be available');
 assert.equal(share.isConfirmed(true),true);
+// Friday and Saturday 20:00–22:59 in Krasnodar (UTC+3), independent of browser locale.
+for(const [iso,expected] of [
+ ['2026-11-06T16:59:00Z','wishes'], // Friday 19:59
+ ['2026-11-06T17:00:00Z','order'],  // Friday 20:00
+ ['2026-11-06T19:59:00Z','order'],  // Friday 22:59
+ ['2026-11-06T20:00:00Z','wishes'], // Friday 23:00
+ ['2026-11-07T17:00:00Z','order'],  // Saturday 20:00
+ ['2026-11-07T19:59:00Z','order'],  // Saturday 22:59
+ ['2026-11-07T20:00:00Z','wishes'], // Saturday 23:00
+ ['2026-11-08T17:00:00Z','wishes'], // Sunday 20:00
+])assert.equal(share.defaultPurpose(new Date(iso)),expected,iso);
 for(const v of [false,undefined,null,'true',0])assert.equal(share.isConfirmed(v),false);
 
 const link='https://singer.andreway.ru/podborka/#key='+'a'.repeat(64);
@@ -63,13 +74,14 @@ for(const term of [
  'name="purpose"',
  'data-share="telegram"',
  'data-share="whatsapp"',
- 'data-share="max"',
  'id="save-link"',
  'id="selected-dialog"',
  'id="show-selected"',
  'id="share-result"',
  'id="share-copy"',
- 'id="share-max-send"',
  'Сохранить себе подборку',
 ])assert.ok(html.includes(term),'Repertoire page missing '+term);
-console.log('Request sharing passed: Telegram, WhatsApp, MAX and one-action form');
+assert.ok(!html.includes('data-share="max"'));
+assert.ok(!html.includes('id="share-max-send"'));
+assert.ok(html.includes('SingerRequestShare.defaultPurpose()'));
+console.log('Request sharing passed: Telegram, WhatsApp and Krasnodar-time purpose selection');
