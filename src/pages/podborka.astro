@@ -93,13 +93,19 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 .rep-filter-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .rep-filter-toolbar .rep-chips{flex:1;gap:6px}
 .rep-filter-toolbar #quick-filters{display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-width:0}
-.rep-filter-toolbar #quick-buttons,.rep-filter-toolbar #active-filter-tags{display:flex;flex:0 1 auto;flex-wrap:wrap;gap:6px}
-.rep-show-all{min-height:34px;border:1px solid rgba(229,184,95,.5);border-radius:999px;background:transparent;color:var(--accent2);font:inherit;font-weight:700;font-size:.8rem;padding:6px 11px;white-space:nowrap;cursor:pointer}
-.rep-show-all[aria-pressed="true"],.rep-filter-toolbar .rep-chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:#152330}
-:global(.rep-active-tag){min-height:34px;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--accent);background:var(--accent);border-radius:999px;padding:6px 11px;color:#152330;font:inherit;font-size:.8rem;font-weight:650;line-height:1.2;cursor:pointer;white-space:nowrap;transition:filter .14s}
-:global(.rep-active-tag span){font-size:1rem;line-height:1;color:#152330;font-weight:800}
-:global(.rep-active-tag:focus-visible),.rep-show-all:focus-visible{outline:2px solid var(--text);outline-offset:3px}
-:global(.rep-active-tag:hover){filter:brightness(1.1)}
+.rep-filter-toolbar #quick-buttons{display:flex;flex:0 1 auto;flex-wrap:wrap;gap:6px}
+.rep-show-all{min-height:34px;border:1px solid rgba(255,255,255,.24);border-radius:999px;background:rgba(255,255,255,.035);color:var(--text);font:inherit;font-weight:650;font-size:.8rem;padding:6px 11px;white-space:nowrap;cursor:pointer}
+.rep-show-all[aria-pressed="true"]{border-color:rgba(229,184,95,.65);color:var(--accent2)}
+:global(#quick-buttons .rep-chip[aria-pressed="true"]){background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.22);color:#dce7f0}
+.rep-selected-filters{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:10px}
+.rep-selected-filters[hidden]{display:none!important}
+.rep-selected-label{font-size:.78rem;color:var(--muted);margin-right:2px}
+.rep-selected-chips{display:flex;flex-wrap:wrap;gap:7px;min-width:0}
+.rep-reset-all{border:0;background:none;color:var(--accent2);font:inherit;font-size:.78rem;font-weight:700;padding:7px 5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+:global(.rep-active-tag){min-height:34px;display:inline-flex;align-items:center;gap:9px;border:1px solid rgba(229,184,95,.65);background:rgba(229,184,95,.13);border-radius:999px;padding:6px 10px 6px 12px;color:var(--accent2);font:inherit;font-size:.8rem;font-weight:650;line-height:1.2;cursor:pointer;transition:background .14s}
+:global(.rep-active-tag .rep-active-x){display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;font-size:1rem;line-height:1;color:var(--accent2);font-weight:700;transform:translateY(-1px)}
+:global(.rep-active-tag:focus-visible),.rep-show-all:focus-visible,.rep-reset-all:focus-visible{outline:2px solid var(--text);outline-offset:3px}
+:global(.rep-active-tag:hover){background:rgba(229,184,95,.22)}
 :global(.rep-chip){min-height:34px;padding:6px 11px;font-size:.8rem;line-height:1.2}
 .rep-open-filters{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(229,184,95,.5);background:rgba(229,184,95,.07);color:var(--accent2);border-radius:11px;padding:9px 13px;font:inherit;font-size:.84rem;font-weight:750;cursor:pointer;min-height:38px;white-space:nowrap}
 .rep-open-filters:focus-visible,.rep-dialog-close:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
@@ -193,10 +199,11 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <h2 class="rep-section-title">Репертуар</h2><label class="rep-label">Поиск песен <input id="search" type="search" placeholder="Название или исполнитель" /></label>
 <div id="filter-panel" class="rep-filterbar rep-hidden">
 <div class="rep-filter-toolbar">
-<div id="quick-filters" class="rep-chips" aria-label="Быстрые фильтры"><button id="show-all" class="rep-show-all" type="button" aria-pressed="true">Все песни</button><div id="quick-buttons" class="rep-chips"></div><div id="active-filter-tags" class="rep-chips"></div></div>
+<div id="quick-filters" class="rep-chips" aria-label="Выбрать фильтр"><button id="show-all" class="rep-show-all" type="button" aria-pressed="true">Все песни</button><div id="quick-buttons" class="rep-chips"></div></div>
 <button id="open-filters" class="rep-open-filters" type="button" aria-haspopup="dialog"><Icon name="filter" size={18}/><span>Все фильтры</span><span id="active-filter-count"></span></button>
 </div>
-<dialog id="filter-dialog" class="rep-dialog" aria-labelledby="filter-title">
+<div id="selected-filters" class="rep-selected-filters" hidden aria-label="Применённые фильтры"><span class="rep-selected-label">Выбрано:</span><div id="active-filter-tags" class="rep-selected-chips"></div><button id="reset-all" type="button" class="rep-reset-all">Сбросить всё</button></div>
+<dialog id="filter-dialog" aria-labelledby="filter-title">
 <div class="rep-dialog-content">
 <div class="rep-dialog-top"><h2 id="filter-title">Фильтры репертуара</h2><button type="button" class="rep-dialog-close" id="close-filters" aria-label="Закрыть фильтры">×</button></div>
 <p class="rep-dialog-sub">Выберите язык, повод, стиль, настроение и эпоху. Количество подходящих песен обновляется сразу.</p>
@@ -377,18 +384,30 @@ function clearPresetFromUrl(){
 function renderActiveFilters(){
  const target=$('active-filter-tags');
  target.replaceChildren();
+ let count=0;
  for(const [field,values] of selectedFacets){
-  const selectedValues=[...values];
-  if(quick.some(item=>item.field===field&&item.values.length===selectedValues.length&&item.values.every(v=>values.has(v))))continue;
-  const labels=selectedValues.map(value=>(facets[field]||[]).find(f=>f.value===value)?.label||value);
-  const tag=document.createElement('button');
-  tag.type='button';tag.className='rep-active-tag';
-  const label=document.createTextNode(labels.join(', '));
-  const close=document.createElement('span');close.textContent='×';close.setAttribute('aria-hidden','true');
-  tag.append(label,close);tag.setAttribute('aria-label','Убрать фильтр '+(extraTitles[field]||'')+': '+labels.join(', '));
-  tag.addEventListener('click',()=>{clearPresetFromUrl();selectedFacets.delete(field);paintChips();draw()});
-  target.append(tag);
+  for(const value of values){
+   count++;
+   const label=(facets[field]||[]).find(f=>f.value===value)?.label||value;
+   const tag=document.createElement('button');
+   tag.type='button';tag.className='rep-active-tag';
+   const text=document.createElement('span');text.textContent=label;
+   const close=document.createElement('span');close.className='rep-active-x';close.textContent='×';close.setAttribute('aria-hidden','true');
+   tag.append(text,close);
+   tag.setAttribute('aria-label','Убрать фильтр: '+label);
+   tag.addEventListener('click',()=>{
+    clearPresetFromUrl();
+    const remaining=selectedFacets.get(field);
+    if(!remaining)return;
+    remaining.delete(value);
+    if(!remaining.size)selectedFacets.delete(field);
+    paintChips();draw();
+   });
+   target.append(tag);
+  }
  }
+ $('selected-filters').hidden=count===0;
+ $('open-filters').setAttribute('aria-label',count?'Все фильтры, выбрано: '+count:'Все фильтры');
 }
 function clearAllFilters(){
  selectedFacets.clear();
@@ -554,6 +573,7 @@ window.SingerPhoneMask.setup($('phone'));
 $('search').addEventListener('input',()=>{paintChips();draw()});
 $('clear-filters').addEventListener('click',clearAllFilters);
 $('show-all').addEventListener('click',clearAllFilters);
+$('reset-all').addEventListener('click',clearAllFilters);
 $('open-filters').addEventListener('click',()=>$('filter-dialog').showModal());
 $('close-filters').addEventListener('click',()=>$('filter-dialog').close());
 $('apply-filters').addEventListener('click',()=>$('filter-dialog').close());
