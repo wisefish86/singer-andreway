@@ -530,8 +530,11 @@ function showCatalogue(data){
  catalogue=data.songs;facets=data.facets;setupFilters();
  if(!presetApplied){
    presetApplied=true;
-   if(presetField&&presetValue&&permitted(presetField,[presetValue]).length){
-    selectedFacets.set(presetField,new Set([presetValue]));
+   // A shared link may select multiple values within one facet (e.g. foreign languages).
+   const presetValues=presetValue?.split(',').filter(Boolean)||[];
+   const validPreset=presetField?permitted(presetField,presetValues):[];
+   if(validPreset.length){
+    selectedFacets.set(presetField,new Set(validPreset));
     paintChips();
    }
   }
