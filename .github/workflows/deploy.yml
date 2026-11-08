@@ -42,6 +42,9 @@ jobs:
       - name: Verify desktop social QR links and MAX profile format
         run: node .github/scripts/verify-social-qr.mjs
 
+      - name: Verify booking and guest messenger message contexts
+        run: node .github/scripts/verify-contact-intents.mjs
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
