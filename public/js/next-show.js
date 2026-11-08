@@ -5,6 +5,10 @@ if(eventCard){
  const place=eventCard.querySelector('.event-place');
  const media=eventCard.querySelector('.event-media');
  const calendarLink=eventCard.querySelector('.event-calendar-link');
+ // A pending calendar link has no destination until the event loads.
+ calendarLink.addEventListener('click',event=>{
+  if(calendarLink.getAttribute('aria-disabled')==='true')event.preventDefault();
+ });
  const fallbackImage='/images/event-fallback.webp';
  const poster=document.createElement('img');
  poster.alt='Концертная сцена с микрофоном';
@@ -67,6 +71,7 @@ if(eventCard){
     calendarLink.href='https://calendar.google.com/calendar/render?'+params.toString();
     calendarLink.removeAttribute('aria-disabled');
     calendarLink.removeAttribute('tabindex');
+    calendarLink.removeAttribute('title');
    }
   }catch{date.textContent='Следите за афишей';place.textContent='Актуальное расписание — в Telegram-канале'}
  }
