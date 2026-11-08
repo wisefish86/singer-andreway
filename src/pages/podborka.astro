@@ -44,6 +44,12 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 @media (min-width:800px){.rep-layout{display:block}.rep-catalog{width:100%}}
 
 .rep-page{padding-bottom:150px}
+.rep-prepare{margin:14px 0 18px;border:1px solid rgba(229,184,95,.24);border-radius:14px;padding:13px 15px;background:rgba(229,184,95,.045)}
+.rep-prepare-label{display:flex;align-items:center;gap:12px;cursor:pointer;font-weight:750;font-size:.93rem}
+.rep-prepare-label input{width:19px;height:19px;flex:none;accent-color:var(--accent);cursor:pointer}
+.rep-prepare-label input:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
+.rep-prepare-detail{margin:8px 0 0 31px;font-size:.83rem;line-height:1.55;color:var(--muted)}
+:global(.rep-song-prepare){color:var(--accent2);font-size:.75rem;font-weight:700;margin-top:2px}
 .rep-filterbar{padding:12px 0 8px}
 :global(.rep-filter-heading){font-weight:750;margin:19px 0 10px;font-size:.9rem;color:var(--text)}
 :global(.rep-filter-heading:first-child){margin-top:7px}
@@ -212,6 +218,10 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <div class="rep-dialog-bottom"><button id="clear-filters" type="button" class="rep-clear">Сбросить</button><span id="filter-result-count" class="rep-modal-count" role="status">Подсчёт песен…</span><button id="apply-filters" type="button" class="rep-action">Показать песни</button></div>
 </dialog>
 </div>
+<div id="prepare-panel" class="rep-prepare rep-hidden">
+<label class="rep-prepare-label"><input id="include-preparing" type="checkbox"/><span>Могу подготовить к мероприятию</span></label>
+<p id="prepare-detail" class="rep-prepare-detail">Показать также песни, которые могу повторить или выучить специально для вас. Если до мероприятия не меньше двух недель, можно выбрать несколько таких песен. Возможность исполнения согласуем заранее.</p>
+</div>
 <p id="filter-notice" class="rep-meta rep-hidden">Каталог ещё не обновлён для фильтров и прослушивания. Требуется повторный экспорт.</p>
 <p id="count" class="rep-meta"></p><p id="selection-limit" class="rep-meta rep-hidden">Можно выбрать не более 250 песен в одну подборку.</p>
 <div id="songs" aria-live="polite"><p>Загрузка репертуара…</p></div>
@@ -299,6 +309,8 @@ const preferredRadio=purposeFieldset.querySelector('input[name="purpose"][value=
 preferredRadio.checked=true;
 purposeFieldset.insertBefore(preferredRadio.closest('.rep-purpose-option'),purposeFieldset.querySelector('.rep-purpose-option'));
 const status=m=>{$('status').textContent=m};
+let showPreparing=false;
+let preparationIds=new Set();
 const selectedFacets=new Map();
 const sharedFilter=new URLSearchParams(location.search);
 const presetField=sharedFilter.get('field');
@@ -483,7 +495,7 @@ async function playSong(song){
 }
 function draw(){
  const q=$('search').value.trim().toLocaleLowerCase('ru');
- const found=catalogue.filter(s=>(s.name+' '+s.artist).toLocaleLowerCase('ru').includes(q)&&matches(s));
+ const found=catalogue.filter(s=>(showPreparing||!preparationIds.has(s.id))&&(s.name+' '+s.artist).toLocaleLowerCase('ru').includes(q)&&matches(s));
  const target=$('songs');target.replaceChildren();
  const fragment=document.createDocumentFragment();
  for(const song of found){
@@ -495,7 +507,13 @@ function draw(){
   const text=document.createElement('span');text.className='rep-song-copy';
   const name=document.createElement('span');name.className='rep-song-title';name.textContent=song.name;
   const artist=document.createElement('span');artist.className='rep-song-artist';artist.textContent=song.artist;
-  text.append(name,artist);label.append(text);row.append(checkbox,label);
+  text.append(name,artist);
+  if(preparationIds.has(song.id)){
+   const note=document.createElement('span');note.className='rep-song-prepare';
+   note.textContent='Могу подготовить к мероприятию · по согласованию';
+   text.append(note);
+  }
+  label.append(text);row.append(checkbox,label);
   if(safePreview(song)){
    const preview=document.createElement('button');preview.type='button';preview.className='rep-preview';
    preview.dataset.songId=song.id;preview.dataset.songName=song.artist+' — '+song.name;
@@ -539,7 +557,14 @@ async function request(body){
 }
 function showCatalogue(data){
  if(!window.SingerRepertoireCache.valid(data))throw Error('Каталог пока пуст');
- catalogue=data.songs;facets=data.facets;
+ // Optional preparation catalogue is already generated alongside the regular songs.
+ const ready=data.songs;
+ const preparing=Array.isArray(data.learning_songs)?data.learning_songs.filter(song=>!ready.some(item=>item.id===song.id)):[];
+ preparationIds=new Set(preparing.map(song=>song.id));
+ catalogue=[...ready,...preparing];
+ facets=data.facets;
+ $('prepare-panel').classList.toggle('rep-hidden',preparationIds.size===0);
+ $('include-preparing').checked=showPreparing;
  // Use actual facet IDs so all dance subtypes are selected and the quick chip lights up.
  const dance=danceValues();
  quick.find(item=>item.label==='Танцевальные').values=dance;
@@ -590,12 +615,20 @@ async function start(){
   $('phone').value=window.SingerPhoneMask.formatPhone(saved.request.phone||'');
   $('event').value=saved.request.event_label||'';
   selected=new Set(saved.request.song_ids||[]);
+  if([...selected].some(id=>preparationIds.has(id))){
+   showPreparing=true;
+   $('include-preparing').checked=true;
+  }
   $('saved').classList.add('rep-hidden');$('link').value=location.href;
   if(catalogue.length)draw();
  }).catch(()=>status('Сохранённую подборку пока не удалось открыть. Попробуйте позже.')):Promise.resolve();
  await Promise.allSettled([refresh,savedRequest]);
 }
 window.SingerPhoneMask.setup($('phone'));
+$('include-preparing').addEventListener('change',event=>{
+ showPreparing=event.target.checked;
+ draw();
+});
 $('search').addEventListener('input',()=>{paintChips();draw()});
 $('clear-filters').addEventListener('click',clearAllFilters);
 $('show-all').addEventListener('click',clearAllFilters);
