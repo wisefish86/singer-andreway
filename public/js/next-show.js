@@ -5,6 +5,20 @@ if(eventCard){
  const place=eventCard.querySelector('.event-place');
  const media=eventCard.querySelector('.event-media');
  const buttons=eventCard.querySelectorAll('.event-actions .btn');
+ const fallbackImage='/images/event-fallback.webp';
+ const poster=document.createElement('img');
+ poster.alt='Концертная сцена с микрофоном';
+ poster.loading='lazy';
+ poster.onerror=()=>{
+  if(poster.getAttribute('src')!==fallbackImage){
+   poster.src=fallbackImage;
+   poster.alt='Концертная сцена с микрофоном';
+  }else{
+   poster.remove();
+  }
+ };
+ poster.src=fallbackImage;
+ media.append(poster);
  const safeUrl=value=>{try{const url=new URL(value);return url.protocol==='https:'?url.href:''}catch{return ''}};
  async function loadNextShow(){
   try{
@@ -18,7 +32,7 @@ if(eventCard){
    title.textContent=show.venue||'Выступление Андрея';
    place.textContent=show.address||'Место выступления уточняется';
    const image=safeUrl(show.image_url);
-   if(image){const img=document.createElement('img');img.src=image;img.alt='Фото площадки';img.loading='lazy';img.onerror=()=>img.remove();media.append(img)}
+   if(image){poster.alt='Афиша или фотография площадки';poster.src=image}
    const destination=safeUrl(show.booking_url)||safeUrl(show.website)||safeUrl(show.map_link);
    buttons[1].href='#events';buttons[1].addEventListener('click',e=>{e.preventDefault();window.downloadSingerEvent(show,start)});
    if(destination){buttons[0].href=destination;buttons[0].textContent=show.booking_url?'Забронировать столик ↗':'Подробнее о площадке ↗'}
