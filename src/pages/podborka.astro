@@ -323,7 +323,7 @@ const quick=[
  {label:'Русские',field:'language',values:['Я-рус']},
  {label:'Иностранные',field:'language',values:['Я-англ','Я-ин']},
  {label:'Хиты',field:'recognition',values:['уз-1-Хит']},
- {label:'Танцевальные',field:'energy',values:['к-Танцы-фон','к-Танцы-средняя','к-Танцы-драйв']}
+ {label:'Танцевальные',field:'energy',values:[]}
 ];
 const events=[
  
@@ -337,6 +337,16 @@ const events=[
  {label:'Детям',field:'situations',values:['с-Детям']}
 ];
 const extraTitles={language:'Язык',audience:'Стиль и аудитория',energy:'Характер и энергия',mood:'Настроение',recognition:'Узнаваемость',era:'Эпоха',situations:'Другие поводы'};
+// Derive the exact dance tags from the published catalogue instead of guessing their IDs.
+function danceValues(){
+ const variants=['фон','средняя','драйв'];
+ const normalized=value=>String(value||'').toLocaleLowerCase('ru-RU').replace(/[^а-яёa-z0-9]/g,'');
+ const options=facets.energy||[];
+ return variants.map(variant=>options.find(option=>{
+  const expected='танцы'+variant;
+  return normalized(option.label)===expected||normalized(option.value).endsWith(expected);
+ })?.value).filter(Boolean);
+}
 const permitted=(field,values)=>values.filter(v=>(facets[field]||[]).some(f=>f.value===v));
 function matches(song){
  const tags=song.filters||{};
@@ -377,9 +387,10 @@ function paintChips(){
 }
 function clearPresetFromUrl(){
  const url=new URL(location.href);
- if(!url.searchParams.has('field')&&!url.searchParams.has('tag'))return;
+ if(!url.searchParams.has('field')&&!url.searchParams.has('tag')&&!url.searchParams.has('preset'))return;
  url.searchParams.delete('field');
  url.searchParams.delete('tag');
+ url.searchParams.delete('preset');
  history.replaceState(null,'',url.pathname+url.search+url.hash);
 }
 function renderActiveFilters(){
@@ -528,17 +539,28 @@ async function request(body){
 }
 function showCatalogue(data){
  if(!window.SingerRepertoireCache.valid(data))throw Error('Каталог пока пуст');
- catalogue=data.songs;facets=data.facets;setupFilters();
- if(!presetApplied){
-   presetApplied=true;
-   // A shared link may select multiple values within one facet (e.g. foreign languages).
-   const presetValues=presetValue?.split(',').filter(Boolean)||[];
-   const validPreset=presetField?permitted(presetField,presetValues):[];
-   if(validPreset.length){
-    selectedFacets.set(presetField,new Set(validPreset));
-    paintChips();
-   }
+ catalogue=data.songs;facets=data.facets;
+ // Use actual facet IDs so all dance subtypes are selected and the quick chip lights up.
+ const dance=danceValues();
+ quick.find(item=>item.label==='Танцевальные').values=dance;
+ setupFilters();
+ const dancePreset=sharedFilter.get('preset')==='dance'
+  ||(presetField==='energy'&&presetValue?.includes('Танцы'));
+ if(dancePreset){
+  if(dance.length)selectedFacets.set('energy',new Set(dance));
+  else selectedFacets.delete('energy');
+  paintChips();
+  presetApplied=true;
+ }else if(!presetApplied){
+  presetApplied=true;
+  // A shared link may select multiple values within one facet (e.g. foreign languages).
+  const presetValues=presetValue?.split(',').filter(Boolean)||[];
+  const validPreset=presetField?permitted(presetField,presetValues):[];
+  if(validPreset.length){
+   selectedFacets.set(presetField,new Set(validPreset));
+   paintChips();
   }
+ }
  draw();
 }
 function showCatalogueUnavailable(error){
