@@ -330,3 +330,14 @@ dialog::backdrop{touch-action:none}
     background-position:55% top;
   }
 }
+
+/* Keep the calendar action clearly visible under the event heading on phones.
+   Desktop retains it in the event card; there is only one visible calendar action. */
+.event-calendar-mobile{display:none}
+@media(max-width:759px){
+  #events .section-head{align-items:flex-start}
+  #events .section-head>div{min-width:0;flex:1}
+  #events .event-calendar-mobile{display:inline-flex;margin-top:12px;padding:0 12px;min-height:43px;font-size:.82rem;white-space:normal;text-align:center}
+  #events .event-actions>.event-calendar-link{display:none}
+}
+.event-calendar-link[aria-disabled="true"]{opacity:.6;cursor:default}
