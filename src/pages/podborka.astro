@@ -44,12 +44,17 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 @media (min-width:800px){.rep-layout{display:block}.rep-catalog{width:100%}}
 
 .rep-page{padding-bottom:150px}
-.rep-prepare{margin:14px 0 18px;border:1px solid rgba(229,184,95,.24);border-radius:14px;padding:13px 15px;background:rgba(229,184,95,.045)}
-.rep-prepare-label{display:flex;align-items:center;gap:12px;cursor:pointer;font-weight:750;font-size:.93rem}
-.rep-prepare-label input{width:19px;height:19px;flex:none;accent-color:var(--accent);cursor:pointer}
-.rep-prepare-label input:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
-.rep-prepare-detail{margin:8px 0 0 31px;font-size:.83rem;line-height:1.55;color:var(--muted)}
-:global(.rep-song-prepare){color:var(--accent2);font-size:.75rem;font-weight:700;margin-top:2px}
+.rep-prepare{display:inline-flex;align-items:center;gap:7px;max-width:100%;margin:7px 0 2px}
+.rep-prepare-label{display:inline-flex;align-items:center;gap:9px;font-size:.85rem;font-weight:650;color:var(--text);cursor:pointer;min-height:34px}
+.rep-prepare-label input{appearance:none;-webkit-appearance:none;display:grid;place-content:center;width:19px;height:19px;flex:none;margin:0;border:1.7px solid rgba(230,239,247,.8);border-radius:5px;background:transparent;cursor:pointer}
+.rep-prepare-label input:checked{border-color:var(--accent2);background:rgba(229,184,95,.10)}
+.rep-prepare-label input:checked::after{content:"";width:5px;height:10px;border:solid var(--accent2);border-width:0 2px 2px 0;transform:translateY(-1px) rotate(45deg)}
+.rep-prepare-label input:focus-visible,.rep-prepare-help:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
+.rep-prepare-help{width:29px;height:29px;display:inline-grid;place-items:center;border:1px solid rgba(229,184,95,.42);border-radius:50%;background:transparent;color:var(--accent2);font-size:.86rem;font-weight:700;cursor:pointer;padding:0}
+.rep-prepare-info{margin:0 0 12px;font-size:.9rem;color:var(--muted);line-height:1.65}
+.rep-prepare-info strong{color:var(--text)}
+:global(.rep-song.is-preparing){border-left:2px solid rgba(229,184,95,.72);padding-left:6px}
+:global(.rep-song-prepare){display:inline-flex;align-items:center;align-self:flex-start;margin-top:4px;border:1px solid rgba(229,184,95,.46);border-radius:999px;padding:2px 8px;background:rgba(229,184,95,.07);color:var(--accent2);font-size:.72rem;font-weight:700;line-height:1.4}
 .rep-filterbar{padding:12px 0 8px}
 :global(.rep-filter-heading){font-weight:750;margin:19px 0 10px;font-size:.9rem;color:var(--text)}
 :global(.rep-filter-heading:first-child){margin-top:7px}
@@ -208,6 +213,10 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <div id="quick-filters" class="rep-chips" aria-label="Выбрать фильтр"><button id="show-all" class="rep-show-all" type="button" aria-pressed="true">Все песни</button><div id="quick-buttons" class="rep-chips"></div></div>
 <button id="open-filters" class="rep-open-filters" type="button" aria-haspopup="dialog"><Icon name="filter" size={18}/><span>Все фильтры</span><span id="active-filter-count"></span></button>
 </div>
+<div id="prepare-panel" class="rep-prepare rep-hidden">
+<label class="rep-prepare-label"><input id="include-preparing" type="checkbox"/><span>Могу подготовить</span></label>
+<button id="prepare-help" class="rep-prepare-help" type="button" aria-label="Что значит «Могу подготовить»?" aria-haspopup="dialog" aria-controls="prepare-info-dialog">i</button>
+</div>
 <div id="selected-filters" class="rep-selected-filters" hidden aria-label="Применённые фильтры"><span class="rep-selected-label">Выбрано:</span><div id="active-filter-tags" class="rep-selected-chips"></div><button id="reset-all" type="button" class="rep-reset-all">Сбросить всё</button></div>
 <dialog id="filter-dialog" class="rep-dialog" aria-labelledby="filter-title">
 <div class="rep-dialog-content">
@@ -217,10 +226,13 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 </div>
 <div class="rep-dialog-bottom"><button id="clear-filters" type="button" class="rep-clear">Сбросить</button><span id="filter-result-count" class="rep-modal-count" role="status">Подсчёт песен…</span><button id="apply-filters" type="button" class="rep-action">Показать песни</button></div>
 </dialog>
+<dialog id="prepare-info-dialog" class="rep-dialog" aria-labelledby="prepare-info-title">
+<div class="rep-dialog-content">
+<div class="rep-dialog-top"><h2 id="prepare-info-title">Песни на подготовку</h2><button id="close-prepare-info" type="button" class="rep-dialog-close" aria-label="Закрыть пояснение">×</button></div>
+<p class="rep-prepare-info">Если до мероприятия <strong>не менее двух недель</strong>, я могу дополнительно подготовить несколько песен, которые сейчас повторяю или разучиваю. Возможность исполнения согласуем заранее.</p>
+<p class="rep-prepare-info">В списке такие композиции помечены золотой меткой <strong>✦ Подготовлю</strong>. Остальные песни уже входят в основной репертуар.</p>
 </div>
-<div id="prepare-panel" class="rep-prepare rep-hidden">
-<label class="rep-prepare-label"><input id="include-preparing" type="checkbox"/><span>Могу подготовить к мероприятию</span></label>
-<p id="prepare-detail" class="rep-prepare-detail">Показать также песни, которые могу повторить или выучить специально для вас. Если до мероприятия не меньше двух недель, можно выбрать несколько таких песен. Возможность исполнения согласуем заранее.</p>
+</dialog>
 </div>
 <p id="filter-notice" class="rep-meta rep-hidden">Каталог ещё не обновлён для фильтров и прослушивания. Требуется повторный экспорт.</p>
 <p id="count" class="rep-meta"></p><p id="selection-limit" class="rep-meta rep-hidden">Можно выбрать не более 250 песен в одну подборку.</p>
@@ -499,7 +511,7 @@ function draw(){
  const target=$('songs');target.replaceChildren();
  const fragment=document.createDocumentFragment();
  for(const song of found){
-  const row=document.createElement('div');row.className='rep-song';row.classList.toggle('is-selected',selected.has(song.id));
+  const row=document.createElement('div');row.className='rep-song';row.classList.toggle('is-selected',selected.has(song.id));row.classList.toggle('is-preparing',preparationIds.has(song.id));
   const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.checked=selected.has(song.id);checkbox.id='song-'+song.id;
   checkbox.setAttribute('aria-label','Выбрать: '+song.artist+' — '+song.name);
   checkbox.addEventListener('change',()=>{if(checkbox.checked&&selected.size>=250){checkbox.checked=false;$('selection-limit').classList.remove('rep-hidden');return}checkbox.checked?selected.add(song.id):selected.delete(song.id);row.classList.toggle('is-selected',checkbox.checked);updateCount()});
@@ -510,7 +522,7 @@ function draw(){
   text.append(name,artist);
   if(preparationIds.has(song.id)){
    const note=document.createElement('span');note.className='rep-song-prepare';
-   note.textContent='Могу подготовить к мероприятию · по согласованию';
+   note.textContent='✦ Подготовлю';
    text.append(note);
   }
   label.append(text);row.append(checkbox,label);
@@ -625,6 +637,8 @@ async function start(){
  await Promise.allSettled([refresh,savedRequest]);
 }
 window.SingerPhoneMask.setup($('phone'));
+$('prepare-help').addEventListener('click',()=>$('prepare-info-dialog').showModal());
+$('close-prepare-info').addEventListener('click',()=>$('prepare-info-dialog').close());
 $('include-preparing').addEventListener('change',event=>{
  showPreparing=event.target.checked;
  draw();
