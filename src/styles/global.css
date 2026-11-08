@@ -76,7 +76,10 @@ linear-gradient(155deg,#18374f,#09141e 72%)}
 .event-title{font-size:1.25rem;font-weight:800;margin:8px 0 4px}
 .event-place{color:var(--muted);font-size:.9rem}
 .event-actions{display:grid;grid-template-columns:1fr;gap:9px;margin-top:16px}
-.event-actions .btn{justify-content:flex-start}
+.event-actions .btn{justify-content:center;min-width:0;text-align:center}
+.event-actions .event-telegram-reminder{background:transparent;border:1px solid rgba(230,239,247,.22);color:var(--text);white-space:normal}
+.event-actions .event-telegram-reminder:hover{border-color:rgba(229,184,95,.55);background:rgba(255,255,255,.035)}
+.event-actions .event-telegram-reminder .ui-icon{flex:none}
 .media-row{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;margin-right:-12px}
 .media-row::-webkit-scrollbar{display:none}
 .video-card{flex:0 0 78%;scroll-snap-align:start;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#0c1720}
