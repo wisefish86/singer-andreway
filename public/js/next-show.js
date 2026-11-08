@@ -5,6 +5,7 @@ if(eventCard){
  const place=eventCard.querySelector('.event-place');
  const media=eventCard.querySelector('.event-media');
  const calendarLink=document.getElementById('event-google-calendar');
+ const venueDetails=document.getElementById('event-venue-details');
  const fallbackImage='/images/event-fallback.webp';
  const poster=document.createElement('img');
  poster.alt='Концертная сцена с микрофоном';
@@ -31,6 +32,20 @@ if(eventCard){
    date.textContent=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',weekday:'short'}).format(start)+(show.time?' · '+show.time:'');
    title.textContent=show.venue||'Выступление Андрея';
    place.textContent=show.address||'Место выступления уточняется';
+   // Preserve a separate venue/event-details action alongside both reminder buttons.
+   const eventUrl=safeUrl(show.booking_url);
+   const venueUrl=safeUrl(show.website);
+   const detailsUrl=eventUrl||venueUrl;
+   if(venueDetails){
+    if(detailsUrl){
+     venueDetails.href=detailsUrl;
+     venueDetails.querySelector('span').textContent=eventUrl?'Подробнее о мероприятии':'Подробнее о заведении';
+     venueDetails.hidden=false;
+    }else{
+     venueDetails.hidden=true;
+     venueDetails.removeAttribute('href');
+    }
+   }
    const image=safeUrl(show.image_url);
    if(image){poster.alt='Афиша или фотография площадки';poster.src=image}
    // Google Calendar accepts local event times and an IANA time zone.
