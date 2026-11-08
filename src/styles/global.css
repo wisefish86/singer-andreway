@@ -88,7 +88,7 @@ linear-gradient(145deg,#16334a,#0a151f 70%)}
 .video-title{font-weight:750}
 .video-sub{color:var(--muted);font-size:.78rem;margin-top:4px}
 .rep-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.rep-card{min-height:150px;border-radius:18px;padding:14px;display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--line);position:relative;overflow:hidden;background:
+.rep-card{min-height:126px;border-radius:18px;padding:14px;display:flex;flex-direction:column;justify-content:flex-end;border:1px solid var(--line);position:relative;overflow:hidden;background:
 radial-gradient(circle at 76% 18%,rgba(83,185,232,.22),transparent 34%),
 linear-gradient(145deg,#16334a,#0a151f 72%)}
 .rep-card:nth-child(even){background:
@@ -96,7 +96,7 @@ radial-gradient(circle at 74% 20%,rgba(229,184,95,.22),transparent 32%),
 linear-gradient(145deg,#18293a,#0a151f 72%)}
 .rep-card::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,10,15,.05),rgba(4,10,15,.84))}
 .rep-card>*{position:relative;z-index:1}
-.rep-card strong{font-size:.98rem}
+.rep-card strong{font-size:1.03rem;letter-spacing:-.01em;line-height:1.25}
 .rep-card span{color:#d4dde5;font-size:.74rem;margin-top:4px}
 .live-actions{display:grid;grid-template-columns:1fr;gap:10px}
 .action-wide{min-height:78px;border-radius:18px;padding:12px 14px;display:grid;grid-template-columns:42px minmax(0,1fr) 20px;gap:12px;align-items:center;border:1px solid var(--line);background:linear-gradient(135deg,#10263a,#0b1722)}
