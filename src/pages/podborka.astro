@@ -203,7 +203,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <button id="open-filters" class="rep-open-filters" type="button" aria-haspopup="dialog"><Icon name="filter" size={18}/><span>Все фильтры</span><span id="active-filter-count"></span></button>
 </div>
 <div id="selected-filters" class="rep-selected-filters" hidden aria-label="Применённые фильтры"><span class="rep-selected-label">Выбрано:</span><div id="active-filter-tags" class="rep-selected-chips"></div><button id="reset-all" type="button" class="rep-reset-all">Сбросить всё</button></div>
-<dialog id="filter-dialog" aria-labelledby="filter-title">
+<dialog id="filter-dialog" class="rep-dialog" aria-labelledby="filter-title">
 <div class="rep-dialog-content">
 <div class="rep-dialog-top"><h2 id="filter-title">Фильтры репертуара</h2><button type="button" class="rep-dialog-close" id="close-filters" aria-label="Закрыть фильтры">×</button></div>
 <p class="rep-dialog-sub">Выберите язык, повод, стиль, настроение и эпоху. Количество подходящих песен обновляется сразу.</p>
@@ -325,7 +325,7 @@ const quick=[
  {label:'Хиты',field:'recognition',values:['уз-1-Хит']}
 ];
 const events=[
- {label:'Свадьба',field:'situations',values:['с-Свадьба']},
+ 
  {label:'День рождения',field:'situations',values:['с-ДР']},
  {label:'Женщине',field:'situations',values:['с-ДляЖен']},
  {label:'Мужчине',field:'situations',values:['с-ДляМуж']},
