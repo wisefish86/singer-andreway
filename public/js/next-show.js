@@ -4,7 +4,7 @@ if(eventCard){
  const title=eventCard.querySelector('.event-title');
  const place=eventCard.querySelector('.event-place');
  const media=eventCard.querySelector('.event-media');
- const buttons=eventCard.querySelectorAll('.event-actions .btn');
+ const detailsLink=eventCard.querySelector('.event-details-link');
  const fallbackImage='/images/event-fallback.webp';
  const poster=document.createElement('img');
  poster.alt='Концертная сцена с микрофоном';
@@ -34,8 +34,10 @@ if(eventCard){
    const image=safeUrl(show.image_url);
    if(image){poster.alt='Афиша или фотография площадки';poster.src=image}
    const destination=safeUrl(show.booking_url)||safeUrl(show.website)||safeUrl(show.map_link);
-   buttons[1].href='#events';buttons[1].addEventListener('click',e=>{e.preventDefault();window.downloadSingerEvent(show,start)});
-   if(destination){buttons[0].href=destination;buttons[0].textContent=show.booking_url?'Забронировать столик ↗':'Подробнее о площадке ↗'}
+   if(destination){
+    detailsLink.href=destination;
+    detailsLink.textContent=show.booking_url?'Забронировать столик ↗':show.website?'Сайт площадки ↗':'Подробнее о площадке ↗';
+   }
   }catch{date.textContent='Следите за афишей';place.textContent='Актуальное расписание — в Telegram-канале'}
  }
  loadNextShow();
