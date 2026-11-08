@@ -331,4 +331,8 @@ dialog::backdrop{touch-action:none}
   }
 }
 
-.event-calendar-link[aria-disabled="true"]{opacity:.6;cursor:default}
+/* A stable, distinct calendar action that cannot match legacy mobile hide rules. */
+.event-actions .event-google-calendar{display:flex;align-items:center;justify-content:center;min-width:0;white-space:normal;text-align:center}
+@media(max-width:759px){
+  .event-actions .event-google-calendar{grid-column:1;width:100%}
+}
