@@ -4,7 +4,7 @@ if(eventCard){
  const title=eventCard.querySelector('.event-title');
  const place=eventCard.querySelector('.event-place');
  const media=eventCard.querySelector('.event-media');
- const calendarLink=eventCard.querySelector('.event-calendar-link');
+ const calendarLinks=[...document.querySelectorAll('#events .event-calendar-link')];
  const fallbackImage='/images/event-fallback.webp';
  const poster=document.createElement('img');
  poster.alt='Концертная сцена с микрофоном';
@@ -64,9 +64,11 @@ if(eventCard){
     const destination=safeUrl(show.booking_url)||safeUrl(show.website)||safeUrl(show.map_link);
     const description=['Живое выступление Андрея Шевцова',!validEnd?'Время окончания уточняется.':'',destination].filter(Boolean).join('\n');
     const params=new URLSearchParams({action:'TEMPLATE',text:'Выступление Андрея Шевцова — '+(show.venue||'концерт'),dates:startsAt+'/'+endsAt,ctz:'Europe/Moscow',details:description,location:[show.venue,show.address].filter(Boolean).join(', ')});
-    calendarLink.href='https://calendar.google.com/calendar/render?'+params.toString();
-    calendarLink.removeAttribute('aria-disabled');
-    calendarLink.removeAttribute('tabindex');
+    for(const link of calendarLinks){
+     link.href='https://calendar.google.com/calendar/render?'+params.toString();
+     link.removeAttribute('aria-disabled');
+     link.removeAttribute('tabindex');
+    }
    }
   }catch{date.textContent='Следите за афишей';place.textContent='Актуальное расписание — в Telegram-канале'}
  }
