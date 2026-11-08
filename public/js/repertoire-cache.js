@@ -28,7 +28,8 @@
   function updated(before, after) {
     return !before || before.generated_at !== after.generated_at ||
       before.schema_version !== after.schema_version ||
-      before.song_count !== after.song_count;
+      before.song_count !== after.song_count ||
+      before.learning_song_count !== after.learning_song_count;
   }
   window.SingerRepertoireCache = Object.freeze({ read, write, valid, updated });
 })();
