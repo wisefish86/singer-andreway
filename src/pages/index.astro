@@ -421,11 +421,20 @@ const repertoireUrl = '/podborka/';
         sheetCopy.textContent = trigger.dataset.copy || 'Выберите удобный способ связи.';
         sheetTemplate = decodeURIComponent(trigger.dataset.template || '');
         sheetRepertoire.hidden = trigger.dataset.repertoire !== 'true';
+        const message = sheetTemplate ? encodeURIComponent(sheetTemplate) : '';
         const waLink = sheet.querySelector('[data-messenger="whatsapp"]');
         if (waLink) {
-          const url = 'https://wa.me/79181142693' + (sheetTemplate ? '?text=' + encodeURIComponent(sheetTemplate) : '');
+          const base = waLink.dataset.chatBaseWeb;
+          const url = base + (message ? '?text=' + message : '');
           waLink.href = url;
           waLink.dataset.socialWeb = url;
+        }
+        const tgLink = sheet.querySelector('[data-messenger="telegram"]');
+        if (tgLink) {
+          const baseApp = tgLink.dataset.chatBaseApp;
+          const baseWeb = tgLink.dataset.chatBaseWeb;
+          tgLink.href = baseApp + (message ? '&text=' + message : '');
+          tgLink.dataset.socialWeb = baseWeb + (message ? '?text=' + message : '');
         }
         sheet.showModal();
       });
