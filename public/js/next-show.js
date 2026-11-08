@@ -39,8 +39,8 @@ if(eventCard){
     timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'
    }).formatToParts(start).filter(part=>part.type!=='literal').map(part=>[part.type,part.value]));
    const datePart=localParts.year+localParts.month+localParts.day;
-   const times=String(show.time||'').match(/(\\d{1,2}):(\\d{2})\\s*[-–—]\\s*(\\d{1,2}):(\\d{2})/);
-   const startParts=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Moscow',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(start).match(/(\\d{2}):(\\d{2})/);
+   const times=String(show.time||'').match(/(\d{1,2}):(\d{2})\s*[-–—]\s*(\d{1,2}):(\d{2})/);
+   const startParts=new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Moscow',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(start).match(/(\d{2}):(\d{2})/);
    const startHour=times?Number(times[1]):Number(startParts?.[1]);
    const startMinute=times?Number(times[2]):Number(startParts?.[2]);
    const endHour=times?Number(times[3]):null;
@@ -62,10 +62,11 @@ if(eventCard){
      endsAt=assumedEnd.toISOString().slice(0,19).replace(/[-:]/g,'');
     }
     const destination=safeUrl(show.booking_url)||safeUrl(show.website)||safeUrl(show.map_link);
-    const description=['Живое выступление Андрея Шевцова',!validEnd?'Время окончания уточняется.':'',destination].filter(Boolean).join('\\n');
+    const description=['Живое выступление Андрея Шевцова',!validEnd?'Время окончания уточняется.':'',destination].filter(Boolean).join('\n');
     const params=new URLSearchParams({action:'TEMPLATE',text:'Выступление Андрея Шевцова — '+(show.venue||'концерт'),dates:startsAt+'/'+endsAt,ctz:'Europe/Moscow',details:description,location:[show.venue,show.address].filter(Boolean).join(', ')});
     calendarLink.href='https://calendar.google.com/calendar/render?'+params.toString();
     calendarLink.removeAttribute('aria-disabled');
+    calendarLink.removeAttribute('tabindex');
    }
   }catch{date.textContent='Следите за афишей';place.textContent='Актуальное расписание — в Telegram-канале'}
  }
