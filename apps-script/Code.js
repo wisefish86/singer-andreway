@@ -619,12 +619,35 @@ function sentNotifications_() {
  * Never use the private calendar start hour as the performance time.
  * Only active subscribers, including the owner if they explicitly /start the bot.
  */
+/**
+ * Reminder search must retain shows whose private calendar start has passed
+ * but whose PUBLIC performance start (from title) is still in the future.
+ * E.g. calendar logistics at 18:00, public show at 21:00.
+ */
+function reminderEvents_() {
+  const calendar = CalendarApp.getCalendarById(CFG.calendarId);
+  if (!calendar) throw new Error('Calendar unavailable: ' + CFG.calendarId);
+  const now = new Date();
+  const from = new Date(now.getTime() - 72 * 3600000);
+  const until = new Date(now.getTime() + CFG.horizonDays * 86400000);
+  return calendar.getEvents(from, until)
+    .filter(e => e.getTitle().startsWith(CFG.calendarPrefix) && !e.isAllDayEvent())
+    .map(e => ({
+      id: e.getId(),
+      title: e.getTitle().slice(CFG.calendarPrefix.length).trim(),
+      start: e.getStartTime().toISOString(),
+      end: e.getEndTime().toISOString(),
+      location: e.getLocation() || '',
+      description: e.getDescription() || '',
+    }));
+}
+
 function sendPerformanceReminders() {
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return;
   try {
     const now = Date.now();
-    const events = publicEvents_();
+    const events = reminderEvents_();
     const subscribers = singerSubscribersFromSupabase_();
     const sent = sentNotifications_();
     const tasks = [];
@@ -677,6 +700,18 @@ function sendPerformanceReminders() {
   } finally {
     lock.releaseLock();
   }
+}
+
+/** Run manually after deploying to confirm the 15-minute reminder trigger exists. */
+function inspectReminderTrigger() {
+  const triggers = ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'sendPerformanceReminders');
+  console.log('Reminder trigger count: ' + triggers.length +
+    ' (expected 1; if 0, run installReminderTrigger)');
+  console.log('Eligible public shows: ' + reminderEvents_().filter(e => {
+    const show = publicShowStart_(e);
+    return show && Date.parse(show.day + 'T' + show.time + ':00+03:00') > Date.now();
+  }).length);
 }
 
 function installReminderTrigger() {
