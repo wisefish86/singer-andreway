@@ -2,7 +2,7 @@
 (() => {
   const root = '/';
   const fallback = {
-    videos: [{title:'Лучшие моменты',file:'- Андрей Шевцов - Видео выступлений.mp4',description:'Нарезка выступлений',cover:'best-moments.webp'}],
+    videos: [{title:'Лучшие моменты',file:'- Андрей Шевцов - Видео выступлений.mp4',description:'Нарезка выступлений',cover:'- Андрей Шевцов - Видео выступлений.webp'}],
     photos: []
   };
   let collection = fallback;
@@ -46,7 +46,7 @@
     const player=element('video','showcase-player');
     player.controls=true;player.playsInline=true;player.preload='auto';
     player.src=mediaPath('videos',video.file);
-    const cover=mediaPath('covers',video.cover);
+    const cover=mediaPath('videos',video.cover);
     if(cover)player.poster=cover;
     stage.append(player);
     const previous=element('button','showcase-video-arrow showcase-prev','‹');
@@ -126,7 +126,7 @@
     card.type='button';
     const thumb=element('span','showcase-thumb');
     if(type==='video') {
-      const cover=mediaPath('covers',item.cover);
+      const cover=mediaPath('videos',item.cover);
       if(cover) {
         const poster=element('img','showcase-poster');
         poster.src=cover;poster.loading='lazy';poster.alt='';
