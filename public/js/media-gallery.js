@@ -51,8 +51,27 @@
     document.body.append(modal);
     return modal;
   };
+  function arrowIcon(direction) {
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');
+    svg.setAttribute('width','22');
+    svg.setAttribute('height','22');
+    svg.setAttribute('aria-hidden','true');
+    svg.setAttribute('focusable','false');
+    svg.classList.add('showcase-arrow-icon');
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',direction<0?'M15 5 8 12l7 7':'m9 5 7 7-7 7');
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke','currentColor');
+    path.setAttribute('stroke-width','2.6');
+    path.setAttribute('stroke-linecap','round');
+    path.setAttribute('stroke-linejoin','round');
+    svg.append(path);
+    return svg;
+  }
   function navButton(direction,callback,disabled){
-    const btn=elt('button','showcase-video-arrow '+(direction<0?'showcase-prev':'showcase-next'),direction<0?'‹':'›');
+    const btn=elt('button','showcase-video-arrow '+(direction<0?'showcase-prev':'showcase-next'));
+    btn.append(arrowIcon(direction));
     btn.type='button';btn.disabled=disabled;
     btn.setAttribute('aria-label',direction<0?'Предыдущее':'Следующее');
     btn.addEventListener('click',callback);
@@ -229,8 +248,10 @@
     const rail=elt('div','showcase-carousel-rail');
     rail.setAttribute('aria-label',type==='photos'?'Карусель фотографий':'Карусель видео');
     items.forEach((item,i)=>rail.append(card(item,type,i,true)));
-    const prev=elt('button','showcase-carousel-arrow showcase-carousel-prev','‹');
-    const next=elt('button','showcase-carousel-arrow showcase-carousel-next','›');
+    const prev=elt('button','showcase-carousel-arrow showcase-carousel-prev');
+    prev.append(arrowIcon(-1));
+    const next=elt('button','showcase-carousel-arrow showcase-carousel-next');
+    next.append(arrowIcon(1));
     prev.type=next.type='button';
     prev.setAttribute('aria-label','Прокрутить назад');
     next.setAttribute('aria-label','Прокрутить вперёд');
