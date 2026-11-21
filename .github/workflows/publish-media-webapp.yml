@@ -38,4 +38,4 @@ jobs:
         working-directory: apps-script
         run: |
           clasp push --force
-          clasp deploy --description "ANDREY-SPOET public media gallery"
+          clasp deploy -i AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg --description "ANDREY-SPOET public media gallery"
