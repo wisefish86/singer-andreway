@@ -48,4 +48,8 @@ jobs:
             exit 0
           fi
           git commit -m "Refresh prebuilt afisha and gallery cache"
+          # Other site edits may arrive while thumbnails are generated.
+          # Replay only the public snapshot commit on current main before pushing.
+          git fetch origin main
+          git rebase -X theirs origin/main
           git push origin HEAD:main
