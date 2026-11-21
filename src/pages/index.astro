@@ -5,6 +5,7 @@ import BrandIcon from '../components/BrandIcon.astro';
 import SiteFavicons from '../components/SiteFavicons.astro';
 import { readFileSync } from 'node:fs';
 const mediaSnapshot = JSON.parse(readFileSync('public/media-catalog.json', 'utf8'));
+const afishaSnapshot = JSON.parse(readFileSync('public/data/afisha.public.json', 'utf8'));
 import { telegramWeb, telegramApp, whatsapp, contactMessages, directChatLinks } from '../config/contact-links';
 
 const phoneDisplay = '+7 918 114-26-93';
@@ -547,7 +548,8 @@ const repertoireUrl = '/podborka/';
       });
     })();
   </script>
-<script is:inline src="/js/next-show.js?v=20261108-3" defer></script>
+<script type="application/json" id="afisha-snapshot" set:html={JSON.stringify(afishaSnapshot).replace(/</g, '\\u003c')}></script>
+<script is:inline src="/js/next-show.js?v=20261121-cached2" defer></script>
 
   <script type="application/json" id="media-snapshot" set:html={JSON.stringify(mediaSnapshot).replace(/</g, '\\u003c')}></script>
   <script src="/js/media-gallery.js?v=20261121-optimized4" defer data-media-api="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec"></script>
