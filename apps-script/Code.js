@@ -406,7 +406,45 @@ function publicMedia_() {
   return {updatedAt: new Date().toISOString(),videos:collect('Видео','video'),photos:collect('Фото','photo')};
 }
 
+/**
+ * Only performances marked !В in the calendar can activate public guest UI.
+ * The Calendar's start/end may include private load-in logistics. If the title
+ * specifies "20:00-22:00", those public on-stage hours take precedence.
+ */
+function guestPerformanceWindows_() {
+  const calendar = CalendarApp.getCalendarById(CFG.calendarId);
+  if (!calendar) throw new Error('Calendar unavailable');
+  const now = Date.now();
+  const events = calendar.getEvents(new Date(now - 48*3600000), new Date(now + 48*3600000));
+  return events.filter(e => !e.isAllDayEvent() && e.getTitle().startsWith(CFG.calendarPrefix))
+    .map(event => {
+      let start = event.getStartTime().getTime();
+      let end = event.getEndTime().getTime();
+      const times = event.getTitle().match(/(\d{1,2}):(\d{2})\s*[-–—]\s*(\d{1,2}):(\d{2})\s*(?:\([^)]*\))?\s*$/);
+      if (times) {
+        const sh = Number(times[1]), sm = Number(times[2]);
+        const eh = Number(times[3]), em = Number(times[4]);
+        if (sh < 24 && eh < 24 && sm < 60 && em < 60) {
+          const date = Utilities.formatDate(event.getStartTime(), CFG.timezone, 'yyyy-MM-dd');
+          const midnight = Date.parse(date + 'T00:00:00+03:00');
+          start = midnight + (sh*60+sm)*60000;
+          end = midnight + (eh*60+em)*60000;
+          if (end <= start) end += 86400000;
+        }
+      }
+      return {start: new Date(start).toISOString(), end: new Date(end + 2*3600000).toISOString()};
+    }).filter(window => Date.parse(window.end) > now - 60000);
+}
+
 function doGet(e) {
+  if (e && e.parameter && e.parameter.kind === 'guest-mode') {
+    const payload = JSON.stringify({windows: guestPerformanceWindows_()});
+    if (e.parameter.callback === 'singerGuestModeLoaded') {
+      return ContentService.createTextOutput('window.singerGuestModeLoaded(' + payload + ');')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JSON);
+  }
   if (e && e.parameter && e.parameter.kind === 'events') {
     const events = publicEvents_().map(({title,start,end,location}) => ({
       title: String(title || '').replace(/\s*\(\s*\d+\s*[кk]\s*\)/gi,'').trim(),
