@@ -406,3 +406,9 @@ dialog::backdrop{touch-action:none}
   .showcase-video-dialog .showcase-video-footer{padding:0 14px}
   .showcase-video-arrow{width:37px;height:52px;background:#07121dbd;font-size:35px}
 }
+
+
+/* Preserve the whole source frame inside thumbnails: portrait images get side bars. */
+.showcase-thumb{background:#08131d}
+.showcase-thumb .showcase-poster,
+.showcase-still .showcase-poster{object-fit:contain;object-position:center center;background:#08131d}
