@@ -72,5 +72,5 @@ jobs:
               --user "andreway:${FTP_PASSWORD}" \
               --ftp-create-dirs \
               --upload-file "public/images/${folder}/.gitkeep" \
-              "ftp://andreway.ru/www/singer.andreway.ru/images/${folder}/.gitkeep"
+              "ftp://andreway.ru//www/singer.andreway.ru/images/${folder}/.gitkeep"
           done
