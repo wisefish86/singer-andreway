@@ -373,7 +373,904 @@ function installTriggers() {
 }
 
 // Public read-only endpoint for the website. Deployment is a separate one-time step.
-function doGet() {
+// Public media catalog reads only explicitly checked rows from a separate sheet.
+// Never publish the sheet itself or return private/unchecked rows.
+function publicMedia_() {
+  const spreadsheet = SpreadsheetApp.openById('1BwmXTVFysgzZq_UbCvrk98seMtOuUYj34Lwym371-hU');
+  const safeName = value => {
+    const file = String(value || '').trim();
+    return file && file.length <= 240 && !/[\\\\/]/.test(file) &&
+      !file.includes('..') && !/[<>:"|?*]/.test(file) ? file : '';
+  };
+  function entries(tabName, kind) {
+    const sheet = spreadsheet.getSheetByName(tabName);
+    if (!sheet) throw new Error('Media sheet missing: ' + tabName);
+    const rows = sheet.getDataRange().getValues().slice(1);
+    return rows.flatMap(row => {
+      const checked = kind === 'video' ? row[4] : row[3];
+      if (checked !== true) return [];
+      const file = safeName(row[1]);
+      if (!file || !new RegExp(kind === 'video' ? '\\\\.(mp4|webm)
+
+
+/**
+ * Private Telegram subscriptions and reminders.
+ * Does not change the current webhook until setupSubscriberWebhook() is explicitly run.
+ * Telegram cannot enumerate bot users: /start is required to register a subscriber.
+ */
+function subscribersSheet_(name) {
+  const book = SpreadsheetApp.openById(CFG.spreadsheetId);
+  const sheet = book.getSheetByName(name);
+  if (!sheet) throw new Error('Не найдена вкладка «' + name + '»');
+  return sheet;
+}
+
+function subscriberRows_() {
+  const sheet = subscribersSheet_('Подписчики');
+  const values = sheet.getDataRange().getValues();
+  return {sheet, rows: values.slice(1).map((v,i) => ({
+    row: i+2, chatId: String(v[0] || '').trim(), status: String(v[1] || ''),
+    dayBefore: v[4] !== false && String(v[4]).toLowerCase() !== 'false',
+    dayOf: v[5] !== false && String(v[5]).toLowerCase() !== 'false',
+  }))};
+}
+
+function updateSubscriber_(chatId, enabled) {
+  const {sheet, rows} = subscriberRows_();
+  const id = String(chatId);
+  const existing = rows.find(r => r.chatId === id);
+  const stamp = new Date().toISOString();
+  if (existing) {
+    sheet.getRange(existing.row, 2).setValue(enabled ? 'active' : 'stopped');
+    sheet.getRange(existing.row, 4).setValue(stamp);
+    if (enabled) sheet.getRange(existing.row, 7).clearContent();
+  } else if (enabled) {
+    sheet.appendRow([id, 'active', stamp, stamp, true, true, '']);
+  }
+}
+
+function doPost(e) {
+  // The Telegram webhook must be configured separately, with a per-project
+  // random secret in the URL. Never change an existing webhook automatically.
+  const props = PropertiesService.getScriptProperties();
+  const expected = props.getProperty('SUBSCRIBER_WEBHOOK_SECRET');
+  if (!expected || !e || !e.parameter || e.parameter.key !== expected) {
+    return ContentService.createTextOutput('ignored');
+  }
+  try {
+    const update = JSON.parse(e.postData.contents || '{}');
+    const message = update.message;
+    if (!message || !message.chat || message.chat.type !== 'private') {
+      return ContentService.createTextOutput('ok');
+    }
+    const command = String(message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
+    const id = String(message.chat.id);
+    if (!['/start','/stop','/status','/help'].includes(command)) {
+      return ContentService.createTextOutput('ok');
+    }
+    const lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    let reply;
+    try {
+      if (command === '/start') {
+        updateSubscriber_(id, true);
+        reply = '🔔 Вы подписались на напоминания о моих открытых выступлениях! Вы получите сообщения за 48 и за 3 часа до выступления.\n\nОтключить: /stop';
+      } else if (command === '/stop') {
+        updateSubscriber_(id, false);
+        reply = '🔕 Напоминания отключены. Чтобы включить их снова: /start';
+      } else if (command === '/status') {
+        const found = subscriberRows_().rows.find(r => r.chatId === id);
+        reply = found && found.status === 'active' ? '✅ Напоминания включены. Отключить: /stop' : 'Напоминания выключены. Включить: /start';
+      } else {
+        reply = 'Напоминания о моих открытых выступлениях:\n/start — подписаться\n/status — проверить подписку\n/stop — отписаться';
+      }
+    } finally {lock.releaseLock();}
+    telegram_('sendMessage', {chat_id: id, text: reply});
+  } catch (error) {
+    console.error('Subscriber webhook: ' + String(error));
+    // Return OK to avoid Telegram retry storms; inspect Apps Script execution logs.
+  }
+  return ContentService.createTextOutput('ok');
+}
+
+
+/**
+ * Subscriber commands through Telegram polling. Does not require a web app.
+ * Run enableSubscriberPolling() once to replace the obsolete external webhook.
+ */
+function subscriberKeyboard_() {
+  return {keyboard: [
+    [{text: '🔔 Получать уведомления'}, {text: '🔕 Отключить'}],
+    [{text: '📋 Моя подписка'}]
+  ], resize_keyboard: true, is_persistent: true};
+}
+
+function handleSubscriberMessage_(message) {
+  if (!message || !message.chat || message.chat.type !== 'private') return;
+  const chatId = String(message.chat.id);
+  const value = String(message.text || '').trim();
+  const cmd = value.split(/\s+/)[0].split('@')[0].toLowerCase();
+  let answer = '';
+  if (cmd === '/start' || value === '🔔 Получать уведомления') {
+    updateSubscriber_(chatId, true);
+    answer = '✅ Напоминания включены! Пришлю сообщение за 48 часов и за 3 часа до открытого выступления.\n\nОтключить можно кнопкой ниже или командой /stop.';
+  } else if (cmd === '/stop' || value === '🔕 Отключить') {
+    updateSubscriber_(chatId, false);
+    answer = '🔕 Напоминания отключены. Подписаться снова можно кнопкой ниже.';
+  } else if (cmd === '/status' || value === '📋 Моя подписка') {
+    const record = subscriberRows_().rows.find(r => r.chatId === chatId);
+    answer = record && record.status === 'active'
+      ? '✅ Вы подписаны. Напоминания придут за 48 и за 3 часа до выступления.'
+      : 'Напоминания сейчас выключены. Нажмите «🔔 Получать уведомления».';
+  } else if (cmd === '/help') {
+    answer = 'Здесь можно подписаться на уведомления об открытых выступлениях или отключить их.';
+  } else {
+    answer = 'Выберите действие на клавиатуре ниже.';
+  }
+  telegram_('sendMessage', {chat_id: chatId, text: answer, reply_markup: subscriberKeyboard_()});
+}
+
+function pollSubscriberMessages() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return;
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const offset = Number(props.getProperty('SUBSCRIBER_UPDATE_OFFSET') || '0');
+    const args = {timeout: 0, limit: 50, allowed_updates: ['message']};
+    if (offset > 0) args.offset = offset;
+    const updates = telegram_('getUpdates', args);
+    for (const update of updates) {
+      // Process before confirming the update; failed messages are retried.
+      if (update.message) handleSubscriberMessage_(update.message);
+      props.setProperty('SUBSCRIBER_UPDATE_OFFSET', String(update.update_id + 1));
+    }
+    console.log('Проверено сообщений: ' + updates.length);
+  } finally { lock.releaseLock(); }
+}
+
+function enableSubscriberPolling() {
+  // ControllerBot is no longer used. Revoke its webhook to allow getUpdates.
+  telegram_('deleteWebhook', {drop_pending_updates: true});
+  const props = PropertiesService.getScriptProperties();
+  props.deleteProperty('SUBSCRIBER_UPDATE_OFFSET');
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'pollSubscriberMessages')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('pollSubscriberMessages').timeBased().everyMinutes(1).create();
+  console.log('Приём команд включён. Отправьте /start боту в личный чат.');
+  pollSubscriberMessages();
+}
+
+function moscowTime_(date) {
+  return Utilities.formatDate(date, CFG.timezone, 'yyyy-MM-dd HH:mm');
+}
+
+function publicShowStart_(e) {
+  const heading = publicEventHeading_(e);
+  if (!heading.time) return null;
+  const startTime = heading.time.split('–')[0].trim();
+  // Event day comes from Google Calendar; event start clock time is PRIVATE.
+  const day = Utilities.formatDate(new Date(e.start), CFG.timezone, 'yyyy-MM-dd');
+  return {day, time: startTime, timestamp: day + ' ' + startTime};
+}
+
+function plusLocalDays_(day, days) {
+  const d = new Date(day + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + days);
+  return Utilities.formatDate(d, 'UTC', 'yyyy-MM-dd');
+}
+
+function singerSubscribersFromSupabase_() {
+  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
+  if (!token) throw new Error('TELEGRAM_BOT_TOKEN отсутствует');
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, 'singer-webhook:' + token, Utilities.Charset.UTF_8
+  );
+  const secret = digest.map(b => ('0' + ((b + 256) % 256).toString(16)).slice(-2)).join('');
+  const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-telegram-webhook?subscribers=1';
+  const result = UrlFetchApp.fetch(endpoint, {
+    method: 'get', headers: {'X-Telegram-Bot-Api-Secret-Token': secret},
+    muteHttpExceptions: true
+  });
+  if (result.getResponseCode() !== 200) {
+    throw new Error('Не удалось получить подписчиков Supabase, HTTP ' + result.getResponseCode());
+  }
+  const parsed = JSON.parse(result.getContentText());
+  if (!Array.isArray(parsed.subscribers)) throw new Error('Некорректный ответ Supabase');
+  return parsed.subscribers.filter(id => /^\d+$/.test(String(id))).map(id => ({
+    chatId: String(id), status: 'active', dayBefore: true, dayOf: true
+  }));
+}
+
+function reminderButtons_(event) {
+  const d = eventDetails_(event);
+  const rows = [];
+  const digits = String(d.phone || '').replace(/\D/g, '').replace(/^8(?=\d{10}$)/, '7');
+  if (digits.length === 11 && digits[0] === '7') {
+    rows.push([{text: '📞 Позвонить в заведение', callback_data: 'venue_call:' + digits}]);
+  }
+  if (d.bookingUrl && /^https?:\/\//i.test(d.bookingUrl)) {
+    rows.push([{text: '🍽 Забронировать столик', url: d.bookingUrl}]);
+  }
+  if (d.address) rows.push([{text: '🗺 Построить маршрут', url: routeLink_(d.address, d.mapLink)}]);
+  if (d.website && /^https?:\/\//i.test(d.website)) {
+    rows.push([{text: '🌐 Сайт заведения', url: d.website}]);
+  }
+  return {inline_keyboard: rows};
+}
+
+function notificationText_(event, kind) {
+  const h = publicEventHeading_(event);
+  const d = eventDetails_(event);
+  const prefix = kind === 'hours_48' ? '🔔 До выступления два дня!' : '🎤 До выступления три часа!';
+  const parts = ['<b>' + prefix + '</b>', '', '📅 ' + escapeHtml_(h.date)];
+  if (h.time) parts.push('🕗 ' + escapeHtml_(h.time));
+  if (d.venue) parts.push('🏛️ <b>' + escapeHtml_(d.venue) + '</b>');
+  if (d.address) parts.push('📍 ' + escapeHtml_(d.address));
+  if (d.phone) {
+    const digits = d.phone.replace(/\D/g, '');
+    const dial = digits.length === 11 && digits[0] === '8' ? '+7' + digits.slice(1)
+      : digits.length === 11 && digits[0] === '7' ? '+' + digits
+      : escapeHtml_(d.phone);
+    parts.push('📞 Телефон: ' + dial.replace(/[()]/g, ''));
+  }
+  parts.push('', 'Буду рад видеть вас! 🎶');
+  return parts.join('\n');
+}
+
+function sentNotifications_() {
+  const sheet = subscribersSheet_('Отправки');
+  const data = sheet.getDataRange().getValues();
+  const keys = new Set(data.slice(1).filter(row => String(row[6]) === 'sent')
+    .map(row => [String(row[0]), String(row[1]), String(row[2]), String(row[3])].join('|')));
+  return {sheet, keys};
+}
+
+/**
+ * Check every 15 minutes. Reminders at 48h and 3h before the PUBLIC showtime.
+ * Never use the private calendar start hour as the performance time.
+ * Only active subscribers, including the owner if they explicitly /start the bot.
+ */
+/**
+ * Reminder search must retain shows whose private calendar start has passed
+ * but whose PUBLIC performance start (from title) is still in the future.
+ * E.g. calendar logistics at 18:00, public show at 21:00.
+ */
+function reminderEvents_() {
+  const calendar = CalendarApp.getCalendarById(CFG.calendarId);
+  if (!calendar) throw new Error('Calendar unavailable: ' + CFG.calendarId);
+  const now = new Date();
+  const from = new Date(now.getTime() - 72 * 3600000);
+  const until = new Date(now.getTime() + CFG.horizonDays * 86400000);
+  return calendar.getEvents(from, until)
+    .filter(e => e.getTitle().startsWith(CFG.calendarPrefix) && !e.isAllDayEvent())
+    .map(e => ({
+      id: e.getId(),
+      title: e.getTitle().slice(CFG.calendarPrefix.length).trim(),
+      start: e.getStartTime().toISOString(),
+      end: e.getEndTime().toISOString(),
+      location: e.getLocation() || '',
+      description: e.getDescription() || '',
+    }));
+}
+
+function sendPerformanceReminders() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) return;
+  try {
+    const now = Date.now();
+    const events = reminderEvents_();
+    const subscribers = singerSubscribersFromSupabase_();
+    const sent = sentNotifications_();
+    const tasks = [];
+    for (const event of events) {
+      const show = publicShowStart_(event);
+      if (!show) continue;
+      // Moscow is UTC+03 year-round. Do not use the private calendar clock time.
+      const showAt = Date.parse(show.day + 'T' + show.time + ':00+03:00');
+      if (!Number.isFinite(showAt) || now >= showAt) continue;
+      for (const item of [
+        {kind:'hours_48', before:48},
+        {kind:'hours_3', before:3}
+      ]) {
+        const target = showAt - item.before * 3600000;
+        // One-hour delivery window tolerates Apps Script trigger jitter;
+        // never send a reminder retroactively days after its target.
+        if (now >= target && now < target + 3600000) tasks.push({event, kind:item.kind});
+      }
+    }
+    for (const sub of subscribers) {
+      if (sub.status !== 'active') continue;
+      for (const item of tasks) {
+        if (item.kind === 'hours_48' && !sub.dayBefore) continue;
+        if (item.kind === 'hours_3' && !sub.dayOf) continue;
+        const key = [item.event.id, item.kind, sub.chatId, item.event.start].join('|');
+        if (sent.keys.has(key)) continue;
+        try {
+          const result = telegram_('sendPhoto', {
+            chat_id: sub.chatId,
+            photo: 'https://singer.andreway.ru/images/concert-announcement.webp',
+            caption: notificationText_(item.event, item.kind),
+            parse_mode: 'HTML',
+            reply_markup: reminderButtons_(item.event)
+          });
+          sent.sheet.appendRow([item.event.id, item.kind, sub.chatId, item.event.start,
+            new Date().toISOString(), result.message_id, 'sent', '']);
+          sent.keys.add(key);
+        } catch (error) {
+          const reason = String(error).slice(0,450);
+          sent.sheet.appendRow([item.event.id, item.kind, sub.chatId, item.event.start,
+            new Date().toISOString(), '', 'failed', reason]);
+          if (/bot was blocked|user is deactivated|chat not found|forbidden/i.test(reason)) {
+            // Subscriber state belongs to Supabase. Do not mutate the old sheet.
+            break;
+          }
+          console.error('Reminder failed: ' + reason);
+        }
+      }
+    }
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Run manually after deploying to confirm the 15-minute reminder trigger exists. */
+function inspectReminderTrigger() {
+  const triggers = ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'sendPerformanceReminders');
+  console.log('Reminder trigger count: ' + triggers.length +
+    ' (expected 1; if 0, run installReminderTrigger)');
+  console.log('Eligible public shows: ' + reminderEvents_().filter(e => {
+    const show = publicShowStart_(e);
+    return show && Date.parse(show.day + 'T' + show.time + ':00+03:00') > Date.now();
+  }).length);
+}
+
+function installReminderTrigger() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'sendPerformanceReminders')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('sendPerformanceReminders').timeBased().everyMinutes(15).create();
+}
+
+/**
+ * Print the Telegram webhook URL only after deploying this script as an
+ * Apps Script web app (execute as owner, access anyone). Save a strong random
+ * SUBSCRIBER_WEBHOOK_SECRET in Script Properties first.
+ * Do not call setWebhook until the current webhook target has been reviewed.
+ */
+function inspectTelegramWebhook() {
+  const info = telegram_('getWebhookInfo', {});
+  console.log(JSON.stringify({
+    webhook_host: info.url ? (info.url.match(/^https?:\/\/[^/]+/) || ['unknown'])[0] : '',
+    pending_update_count: info.pending_update_count,
+    last_error_message: info.last_error_message || ''
+  }));
+}
+
+function activateSubscriberWebhook() {
+  const props = PropertiesService.getScriptProperties();
+  const base = props.getProperty('SUBSCRIBER_WEBAPP_URL');
+  const secret = props.getProperty('SUBSCRIBER_WEBHOOK_SECRET');
+  if (!base || !secret) throw new Error('Set SUBSCRIBER_WEBAPP_URL and SUBSCRIBER_WEBHOOK_SECRET first.');
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(base)) {
+    throw new Error('Invalid Apps Script web app URL.');
+  }
+  // Explicitly replaces existing Telegram webhook. Review getWebhookInfo first.
+  const result = telegram_('setWebhook', {url: base + '?key=' + encodeURIComponent(secret),
+    allowed_updates: ['message'], drop_pending_updates: false});
+  console.log('Webhook activated: ' + JSON.stringify(result));
+}
+
+
+/**
+ * One-time safe cutover: validate the Supabase endpoint, register Telegram
+ * webhook with token-derived secret, then stop polling. No bot token logged.
+ */
+function activateSingerSupabaseWebhook() {
+  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
+  if (!token) throw new Error('TELEGRAM_BOT_TOKEN отсутствует в Script Properties');
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, 'singer-webhook:' + token, Utilities.Charset.UTF_8
+  );
+  const secret = digest.map(b => ('0' + ((b + 256) % 256).toString(16)).slice(-2)).join('');
+  const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-telegram-webhook';
+  const result = UrlFetchApp.fetch(endpoint, {
+    method: 'get', headers: {'X-Telegram-Bot-Api-Secret-Token': secret},
+    muteHttpExceptions: true
+  });
+  if (result.getResponseCode() !== 200 || result.getContentText().trim() !== 'ready') {
+    throw new Error('Supabase не готов (HTTP ' + result.getResponseCode() +
+      '). Telegram webhook НЕ изменён. Проверь секрет SINGER_TELEGRAM_BOT_TOKEN.');
+  }
+  telegram_('setWebhook', {
+    url: endpoint, secret_token: secret,
+    allowed_updates: ['message'], drop_pending_updates: false
+  });
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'pollSubscriberMessages')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  console.log('Готово: Telegram webhook подключён к Supabase; опрос отключён.');
+  console.log('Теперь отправь боту /start или /event, затем /status.');
+}
+
+
+/**
+ * After the Supabase function has deployed: enable callbacks used by
+ * "Позвонить в заведение" while retaining the same webhook and secret.
+ */
+function enableSingerButtonCallbacks() {
+  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
+  if (!token) throw new Error('TELEGRAM_BOT_TOKEN отсутствует');
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, 'singer-webhook:' + token, Utilities.Charset.UTF_8
+  );
+  const secret = digest.map(b => ('0' + ((b + 256) % 256).toString(16)).slice(-2)).join('');
+  const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-telegram-webhook';
+  const result = UrlFetchApp.fetch(endpoint, {
+    method: 'get', headers: {'X-Telegram-Bot-Api-Secret-Token': secret},
+    muteHttpExceptions: true
+  });
+  if (result.getResponseCode() !== 200 || result.getContentText().trim() !== 'ready') {
+    throw new Error('Supabase не готов; webhook не изменён, HTTP ' + result.getResponseCode());
+  }
+  telegram_('setWebhook', {
+    url: endpoint, secret_token: secret,
+    allowed_updates: ['message', 'callback_query'], drop_pending_updates: false
+  });
+  console.log('Кнопки Telegram подключены: message + callback_query.');
+}
+ : '\\\\.(jpe?g|png|webp|avif)
+
+
+/**
+ * Private Telegram subscriptions and reminders.
+ * Does not change the current webhook until setupSubscriberWebhook() is explicitly run.
+ * Telegram cannot enumerate bot users: /start is required to register a subscriber.
+ */
+function subscribersSheet_(name) {
+  const book = SpreadsheetApp.openById(CFG.spreadsheetId);
+  const sheet = book.getSheetByName(name);
+  if (!sheet) throw new Error('Не найдена вкладка «' + name + '»');
+  return sheet;
+}
+
+function subscriberRows_() {
+  const sheet = subscribersSheet_('Подписчики');
+  const values = sheet.getDataRange().getValues();
+  return {sheet, rows: values.slice(1).map((v,i) => ({
+    row: i+2, chatId: String(v[0] || '').trim(), status: String(v[1] || ''),
+    dayBefore: v[4] !== false && String(v[4]).toLowerCase() !== 'false',
+    dayOf: v[5] !== false && String(v[5]).toLowerCase() !== 'false',
+  }))};
+}
+
+function updateSubscriber_(chatId, enabled) {
+  const {sheet, rows} = subscriberRows_();
+  const id = String(chatId);
+  const existing = rows.find(r => r.chatId === id);
+  const stamp = new Date().toISOString();
+  if (existing) {
+    sheet.getRange(existing.row, 2).setValue(enabled ? 'active' : 'stopped');
+    sheet.getRange(existing.row, 4).setValue(stamp);
+    if (enabled) sheet.getRange(existing.row, 7).clearContent();
+  } else if (enabled) {
+    sheet.appendRow([id, 'active', stamp, stamp, true, true, '']);
+  }
+}
+
+function doPost(e) {
+  // The Telegram webhook must be configured separately, with a per-project
+  // random secret in the URL. Never change an existing webhook automatically.
+  const props = PropertiesService.getScriptProperties();
+  const expected = props.getProperty('SUBSCRIBER_WEBHOOK_SECRET');
+  if (!expected || !e || !e.parameter || e.parameter.key !== expected) {
+    return ContentService.createTextOutput('ignored');
+  }
+  try {
+    const update = JSON.parse(e.postData.contents || '{}');
+    const message = update.message;
+    if (!message || !message.chat || message.chat.type !== 'private') {
+      return ContentService.createTextOutput('ok');
+    }
+    const command = String(message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
+    const id = String(message.chat.id);
+    if (!['/start','/stop','/status','/help'].includes(command)) {
+      return ContentService.createTextOutput('ok');
+    }
+    const lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    let reply;
+    try {
+      if (command === '/start') {
+        updateSubscriber_(id, true);
+        reply = '🔔 Вы подписались на напоминания о моих открытых выступлениях! Вы получите сообщения за 48 и за 3 часа до выступления.\n\nОтключить: /stop';
+      } else if (command === '/stop') {
+        updateSubscriber_(id, false);
+        reply = '🔕 Напоминания отключены. Чтобы включить их снова: /start';
+      } else if (command === '/status') {
+        const found = subscriberRows_().rows.find(r => r.chatId === id);
+        reply = found && found.status === 'active' ? '✅ Напоминания включены. Отключить: /stop' : 'Напоминания выключены. Включить: /start';
+      } else {
+        reply = 'Напоминания о моих открытых выступлениях:\n/start — подписаться\n/status — проверить подписку\n/stop — отписаться';
+      }
+    } finally {lock.releaseLock();}
+    telegram_('sendMessage', {chat_id: id, text: reply});
+  } catch (error) {
+    console.error('Subscriber webhook: ' + String(error));
+    // Return OK to avoid Telegram retry storms; inspect Apps Script execution logs.
+  }
+  return ContentService.createTextOutput('ok');
+}
+
+
+/**
+ * Subscriber commands through Telegram polling. Does not require a web app.
+ * Run enableSubscriberPolling() once to replace the obsolete external webhook.
+ */
+function subscriberKeyboard_() {
+  return {keyboard: [
+    [{text: '🔔 Получать уведомления'}, {text: '🔕 Отключить'}],
+    [{text: '📋 Моя подписка'}]
+  ], resize_keyboard: true, is_persistent: true};
+}
+
+function handleSubscriberMessage_(message) {
+  if (!message || !message.chat || message.chat.type !== 'private') return;
+  const chatId = String(message.chat.id);
+  const value = String(message.text || '').trim();
+  const cmd = value.split(/\s+/)[0].split('@')[0].toLowerCase();
+  let answer = '';
+  if (cmd === '/start' || value === '🔔 Получать уведомления') {
+    updateSubscriber_(chatId, true);
+    answer = '✅ Напоминания включены! Пришлю сообщение за 48 часов и за 3 часа до открытого выступления.\n\nОтключить можно кнопкой ниже или командой /stop.';
+  } else if (cmd === '/stop' || value === '🔕 Отключить') {
+    updateSubscriber_(chatId, false);
+    answer = '🔕 Напоминания отключены. Подписаться снова можно кнопкой ниже.';
+  } else if (cmd === '/status' || value === '📋 Моя подписка') {
+    const record = subscriberRows_().rows.find(r => r.chatId === chatId);
+    answer = record && record.status === 'active'
+      ? '✅ Вы подписаны. Напоминания придут за 48 и за 3 часа до выступления.'
+      : 'Напоминания сейчас выключены. Нажмите «🔔 Получать уведомления».';
+  } else if (cmd === '/help') {
+    answer = 'Здесь можно подписаться на уведомления об открытых выступлениях или отключить их.';
+  } else {
+    answer = 'Выберите действие на клавиатуре ниже.';
+  }
+  telegram_('sendMessage', {chat_id: chatId, text: answer, reply_markup: subscriberKeyboard_()});
+}
+
+function pollSubscriberMessages() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return;
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const offset = Number(props.getProperty('SUBSCRIBER_UPDATE_OFFSET') || '0');
+    const args = {timeout: 0, limit: 50, allowed_updates: ['message']};
+    if (offset > 0) args.offset = offset;
+    const updates = telegram_('getUpdates', args);
+    for (const update of updates) {
+      // Process before confirming the update; failed messages are retried.
+      if (update.message) handleSubscriberMessage_(update.message);
+      props.setProperty('SUBSCRIBER_UPDATE_OFFSET', String(update.update_id + 1));
+    }
+    console.log('Проверено сообщений: ' + updates.length);
+  } finally { lock.releaseLock(); }
+}
+
+function enableSubscriberPolling() {
+  // ControllerBot is no longer used. Revoke its webhook to allow getUpdates.
+  telegram_('deleteWebhook', {drop_pending_updates: true});
+  const props = PropertiesService.getScriptProperties();
+  props.deleteProperty('SUBSCRIBER_UPDATE_OFFSET');
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'pollSubscriberMessages')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('pollSubscriberMessages').timeBased().everyMinutes(1).create();
+  console.log('Приём команд включён. Отправьте /start боту в личный чат.');
+  pollSubscriberMessages();
+}
+
+function moscowTime_(date) {
+  return Utilities.formatDate(date, CFG.timezone, 'yyyy-MM-dd HH:mm');
+}
+
+function publicShowStart_(e) {
+  const heading = publicEventHeading_(e);
+  if (!heading.time) return null;
+  const startTime = heading.time.split('–')[0].trim();
+  // Event day comes from Google Calendar; event start clock time is PRIVATE.
+  const day = Utilities.formatDate(new Date(e.start), CFG.timezone, 'yyyy-MM-dd');
+  return {day, time: startTime, timestamp: day + ' ' + startTime};
+}
+
+function plusLocalDays_(day, days) {
+  const d = new Date(day + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + days);
+  return Utilities.formatDate(d, 'UTC', 'yyyy-MM-dd');
+}
+
+function singerSubscribersFromSupabase_() {
+  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
+  if (!token) throw new Error('TELEGRAM_BOT_TOKEN отсутствует');
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, 'singer-webhook:' + token, Utilities.Charset.UTF_8
+  );
+  const secret = digest.map(b => ('0' + ((b + 256) % 256).toString(16)).slice(-2)).join('');
+  const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-telegram-webhook?subscribers=1';
+  const result = UrlFetchApp.fetch(endpoint, {
+    method: 'get', headers: {'X-Telegram-Bot-Api-Secret-Token': secret},
+    muteHttpExceptions: true
+  });
+  if (result.getResponseCode() !== 200) {
+    throw new Error('Не удалось получить подписчиков Supabase, HTTP ' + result.getResponseCode());
+  }
+  const parsed = JSON.parse(result.getContentText());
+  if (!Array.isArray(parsed.subscribers)) throw new Error('Некорректный ответ Supabase');
+  return parsed.subscribers.filter(id => /^\d+$/.test(String(id))).map(id => ({
+    chatId: String(id), status: 'active', dayBefore: true, dayOf: true
+  }));
+}
+
+function reminderButtons_(event) {
+  const d = eventDetails_(event);
+  const rows = [];
+  const digits = String(d.phone || '').replace(/\D/g, '').replace(/^8(?=\d{10}$)/, '7');
+  if (digits.length === 11 && digits[0] === '7') {
+    rows.push([{text: '📞 Позвонить в заведение', callback_data: 'venue_call:' + digits}]);
+  }
+  if (d.bookingUrl && /^https?:\/\//i.test(d.bookingUrl)) {
+    rows.push([{text: '🍽 Забронировать столик', url: d.bookingUrl}]);
+  }
+  if (d.address) rows.push([{text: '🗺 Построить маршрут', url: routeLink_(d.address, d.mapLink)}]);
+  if (d.website && /^https?:\/\//i.test(d.website)) {
+    rows.push([{text: '🌐 Сайт заведения', url: d.website}]);
+  }
+  return {inline_keyboard: rows};
+}
+
+function notificationText_(event, kind) {
+  const h = publicEventHeading_(event);
+  const d = eventDetails_(event);
+  const prefix = kind === 'hours_48' ? '🔔 До выступления два дня!' : '🎤 До выступления три часа!';
+  const parts = ['<b>' + prefix + '</b>', '', '📅 ' + escapeHtml_(h.date)];
+  if (h.time) parts.push('🕗 ' + escapeHtml_(h.time));
+  if (d.venue) parts.push('🏛️ <b>' + escapeHtml_(d.venue) + '</b>');
+  if (d.address) parts.push('📍 ' + escapeHtml_(d.address));
+  if (d.phone) {
+    const digits = d.phone.replace(/\D/g, '');
+    const dial = digits.length === 11 && digits[0] === '8' ? '+7' + digits.slice(1)
+      : digits.length === 11 && digits[0] === '7' ? '+' + digits
+      : escapeHtml_(d.phone);
+    parts.push('📞 Телефон: ' + dial.replace(/[()]/g, ''));
+  }
+  parts.push('', 'Буду рад видеть вас! 🎶');
+  return parts.join('\n');
+}
+
+function sentNotifications_() {
+  const sheet = subscribersSheet_('Отправки');
+  const data = sheet.getDataRange().getValues();
+  const keys = new Set(data.slice(1).filter(row => String(row[6]) === 'sent')
+    .map(row => [String(row[0]), String(row[1]), String(row[2]), String(row[3])].join('|')));
+  return {sheet, keys};
+}
+
+/**
+ * Check every 15 minutes. Reminders at 48h and 3h before the PUBLIC showtime.
+ * Never use the private calendar start hour as the performance time.
+ * Only active subscribers, including the owner if they explicitly /start the bot.
+ */
+/**
+ * Reminder search must retain shows whose private calendar start has passed
+ * but whose PUBLIC performance start (from title) is still in the future.
+ * E.g. calendar logistics at 18:00, public show at 21:00.
+ */
+function reminderEvents_() {
+  const calendar = CalendarApp.getCalendarById(CFG.calendarId);
+  if (!calendar) throw new Error('Calendar unavailable: ' + CFG.calendarId);
+  const now = new Date();
+  const from = new Date(now.getTime() - 72 * 3600000);
+  const until = new Date(now.getTime() + CFG.horizonDays * 86400000);
+  return calendar.getEvents(from, until)
+    .filter(e => e.getTitle().startsWith(CFG.calendarPrefix) && !e.isAllDayEvent())
+    .map(e => ({
+      id: e.getId(),
+      title: e.getTitle().slice(CFG.calendarPrefix.length).trim(),
+      start: e.getStartTime().toISOString(),
+      end: e.getEndTime().toISOString(),
+      location: e.getLocation() || '',
+      description: e.getDescription() || '',
+    }));
+}
+
+function sendPerformanceReminders() {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) return;
+  try {
+    const now = Date.now();
+    const events = reminderEvents_();
+    const subscribers = singerSubscribersFromSupabase_();
+    const sent = sentNotifications_();
+    const tasks = [];
+    for (const event of events) {
+      const show = publicShowStart_(event);
+      if (!show) continue;
+      // Moscow is UTC+03 year-round. Do not use the private calendar clock time.
+      const showAt = Date.parse(show.day + 'T' + show.time + ':00+03:00');
+      if (!Number.isFinite(showAt) || now >= showAt) continue;
+      for (const item of [
+        {kind:'hours_48', before:48},
+        {kind:'hours_3', before:3}
+      ]) {
+        const target = showAt - item.before * 3600000;
+        // One-hour delivery window tolerates Apps Script trigger jitter;
+        // never send a reminder retroactively days after its target.
+        if (now >= target && now < target + 3600000) tasks.push({event, kind:item.kind});
+      }
+    }
+    for (const sub of subscribers) {
+      if (sub.status !== 'active') continue;
+      for (const item of tasks) {
+        if (item.kind === 'hours_48' && !sub.dayBefore) continue;
+        if (item.kind === 'hours_3' && !sub.dayOf) continue;
+        const key = [item.event.id, item.kind, sub.chatId, item.event.start].join('|');
+        if (sent.keys.has(key)) continue;
+        try {
+          const result = telegram_('sendPhoto', {
+            chat_id: sub.chatId,
+            photo: 'https://singer.andreway.ru/images/concert-announcement.webp',
+            caption: notificationText_(item.event, item.kind),
+            parse_mode: 'HTML',
+            reply_markup: reminderButtons_(item.event)
+          });
+          sent.sheet.appendRow([item.event.id, item.kind, sub.chatId, item.event.start,
+            new Date().toISOString(), result.message_id, 'sent', '']);
+          sent.keys.add(key);
+        } catch (error) {
+          const reason = String(error).slice(0,450);
+          sent.sheet.appendRow([item.event.id, item.kind, sub.chatId, item.event.start,
+            new Date().toISOString(), '', 'failed', reason]);
+          if (/bot was blocked|user is deactivated|chat not found|forbidden/i.test(reason)) {
+            // Subscriber state belongs to Supabase. Do not mutate the old sheet.
+            break;
+          }
+          console.error('Reminder failed: ' + reason);
+        }
+      }
+    }
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** Run manually after deploying to confirm the 15-minute reminder trigger exists. */
+function inspectReminderTrigger() {
+  const triggers = ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'sendPerformanceReminders');
+  console.log('Reminder trigger count: ' + triggers.length +
+    ' (expected 1; if 0, run installReminderTrigger)');
+  console.log('Eligible public shows: ' + reminderEvents_().filter(e => {
+    const show = publicShowStart_(e);
+    return show && Date.parse(show.day + 'T' + show.time + ':00+03:00') > Date.now();
+  }).length);
+}
+
+function installReminderTrigger() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'sendPerformanceReminders')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('sendPerformanceReminders').timeBased().everyMinutes(15).create();
+}
+
+/**
+ * Print the Telegram webhook URL only after deploying this script as an
+ * Apps Script web app (execute as owner, access anyone). Save a strong random
+ * SUBSCRIBER_WEBHOOK_SECRET in Script Properties first.
+ * Do not call setWebhook until the current webhook target has been reviewed.
+ */
+function inspectTelegramWebhook() {
+  const info = telegram_('getWebhookInfo', {});
+  console.log(JSON.stringify({
+    webhook_host: info.url ? (info.url.match(/^https?:\/\/[^/]+/) || ['unknown'])[0] : '',
+    pending_update_count: info.pending_update_count,
+    last_error_message: info.last_error_message || ''
+  }));
+}
+
+function activateSubscriberWebhook() {
+  const props = PropertiesService.getScriptProperties();
+  const base = props.getProperty('SUBSCRIBER_WEBAPP_URL');
+  const secret = props.getProperty('SUBSCRIBER_WEBHOOK_SECRET');
+  if (!base || !secret) throw new Error('Set SUBSCRIBER_WEBAPP_URL and SUBSCRIBER_WEBHOOK_SECRET first.');
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(base)) {
+    throw new Error('Invalid Apps Script web app URL.');
+  }
+  // Explicitly replaces existing Telegram webhook. Review getWebhookInfo first.
+  const result = telegram_('setWebhook', {url: base + '?key=' + encodeURIComponent(secret),
+    allowed_updates: ['message'], drop_pending_updates: false});
+  console.log('Webhook activated: ' + JSON.stringify(result));
+}
+
+
+/**
+ * One-time safe cutover: validate the Supabase endpoint, register Telegram
+ * webhook with token-derived secret, then stop polling. No bot token logged.
+ */
+function activateSingerSupabaseWebhook() {
+  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
+  if (!token) throw new Error('TELEGRAM_BOT_TOKEN отсутствует в Script Properties');
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, 'singer-webhook:' + token, Utilities.Charset.UTF_8
+  );
+  const secret = digest.map(b => ('0' + ((b + 256) % 256).toString(16)).slice(-2)).join('');
+  const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-telegram-webhook';
+  const result = UrlFetchApp.fetch(endpoint, {
+    method: 'get', headers: {'X-Telegram-Bot-Api-Secret-Token': secret},
+    muteHttpExceptions: true
+  });
+  if (result.getResponseCode() !== 200 || result.getContentText().trim() !== 'ready') {
+    throw new Error('Supabase не готов (HTTP ' + result.getResponseCode() +
+      '). Telegram webhook НЕ изменён. Проверь секрет SINGER_TELEGRAM_BOT_TOKEN.');
+  }
+  telegram_('setWebhook', {
+    url: endpoint, secret_token: secret,
+    allowed_updates: ['message'], drop_pending_updates: false
+  });
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'pollSubscriberMessages')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+  console.log('Готово: Telegram webhook подключён к Supabase; опрос отключён.');
+  console.log('Теперь отправь боту /start или /event, затем /status.');
+}
+
+
+/**
+ * After the Supabase function has deployed: enable callbacks used by
+ * "Позвонить в заведение" while retaining the same webhook and secret.
+ */
+function enableSingerButtonCallbacks() {
+  const token = PropertiesService.getScriptProperties().getProperty('TELEGRAM_BOT_TOKEN');
+  if (!token) throw new Error('TELEGRAM_BOT_TOKEN отсутствует');
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, 'singer-webhook:' + token, Utilities.Charset.UTF_8
+  );
+  const secret = digest.map(b => ('0' + ((b + 256) % 256).toString(16)).slice(-2)).join('');
+  const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-telegram-webhook';
+  const result = UrlFetchApp.fetch(endpoint, {
+    method: 'get', headers: {'X-Telegram-Bot-Api-Secret-Token': secret},
+    muteHttpExceptions: true
+  });
+  if (result.getResponseCode() !== 200 || result.getContentText().trim() !== 'ready') {
+    throw new Error('Supabase не готов; webhook не изменён, HTTP ' + result.getResponseCode());
+  }
+  telegram_('setWebhook', {
+    url: endpoint, secret_token: secret,
+    allowed_updates: ['message', 'callback_query'], drop_pending_updates: false
+  });
+  console.log('Кнопки Telegram подключены: message + callback_query.');
+}
+, 'i').test(file)) return [];
+      return [{
+        type: kind, title: String(row[0] || '').trim().slice(0, 120),
+        file, description: String(row[2] || '').trim().slice(0, 280),
+        cover: kind === 'video' ? safeName(row[3]) : ''
+      }];
+    });
+  }
+  return {updatedAt: new Date().toISOString(), videos: entries('Видео','video'), photos: entries('Фото','photo')};
+}
+
+function doGet(e) {
+  if (e && e.parameter && e.parameter.kind === 'media') {
+    const data = JSON.stringify(publicMedia_()).replace(/<\\/script/gi, '<\\\\/script');
+    // JSONP avoids third-party CORS restrictions. Fixed callback name, no user code accepted.
+    if (e.parameter.callback === 'singerMediaLoaded') {
+      return ContentService.createTextOutput('window.singerMediaLoaded(' + data + ');')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return ContentService.createTextOutput(data).setMimeType(ContentService.MimeType.JSON);
+  }
   return ContentService.createTextOutput(JSON.stringify({
     updatedAt: new Date().toISOString(),
     events: publicEvents_().map(({id,title,start,end,location}) => ({id,title,start,end,location})),
