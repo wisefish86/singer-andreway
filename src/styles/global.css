@@ -456,3 +456,9 @@ dialog::backdrop{touch-action:none}
  .showcase-photo-footer{padding:4px 12px}
  .showcase-photo-footer .showcase-download{width:auto;min-height:42px;padding:8px 12px}
 }
+
+
+/* Icon geometry is independent of font glyph baselines and browser line-height. */
+.showcase-carousel-arrow,.showcase-video-arrow{display:grid!important;place-items:center!important;padding:0!important;line-height:0!important;font-size:0!important;text-align:center!important}
+.showcase-arrow-icon{width:22px;height:22px;display:block;flex:none;margin:0!important;transform:none!important;overflow:visible}
+.showcase-carousel-arrow .showcase-arrow-icon,.showcase-video-arrow .showcase-arrow-icon{justify-self:center;align-self:center}
