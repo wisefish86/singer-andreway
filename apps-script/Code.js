@@ -407,6 +407,18 @@ function publicMedia_() {
 }
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.kind === 'events') {
+    const events = publicEvents_().map(({title,start,end,location}) => ({
+      title: String(title || '').replace(/\\s*\\(\\s*\\d+\\s*[кk]\\s*\\)/gi,'').trim(),
+      start, end, location
+    }));
+    const payload = JSON.stringify({events}).replace(/</g,'\\\\u003c');
+    if (e.parameter.callback === 'singerEventsLoaded') {
+      return ContentService.createTextOutput('window.singerEventsLoaded(' + payload + ');')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JSON);
+  }
   if (e && e.parameter && e.parameter.kind === 'media') {
     const data = JSON.stringify(publicMedia_());
     if (e.parameter.callback === 'singerMediaLoaded') {
