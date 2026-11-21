@@ -462,3 +462,14 @@ dialog::backdrop{touch-action:none}
 .showcase-carousel-arrow,.showcase-video-arrow{display:grid!important;place-items:center!important;padding:0!important;line-height:0!important;font-size:0!important;text-align:center!important}
 .showcase-arrow-icon{width:22px;height:22px;display:block;flex:none;margin:0!important;transform:none!important;overflow:visible}
 .showcase-carousel-arrow .showcase-arrow-icon,.showcase-video-arrow .showcase-arrow-icon{justify-self:center;align-self:center}
+
+
+/* Keep focused-card highlight fully inside the carousel viewport.
+   A previous outline-offset:3px extended beyond the clipped top edge. */
+.showcase-carousel-rail{padding-top:8px;padding-bottom:14px;scroll-padding-inline:8px}
+.showcase-carousel .showcase-card{position:relative;outline:0!important}
+.showcase-carousel .showcase-card:focus-visible::after{
+  content:"";position:absolute;inset:0;z-index:4;pointer-events:none;
+  border:3px solid #ddb570;border-radius:inherit;box-sizing:border-box;
+}
+.showcase-carousel .showcase-card:focus-visible{box-shadow:0 0 0 1px #ddb57055}
