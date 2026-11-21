@@ -1,246 +1,300 @@
-/* Public read-only gallery. Data comes from checked rows in the Google Sheet. */
+/* ANDREY-SPOET public galleries: cached catalog, swipeable carousel and media viewer. */
 (() => {
-  const root = '/';
-  const fallback = {
-    videos: [{title:'Лучшие моменты',file:'- Андрей Шевцов - Видео выступлений.mp4',description:'Нарезка выступлений',cover:'- Андрей Шевцов - Видео выступлений.webp'}],
-    photos: []
-  };
-  let collection = fallback;
-  function mediaPath(folder,name) {
-    if (typeof name !== 'string' || !name || name.includes('/') || name.includes('\\') || name.includes('..')) return '';
-    return root + folder + '/' + encodeURIComponent(name);
-  }
-  function element(tag,className,text) {
-    const node = document.createElement(tag);
+  'use strict';
+  const API=document.querySelector('script[data-media-api]')?.dataset.mediaApi||'';
+  const CACHE_KEY='andrey-spoet-media-v2';
+  const EMPTY={videos:[],photos:[]};
+  let collection=EMPTY, signature='', modal=null, mode='', photoIndex=0, videoIndex=0;
+  let photos=[],videos=[];
+  const elt=(tag,className,text)=>{
+    const node=document.createElement(tag);
     if(className)node.className=className;
-    if(text !== undefined)node.textContent=text;
+    if(text!==undefined)node.textContent=text;
     return node;
-  }
-  // Covers live beside the MP4. Prefer WebP, then JPG, then JPEG.
-  // An explicitly selected extension from the sheet takes priority.
-  function coverCandidates(video) {
-    const filename=String(video.file||'');
-    const stem=filename.replace(/\.[^.]+$/,'');
+  };
+  const fileURL=(folder,name)=>{
+    if(typeof name!=='string'||!name||name.includes('/')||name.includes('\\')||name.includes('..'))return '';
+    return '/'+folder+'/'+encodeURIComponent(name);
+  };
+  function coverCandidates(video){
+    const stem=String(video.file||'').replace(/\.[^.]+$/,'');
     const preferred=String(video.cover||'').match(/\.(webp|jpe?g|png|avif)$/i)?.[1]?.toLowerCase();
-    const types=[preferred,'webp','jpg','jpeg','png','avif'].filter(Boolean);
-    return [...new Set(types)].map(ext=>mediaPath('videos',stem+'.'+ext)).filter(Boolean);
+    return [...new Set([preferred,'webp','jpg','jpeg','png','avif'].filter(Boolean))]
+      .map(ext=>fileURL('videos',stem+'.'+ext)).filter(Boolean);
   }
-  function imageWithFallback(paths,onSuccess,onMissing) {
-    let i=0;
+  const imageCache=new Map();
+  function resolveCover(video,callback){
+    const key=video.file+'|'+(video.cover||'');
+    if(imageCache.has(key)){callback(imageCache.get(key));return;}
+    const paths=coverCandidates(video);
+    let index=0;
     const tryNext=()=>{
-      if(i>=paths.length){onMissing?.();return}
-      const probe=new Image();
-      probe.onload=()=>onSuccess(paths[i-1]);
+      if(index===paths.length){imageCache.set(key,'');callback('');return;}
+      const current=paths[index++],probe=new Image();
+      probe.onload=()=>{imageCache.set(key,current);callback(current);};
       probe.onerror=tryNext;
-      probe.src=paths[i++];
+      probe.src=current;
     };
     tryNext();
   }
-  let dialog;
-  let activeVideoIndex = 0;
-  let videoList = [];
-  function getDialog() {
-    if (!dialog) {
-      dialog = element('dialog','showcase-dialog');
-      dialog.addEventListener('click', e => {if(e.target===dialog)dialog.close()});
-      dialog.addEventListener('close', () => {
-        const player=dialog.querySelector('video');
-        if(player){player.pause();player.removeAttribute('src');player.load()}
-        if(document.fullscreenElement===dialog)document.exitFullscreen().catch(()=>{});
-      });
-      document.body.append(dialog);
-    }
-    return dialog;
-  }
-  function renderPlayer() {
-    const video=videoList[activeVideoIndex];
-    if(!video)return;
-    const playerDialog=getDialog();
-    const old=playerDialog.querySelector('video');
-    if(old){old.pause();old.removeAttribute('src');old.load()}
-    playerDialog.classList.add('showcase-video-dialog');
-    playerDialog.replaceChildren();
-    const close=element('button','showcase-close','✕');
-    close.type='button';close.setAttribute('aria-label','Закрыть видео');close.addEventListener('click',()=>playerDialog.close());
-    const stage=element('div','showcase-video-stage');
-    const player=element('video','showcase-player');
-    player.controls=true;player.playsInline=true;player.preload='auto';
-    player.src=mediaPath('videos',video.file);
-    imageWithFallback(coverCandidates(video),url=>{
-      if(player.isConnected)player.poster=url;
+  const getModal=()=>{
+    if(modal)return modal;
+    modal=elt('dialog','showcase-dialog');
+    modal.setAttribute('aria-label','Просмотр фото и видео');
+    modal.addEventListener('click',e=>{if(e.target===modal)modal.close();});
+    modal.addEventListener('close',()=>{
+      const video=modal.querySelector('video');
+      if(video){video.pause();video.removeAttribute('src');video.load();}
+      if(document.fullscreenElement===modal)document.exitFullscreen().catch(()=>{});
+      mode='';
     });
-    stage.append(player);
-    const previous=element('button','showcase-video-arrow showcase-prev','‹');
-    previous.type='button';previous.setAttribute('aria-label','Предыдущее видео');
-    previous.disabled=activeVideoIndex===0;
-    previous.addEventListener('click',()=>changeVideo(-1));
-    const next=element('button','showcase-video-arrow showcase-next','›');
-    next.type='button';next.setAttribute('aria-label','Следующее видео');
-    next.disabled=activeVideoIndex===videoList.length-1;
-    next.addEventListener('click',()=>changeVideo(1));
-    if(videoList.length>1)stage.append(previous,next);
-    let touchX=null,touchY=null;
+    document.body.append(modal);
+    return modal;
+  };
+  function navButton(direction,callback,disabled){
+    const btn=elt('button','showcase-video-arrow '+(direction<0?'showcase-prev':'showcase-next'),direction<0?'‹':'›');
+    btn.type='button';btn.disabled=disabled;
+    btn.setAttribute('aria-label',direction<0?'Предыдущее':'Следующее');
+    btn.addEventListener('click',callback);
+    return btn;
+  }
+  function swipe(stage,callback){
+    let x=null,y=null;
     stage.addEventListener('touchstart',e=>{
-      if(e.touches.length===1){touchX=e.touches[0].clientX;touchY=e.touches[0].clientY}
+      if(e.touches.length===1){x=e.touches[0].clientX;y=e.touches[0].clientY;}
     },{passive:true});
     stage.addEventListener('touchend',e=>{
-      if(touchX===null||e.changedTouches.length!==1)return;
-      const dx=e.changedTouches[0].clientX-touchX,dy=e.changedTouches[0].clientY-touchY;
-      touchX=null;touchY=null;
-      if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.6)changeVideo(dx<0?1:-1);
+      if(x===null||e.changedTouches.length!==1)return;
+      const dx=e.changedTouches[0].clientX-x,dy=e.changedTouches[0].clientY-y;
+      x=null;y=null;
+      if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.5)callback(dx<0?1:-1);
     },{passive:true});
-    const footer=element('div','showcase-video-footer');
-    const caption=element('strong','showcase-caption',video.title||'Видео выступления');
-    footer.append(caption);
-    if(videoList.length>1)footer.append(element('span','showcase-video-count',(activeVideoIndex+1)+' / '+videoList.length));
-    playerDialog.append(close,stage,footer);
-    if(!playerDialog.open)playerDialog.showModal();
+  }
+  function showPhoto(item){
+    photos=collection.photos;
+    photoIndex=Math.max(0,photos.findIndex(p=>p.file===item.file));
+    mode='photo';renderPhoto();
+  }
+  function changePhoto(delta){
+    const next=photoIndex+delta;
+    if(next<0||next>=photos.length)return;
+    photoIndex=next;renderPhoto();
+  }
+  function renderPhoto(){
+    const item=photos[photoIndex];if(!item)return;
+    const dialog=getModal();
+    dialog.classList.remove('showcase-video-dialog');
+    dialog.classList.add('showcase-photo-dialog');
+    dialog.replaceChildren();
+    const close=elt('button','showcase-close','✕');
+    close.type='button';close.setAttribute('aria-label','Закрыть');
+    close.addEventListener('click',()=>dialog.close());
+    const stage=elt('div','showcase-photo-stage');
+    const photo=elt('img','showcase-photo');
+    photo.src=fileURL('photos',item.file);
+    photo.alt=item.title||'Фотография Андрея Шевцова';
+    stage.append(photo);
+    if(photos.length>1){
+      stage.append(navButton(-1,()=>changePhoto(-1),photoIndex===0),
+        navButton(1,()=>changePhoto(1),photoIndex===photos.length-1));
+    }
+    swipe(stage,changePhoto);
+    const footer=elt('div','showcase-photo-footer');
+    const count=elt('span','showcase-video-count',(photoIndex+1)+' / '+photos.length);
+    const download=elt('a','showcase-download','↓ Скачать фото');
+    download.href=photo.src;download.download=item.file;
+    download.setAttribute('aria-label','Скачать фото '+item.file);
+    footer.append(count,download);
+    dialog.append(close,stage,footer);
+    if(!dialog.open)dialog.showModal();
+    // Warm the adjacent images while the current photo is being viewed.
+    for(const idx of [photoIndex-1,photoIndex+1]){
+      if(photos[idx]){const next=new Image();next.src=fileURL('photos',photos[idx].file);}
+    }
+  }
+  function showVideo(item){
+    videos=collection.videos;
+    videoIndex=Math.max(0,videos.findIndex(v=>v.file===item.file));
+    mode='video';renderVideo();
+    const dialog=getModal();
+    if(dialog.requestFullscreen&&!document.fullscreenElement)dialog.requestFullscreen().catch(()=>{});
+  }
+  function changeVideo(delta){
+    const next=videoIndex+delta;
+    if(next<0||next>=videos.length)return;
+    videoIndex=next;renderVideo();
+  }
+  function renderVideo(){
+    const item=videos[videoIndex];if(!item)return;
+    const dialog=getModal();
+    const old=dialog.querySelector('video');
+    if(old){old.pause();old.removeAttribute('src');old.load();}
+    dialog.classList.remove('showcase-photo-dialog');
+    dialog.classList.add('showcase-video-dialog');
+    dialog.replaceChildren();
+    const close=elt('button','showcase-close','✕');
+    close.type='button';close.setAttribute('aria-label','Закрыть');
+    close.addEventListener('click',()=>dialog.close());
+    const stage=elt('div','showcase-video-stage');
+    const player=elt('video','showcase-player');
+    player.controls=true;player.playsInline=true;player.preload='auto';
+    player.src=fileURL('videos',item.file);
+    stage.append(player);
+    resolveCover(item,url=>{if(url&&player.isConnected)player.poster=url;});
+    if(videos.length>1)stage.append(navButton(-1,()=>changeVideo(-1),videoIndex===0),
+      navButton(1,()=>changeVideo(1),videoIndex===videos.length-1));
+    swipe(stage,changeVideo);
+    const footer=elt('div','showcase-video-footer');
+    footer.append(elt('strong','showcase-caption',item.title||'Видео выступления'));
+    if(videos.length>1)footer.append(elt('span','showcase-video-count',(videoIndex+1)+' / '+videos.length));
+    dialog.append(close,stage,footer);
+    if(!dialog.open)dialog.showModal();
     player.play().catch(()=>{});
   }
-  function changeVideo(delta) {
-    const index=activeVideoIndex+delta;
-    if(index<0||index>=videoList.length)return;
-    activeVideoIndex=index;
-    renderPlayer();
-  }
-  function showPlayer(video) {
-    videoList=Array.isArray(collection.videos)?collection.videos:[];
-    if(!videoList.length)videoList=fallback.videos;
-    activeVideoIndex=Math.max(0,videoList.findIndex(item=>item.file===video.file));
-    renderPlayer();
-    // Fullscreen the whole viewer rather than the video, so navigation remains visible.
-    const viewer=getDialog();
-    if(viewer.requestFullscreen && !document.fullscreenElement) {
-      viewer.requestFullscreen().catch(()=>{}); // CSS fullscreen dialog is the fallback on iPhone.
-    }
-  }
-  document.addEventListener('keydown',event=>{
-    if(!dialog?.open||!dialog.classList.contains('showcase-video-dialog'))return;
-    if(event.key==='ArrowRight')changeVideo(1);
-    if(event.key==='ArrowLeft')changeVideo(-1);
+  document.addEventListener('keydown',e=>{
+    if(!modal?.open)return;
+    if(e.key==='ArrowRight'){mode==='photo'?changePhoto(1):mode==='video'&&changeVideo(1);}
+    if(e.key==='ArrowLeft'){mode==='photo'?changePhoto(-1):mode==='video'&&changeVideo(-1);}
   });
-  function showPhoto(photo) {
-    if(!dialog) {
-      dialog=element('dialog','showcase-dialog');
-      dialog.setAttribute('aria-label','Просмотр фотографии');
-      dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
-      document.body.append(dialog);
+  function card(item,type,index,carousel){
+    const button=elt('button','showcase-card '+(type==='photos'?'showcase-photo-card':'showcase-video-card'));
+    button.type='button';
+    button.setAttribute('aria-label',type==='photos'?'Открыть фотографию '+(index+1):'Воспроизвести '+(item.title||'видео'));
+    const thumb=elt('span','showcase-thumb');
+    if(type==='photos'){
+      const img=elt('img','showcase-poster');
+      img.src=fileURL('photos',item.file);
+      img.alt=item.title||'';
+      img.loading=carousel&&index<4?'eager':'lazy';
+      img.decoding='async';
+      if(carousel&&index<2)img.fetchPriority='high';
+      thumb.append(img);
+      button.append(thumb);
+      button.addEventListener('click',()=>showPhoto(item));
+      return button;
     }
-    dialog.classList.remove('showcase-video-dialog');
-    dialog.replaceChildren();
-    const close=element('button','showcase-close','✕');
-    close.type='button';close.setAttribute('aria-label','Закрыть фотографию');close.addEventListener('click',()=>dialog.close());
-    const img=element('img','showcase-photo');
-    img.src=mediaPath('photos',photo.file);img.alt=photo.title||photo.description||'Фотография с выступления';
-    const actions=element('div','showcase-photo-actions');
-    const caption=element('div','showcase-caption',photo.title||photo.description||'');
-    const download=element('a','showcase-download','↓ Скачать фото');
-    download.href=img.src;
-    download.download=photo.file;
-    download.setAttribute('aria-label','Скачать фотографию '+(photo.title||photo.file));
-    actions.append(caption,download);
-    dialog.append(close,img,actions);
-    dialog.showModal();
+    resolveCover(item,url=>{
+      if(!button.isConnected)return;
+      if(url){
+        const img=elt('img','showcase-poster');
+        img.src=url;img.alt='';
+        img.loading=index<3?'eager':'lazy';
+        img.decoding='async';
+        thumb.prepend(img);
+      }else{
+        // Only if no supplied still exists, capture one frame from the MP4.
+        captureVideoStill(thumb,item);
+      }
+    });
+    thumb.append(elt('span','showcase-play'));
+    const caption=elt('span','showcase-card-body');
+    caption.append(elt('strong','showcase-card-title',item.title||'Видео выступления'));
+    if(item.description)caption.append(elt('span','showcase-card-sub',item.description));
+    button.append(thumb,caption);
+    button.addEventListener('click',()=>showVideo(item));
+    return button;
   }
-  function makeCard(item,type) {
-    const card=element('button','showcase-card');
-    card.type='button';
-    const thumb=element('span','showcase-thumb');
-    if(type==='video') {
-      // A full, uncropped still fits within the card; no heavy video decoding
-      // unless every possible cover is missing.
-      imageWithFallback(coverCandidates(item),url=>{
-        if(!card.isConnected)return;
-        const poster=element('img','showcase-poster');
-        poster.src=url;poster.alt='';poster.loading='lazy';
-        thumb.prepend(poster);
-      },()=>{
-        if(card.isConnected)makeVideoPreview(thumb,item);
-      });
-      thumb.append(element('span','showcase-play',''));
-      card.addEventListener('click',()=>showPlayer(item));
-    } else {
-      const img=element('img','showcase-poster');
-      img.loading='lazy';img.src=mediaPath('photos',item.file);img.alt=item.title||item.description||'Фотография';
-      thumb.append(img);card.addEventListener('click',()=>showPhoto(item));
-    }
-    const body=element('span','showcase-card-body');
-    body.append(element('strong','showcase-card-title',item.title || (type==='video'?'Видео выступления':'Фото')));
-    if(item.description)body.append(element('span','showcase-card-sub',item.description));
-    card.append(thumb,body);
-    return card;
-  }
-  // Capture a single frame and immediately release the large MP4 decoder.
-  // With a supplied cover image, no video file is fetched for previews.
-  function makeVideoPreview(thumb,item){
-    const holder=element('span','showcase-still');
+  function captureVideoStill(thumb,item){
+    if(thumb.querySelector('.showcase-still'))return;
+    const holder=elt('span','showcase-still');
     thumb.prepend(holder);
-    const loadFrame=()=>{
-      const video=document.createElement('video');
-      video.muted=true;video.playsInline=true;video.preload='metadata';
-      video.setAttribute('aria-hidden','true');
-      let done=false;
-      const cleanup=()=>{
-        video.pause();
-        video.removeAttribute('src');
-        video.load();
-      };
-      const capture=()=>{
-        if(done||!video.videoWidth||!video.videoHeight)return;
-        done=true;
+    const start=()=>{
+      const video=document.createElement('video');video.preload='metadata';
+      video.muted=true;video.playsInline=true;
+      const cleanup=()=>{video.pause();video.removeAttribute('src');video.load();};
+      video.addEventListener('loadeddata',()=>{
         try{
           const canvas=document.createElement('canvas');
-          const scale=Math.min(1,480/video.videoWidth,480/video.videoHeight);
+          const scale=Math.min(1,420/video.videoWidth,420/video.videoHeight);
           canvas.width=Math.max(1,Math.round(video.videoWidth*scale));
           canvas.height=Math.max(1,Math.round(video.videoHeight*scale));
           canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
-          const image=element('img','showcase-poster');
-          image.alt='';image.src=canvas.toDataURL('image/jpeg',0.78);
+          const image=elt('img','showcase-poster');image.src=canvas.toDataURL('image/jpeg',.7);
           holder.replaceChildren(image);
-        }catch(error){ /* Keep gradient placeholder on failure. */ }
+        }catch(e){}
         cleanup();
-      };
-      video.addEventListener('loadeddata',capture,{once:true});
+      },{once:true});
       video.addEventListener('error',cleanup,{once:true});
-      video.src=mediaPath('videos',item.file)+'#t=1';
+      video.src=fileURL('videos',item.file)+'#t=1';
     };
-    if('IntersectionObserver' in window){
-      const observer=new IntersectionObserver(entries=>{
-        if(entries.some(e=>e.isIntersecting)){observer.disconnect();loadFrame()}
-      },{rootMargin:'120px'});
-      observer.observe(thumb);
-    }else loadFrame();
+    if('IntersectionObserver'in window){
+      const obs=new IntersectionObserver(entries=>{
+        if(entries.some(e=>e.isIntersecting)){obs.disconnect();start();}
+      },{rootMargin:'90px'});
+      obs.observe(thumb);
+    }else start();
   }
-  function render() {
+  function drawCarousel(host,items,type){
+    const shell=elt('div','showcase-carousel');
+    const rail=elt('div','showcase-carousel-rail');
+    rail.setAttribute('aria-label',type==='photos'?'Карусель фотографий':'Карусель видео');
+    items.forEach((item,i)=>rail.append(card(item,type,i,true)));
+    const prev=elt('button','showcase-carousel-arrow showcase-carousel-prev','‹');
+    const next=elt('button','showcase-carousel-arrow showcase-carousel-next','›');
+    prev.type=next.type='button';
+    prev.setAttribute('aria-label','Прокрутить назад');
+    next.setAttribute('aria-label','Прокрутить вперёд');
+    const step=direction=>{
+      const first=rail.querySelector('.showcase-card');
+      rail.scrollBy({left:direction*(first?.getBoundingClientRect().width||300)+direction*14,behavior:'smooth'});
+    };
+    prev.addEventListener('click',()=>step(-1));
+    next.addEventListener('click',()=>step(1));
+    const sync=()=>{
+      prev.disabled=rail.scrollLeft<5;
+      next.disabled=rail.scrollLeft+rail.clientWidth>=rail.scrollWidth-5;
+    };
+    rail.addEventListener('scroll',sync,{passive:true});
+    shell.append(rail);
+    if(items.length>1)shell.append(prev,next);
+    host.append(shell);
+    requestAnimationFrame(sync);
+  }
+  function warmImages(data){
+    const urls=data.photos.slice(0,5).map(p=>fileURL('photos',p.file));
+    urls.forEach(url=>{if(!url)return;const img=new Image();img.src=url;});
+    data.videos.slice(0,3).forEach(v=>resolveCover(v,()=>{}));
+  }
+  function render(){
     document.querySelectorAll('[data-media-gallery]').forEach(host=>{
-      const type=host.dataset.mediaGallery;
-      const list=type==='photos'?collection.photos:collection.videos;
-      const limit=Number(host.dataset.limit)||10000;
+      const type=host.dataset.mediaGallery==='photos'?'photos':'videos';
+      const items=collection[type];
       host.replaceChildren();
-      const relevant=Array.isArray(list)?list.slice(0,limit):[];
-      if(!relevant.length) {
-        host.append(element('p','showcase-empty',type==='photos'?'Фотографии скоро появятся здесь.':'Видео скоро появятся здесь.'));
+      if(!items.length){
+        host.append(elt('p','showcase-empty',type==='photos'?'Фотографии скоро появятся здесь.':'Видео скоро появятся здесь.'));
         return;
       }
-      relevant.forEach(item=>host.append(makeCard(item,type==='photos'?'photo':'video')));
+      if(host.classList.contains('showcase-home'))drawCarousel(host,items,type);
+      else items.forEach((item,i)=>host.append(card(item,type,i,false)));
     });
   }
-  window.singerMediaLoaded = data => {
-    if(!data || !Array.isArray(data.videos) || !Array.isArray(data.photos)) return;
-    collection=data;render();
-  };
+  function update(data){
+    if(!data||!Array.isArray(data.videos)||!Array.isArray(data.photos))return;
+    const clean={videos:data.videos,photos:data.photos};
+    const serialized=JSON.stringify(clean);
+    if(serialized===signature)return; // avoid tearing down cards and reloading imagery
+    signature=serialized;
+    collection=clean;
+    try{localStorage.setItem(CACHE_KEY,JSON.stringify({time:Date.now(),data:clean}));}catch(e){}
+    render();
+    warmImages(clean);
+  }
+  window.singerMediaLoaded=data=>{update(data);};
+  try{
+    const saved=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
+    if(saved?.data&&Date.now()-saved.time<7*86400000)update(saved.data);
+  }catch(e){}
   function refresh(){
-    const config=document.querySelector('script[data-media-api]');
-    const base=config?.dataset.mediaApi||'';
-    if(!base) return;
+    if(!API)return;
     const script=document.createElement('script');
     script.async=true;
-    script.src=base+(base.includes('?')?'&':'?')+'kind=media&callback=singerMediaLoaded&v='+Math.floor(Date.now()/300000);
+    script.src=API+(API.includes('?')?'&':'?')+'kind=media&callback=singerMediaLoaded&v='+Math.floor(Date.now()/300000);
+    script.onload=()=>script.remove();
     script.onerror=()=>script.remove();
     document.head.append(script);
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{render();refresh()},{once:true});
-  else {render();refresh()}
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{if(!signature)render();refresh();},{once:true});
+  else {if(!signature)render();refresh();}
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
   setInterval(refresh,300000);
 })();
