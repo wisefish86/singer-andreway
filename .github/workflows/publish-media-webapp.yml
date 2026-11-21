@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/publish-media-webapp.yml'
+      - 'apps-script/**'
   workflow_dispatch:
 
 permissions:
