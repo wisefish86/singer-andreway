@@ -23,10 +23,24 @@
   }
   function calendarLink(item){
     const start=new Date(item.start),end=new Date(item.end);
-    const fmt=x=>x.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+    const dateParts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{
+      timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'
+    }).formatToParts(start).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+    const dateStr=dateParts.year+dateParts.month+dateParts.day;
+    const title=parseTitle(item.title);
+    const match=title.clock.match(/^(\d{2}):(\d{2})–(\d{2}):(\d{2})$/);
+    const utcFmt=x=>x.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+    let dates=utcFmt(start)+'/'+utcFmt(end);
+    if(match){
+      const from=Number(match[1])*60+Number(match[2]);
+      const to=Number(match[3])*60+Number(match[4]);
+      const next=to<=from?new Date(Date.UTC(Number(dateParts.year),Number(dateParts.month)-1,Number(dateParts.day)+1)):null;
+      const endDate=next?next.toISOString().slice(0,10).replace(/-/g,''):dateStr;
+      dates=dateStr+'T'+match[1]+match[2]+'00/'+endDate+'T'+match[3]+match[4]+'00';
+    }
     return 'https://calendar.google.com/calendar/render?'+new URLSearchParams({
-      action:'TEMPLATE',text:'Выступление Андрея Шевцова — '+parseTitle(item.title).name,
-      dates:fmt(start)+'/'+fmt(end),details:'Живое выступление Андрея Шевцова',
+      action:'TEMPLATE',text:'Выступление Андрея Шевцова — '+title.name,
+      dates,ctz:'Europe/Moscow',details:'Живое выступление Андрея Шевцова',
       location:item.location||''
     }).toString();
   }
