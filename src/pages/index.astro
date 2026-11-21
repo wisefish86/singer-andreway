@@ -468,23 +468,46 @@ const repertoireUrl = '/podborka/';
     (() => {
       const banner = document.getElementById('guest-evening-banner');
       if (!banner) return;
-      // Never use visitor device timezone: concerts use Moscow/Krasnodar local time.
+      // Visitors use the artist's Krasnodar/Moscow clock, not device timezone.
       const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'Europe/Moscow', weekday: 'short', hour: '2-digit',
-        hourCycle: 'h23', minute: '2-digit'
+        timeZone: 'Europe/Moscow', weekday: 'short', hour: '2-digit', hourCycle: 'h23'
       });
+      const api = 'https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec';
+      const preview = new URLSearchParams(location.search).get('guest-preview') === '1';
+      let windows = [];
+      let lastFetch = 0;
       function updateGuestBanner() {
-        const parts = Object.fromEntries(formatter.formatToParts(new Date())
+        const now = Date.now();
+        const parts = Object.fromEntries(formatter.formatToParts(new Date(now))
           .filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
-        const day = parts.weekday;
-        const hour = Number(parts.hour);
-        const preview = new URLSearchParams(window.location.search).get('guest-preview') === '1';
-        banner.hidden = !(preview || ((day === 'Fri' || day === 'Sat') && hour >= 20 && hour < 24));
+        const regularWeekend = (parts.weekday === 'Fri' || parts.weekday === 'Sat')
+          && Number(parts.hour) >= 20;
+        const calendarShow = windows.some(show => now >= Date.parse(show.start) && now < Date.parse(show.end));
+        banner.hidden = !(preview || regularWeekend || calendarShow);
+      }
+      // The endpoint returns only times for !В performances, not private notes.
+      window.singerGuestModeLoaded = data => {
+        if (!data || !Array.isArray(data.windows)) return;
+        windows = data.windows.filter(w => Number.isFinite(Date.parse(w.start))
+          && Number.isFinite(Date.parse(w.end)));
+        updateGuestBanner();
+      };
+      function refreshCalendar() {
+        if (Date.now() - lastFetch < 240000) return;
+        lastFetch = Date.now();
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = api + '?kind=guest-mode&callback=singerGuestModeLoaded&v='
+          + Math.floor(Date.now() / 300000);
+        script.onload = () => script.remove();
+        script.onerror = () => script.remove();
+        document.head.append(script);
       }
       updateGuestBanner();
-      window.setInterval(updateGuestBanner, 60000);
+      refreshCalendar();
+      window.setInterval(() => { updateGuestBanner(); refreshCalendar(); }, 60000);
       document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) updateGuestBanner();
+        if (!document.hidden) { updateGuestBanner(); refreshCalendar(); }
       });
     })();
   </script>
