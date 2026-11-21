@@ -57,10 +57,13 @@ jobs:
           server-dir: /www/singer.andreway.ru/
           exclude: |
             **/images/**
+            **/photos/**
+            **/videos/**
+            **/covers/**
             **/audio/plus/**
 
-      # The main FTP sync excludes images/** to protect files uploaded by WinSCP.
-      # Create the media folders independently; never synchronize/delete their contents.
+      # The main FTP sync excludes user-uploaded media directories.
+      # Create the root media folders independently; never synchronize/delete their contents.
       - name: Ensure media directories exist on FTP
         env:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
@@ -71,6 +74,6 @@ jobs:
               --retry 2 \
               --user "andreway:${FTP_PASSWORD}" \
               --ftp-create-dirs \
-              --upload-file "public/images/${folder}/.gitkeep" \
-              "ftp://andreway.ru//www/singer.andreway.ru/images/${folder}/.gitkeep"
+              --upload-file "public/${folder}/.gitkeep" \
+              "ftp://andreway.ru//www/singer.andreway.ru/${folder}/.gitkeep"
           done
