@@ -280,10 +280,20 @@
     warmImages(clean);
   }
   window.singerMediaLoaded=data=>{update(data);};
+  let hasSaved=false;
   try{
     const saved=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
-    if(saved?.data&&Date.now()-saved.time<7*86400000)update(saved.data);
+    if(saved?.data&&Date.now()-saved.time<7*86400000){
+      update(saved.data);
+      hasSaved=true;
+    }
   }catch(e){}
+  // This small, prebuilt catalog provides instant first-visit content, while
+  // Google Sheets remains authoritative and updates it asynchronously.
+  if(!hasSaved)fetch('/media-catalog.json',{cache:'force-cache'})
+    .then(response=>response.ok?response.json():null)
+    .then(data=>{if(!signature&&data)update(data);})
+    .catch(()=>{});
   function refresh(){
     if(!API)return;
     const script=document.createElement('script');
