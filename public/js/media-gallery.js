@@ -50,7 +50,14 @@
     close.type='button';close.setAttribute('aria-label','Закрыть фотографию');close.addEventListener('click',()=>dialog.close());
     const img=element('img','showcase-photo');
     img.src=mediaPath('photos',photo.file);img.alt=photo.title||photo.description||'Фотография с выступления';
-    dialog.append(close,img,element('div','showcase-caption',photo.title||photo.description||''));
+    const actions=element('div','showcase-photo-actions');
+    const caption=element('div','showcase-caption',photo.title||photo.description||'');
+    const download=element('a','showcase-download','↓ Скачать фото');
+    download.href=img.src;
+    download.download=photo.file;
+    download.setAttribute('aria-label','Скачать фотографию '+(photo.title||photo.file));
+    actions.append(caption,download);
+    dialog.append(close,img,actions);
     dialog.showModal();
   }
   function makeCard(item,type) {
