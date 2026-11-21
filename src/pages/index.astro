@@ -484,7 +484,8 @@ const repertoireUrl = '/podborka/';
           .filter(part => part.type !== 'literal').map(part => [part.type, part.value]));
         const day = parts.weekday;
         const hour = Number(parts.hour);
-        banner.hidden = !((day === 'Fri' || day === 'Sat') && hour >= 20 && hour < 24);
+        const preview = new URLSearchParams(window.location.search).get('guest-preview') === '1';
+        banner.hidden = !(preview || ((day === 'Fri' || day === 'Sat') && hour >= 20 && hour < 24));
       }
       updateGuestBanner();
       window.setInterval(updateGuestBanner, 60000);
