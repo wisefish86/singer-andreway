@@ -409,10 +409,10 @@ function publicMedia_() {
 function doGet(e) {
   if (e && e.parameter && e.parameter.kind === 'events') {
     const events = publicEvents_().map(({title,start,end,location}) => ({
-      title: String(title || '').replace(/\\s*\\(\\s*\\d+\\s*[кk]\\s*\\)/gi,'').trim(),
+      title: String(title || '').replace(/\s*\(\s*\d+\s*[кk]\s*\)/gi,'').trim(),
       start, end, location
     }));
-    const payload = JSON.stringify({events}).replace(/</g,'\\\\u003c');
+    const payload = JSON.stringify({events}).replace(/</g,'\u003c');
     if (e.parameter.callback === 'singerEventsLoaded') {
       return ContentService.createTextOutput('window.singerEventsLoaded(' + payload + ');')
         .setMimeType(ContentService.MimeType.JAVASCRIPT);
