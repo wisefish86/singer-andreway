@@ -473,3 +473,37 @@ dialog::backdrop{touch-action:none}
   border:3px solid #ddb570;border-radius:inherit;box-sizing:border-box;
 }
 .showcase-carousel .showcase-card:focus-visible{box-shadow:0 0 0 1px #ddb57055}
+
+
+/* Dedicated public calendar /afisha/ page. */
+.afisha-page{min-height:72vh;padding:55px 0 75px}
+.afisha-page h1{font-size:clamp(2.1rem,5vw,3.8rem);line-height:1.1;margin:4px 0 14px}
+.afisha-intro{max-width:680px;margin:0 0 33px;color:#b6c6d3;font-size:1.05rem}
+.afisha-list{display:grid;gap:16px;max-width:990px}
+.afisha-event{display:grid;grid-template-columns:220px minmax(0,1fr);gap:26px;background:linear-gradient(110deg,#0e1b2a,#12263a);border:1px solid #ffffff22;border-radius:20px;padding:24px;min-width:0}
+.afisha-event-date{display:flex;flex-direction:column;justify-content:center;gap:7px;border-right:1px solid #ddb57055;padding-right:22px;color:#f0d095}
+.afisha-event-date strong{font-size:1.35rem;line-height:1.2;color:#fff}
+.afisha-event-weekday{font-size:.85rem;color:#e1bb7b;text-transform:capitalize}
+.afisha-event-content{min-width:0}
+.afisha-event-content h2{font-size:1.42rem;line-height:1.25;margin:0 0 10px;color:#fff}
+.afisha-event-time{font-weight:750;color:#f4d08b;margin:0 0 8px}
+.afisha-event-location{color:#b9c9d7;margin:0 0 16px;line-height:1.5}
+.afisha-event-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.afisha-event-action{display:inline-flex;align-items:center;justify-content:center;min-height:42px;border:1px solid #c9a56b88;color:#edc886;border-radius:11px;text-decoration:none;padding:8px 14px;font-size:.88rem;font-weight:700}
+.afisha-event-action:hover{background:#dcb66b1a}
+.afisha-empty-state,.afisha-empty{padding:25px 22px;border:1px solid #ffffff22;border-radius:16px;color:#bac7d4}
+.afisha-empty-state h2{margin:0 0 9px;font-size:1.3rem;color:#fff}
+.afisha-empty-state p{margin:0}
+.afisha-follow{display:flex;justify-content:space-between;align-items:center;gap:28px;flex-wrap:wrap;max-width:990px;margin-top:40px;padding:26px;border:1px solid #d2af7055;border-radius:20px;background:#132538}
+.afisha-follow h2{margin:0 0 8px;font-size:1.25rem;color:#f8e3b9}
+.afisha-follow p{max-width:420px;margin:0;color:#b5c6d4}
+.afisha-follow-actions{display:flex;gap:10px;flex-wrap:wrap}
+.afisha-follow-actions .btn{white-space:normal;text-align:center}
+@media(max-width:700px){
+ .afisha-page{padding:32px 0 65px}
+ .afisha-event{grid-template-columns:1fr;gap:14px;padding:18px}
+ .afisha-event-date{border-right:0;border-bottom:1px solid #ddb57055;padding:0 0 14px}
+ .afisha-follow{padding:20px}
+ .afisha-follow-actions{width:100%;flex-direction:column}
+ .afisha-follow-actions .btn{width:100%}
+}
