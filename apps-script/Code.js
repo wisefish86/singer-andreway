@@ -374,6 +374,12 @@ function installTriggers() {
 
 // Public read-only endpoint for the website. Deployment is a separate one-time step.
 
+/** Run this visible function once in the Apps Script editor to grant Sheets access. */
+function authorizeMediaGallery() {
+  const data = publicMedia_();
+  console.log('Доступ к таблице получен. Видео: ' + data.videos.length + '; фото: ' + data.photos.length);
+}
+
 function publicMedia_() {
   const book = SpreadsheetApp.openById('1BwmXTVFysgzZq_UbCvrk98seMtOuUYj34Lwym371-hU');
   const clean = value => String(value || '').trim().slice(0, 240);
