@@ -146,18 +146,14 @@ const repertoireUrl = '/podborka/';
       </div>
     </section>
 
+
     <section class="section" id="video">
       <div class="container">
         <div class="section-head">
-          <div><h2>Видео</h2><p class="lead">Энергия живых выступлений</p></div>
-          <a class="link" href="#">Все видео →</a>
+          <div><h2>Видео выступлений</h2><p class="lead">Живой вокал и атмосфера вечера</p></div>
+          <a class="link" href="/videos/">Все видео →</a>
         </div>
-        <div class="media-row">
-          <article class="video-card"><div class="video-thumb"></div><div class="video-info"><div class="video-title">Лучшие моменты</div><div class="video-sub">живое выступление</div></div></article>
-          <article class="video-card"><div class="video-thumb"></div><div class="video-info"><div class="video-title">Поп-хиты</div><div class="video-sub">динамичный сет</div></div></article>
-          <article class="video-card"><div class="video-thumb"></div><div class="video-info"><div class="video-title">Вечные хиты</div><div class="video-sub">для особых событий</div></div></article>
-          <article class="video-card"><div class="video-thumb"></div><div class="video-info"><div class="video-title">Атмосфера вечера</div><div class="video-sub">ресторанный формат</div></div></article>
-        </div>
+        <div class="showcase-grid showcase-home" data-media-gallery="videos" data-limit="3"></div>
       </div>
     </section>
 
@@ -207,17 +203,14 @@ const repertoireUrl = '/podborka/';
       </div>
     </section>
 
+
     <section class="section" id="photos">
       <div class="container">
         <div class="section-head">
           <div><h2>Фото</h2><p class="lead">Сцена, публика, живые моменты</p></div>
-          <a class="link" href="#">Все фото →</a>
+          <a class="link" href="/photos/">Все фото →</a>
         </div>
-        <div class="media-row">
-          <article class="video-card"><div class="video-thumb"></div></article>
-          <article class="video-card"><div class="video-thumb"></div></article>
-          <article class="video-card"><div class="video-thumb"></div></article>
-        </div>
+        <div class="showcase-grid showcase-home" data-media-gallery="photos" data-limit="6"></div>
       </div>
     </section>
 
@@ -527,5 +520,6 @@ const repertoireUrl = '/podborka/';
   </script>
 <script is:inline src="/js/next-show.js?v=20261108-3" defer></script>
 
+  <script src="/js/media-gallery.js" defer data-media-api=""></script>
 </body>
 </html>
