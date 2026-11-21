@@ -1,7 +1,8 @@
 ---
 import '../../styles/global.css';
 import SiteFavicons from '../../components/SiteFavicons.astro';
-import mediaSnapshot from '../../../public/media-catalog.json';
+import { readFileSync } from 'node:fs';
+const mediaSnapshot = JSON.parse(readFileSync('public/media-catalog.json', 'utf8'));
 const isVideo = true;
 const heading = isVideo ? 'Видео выступлений' : 'Фотографии с выступлений';
 ---
