@@ -1,0 +1,78 @@
+{
+  "videos": [
+    {
+      "title": "Лучшие моменты",
+      "file": "- Андрей Шевцов - Видео выступлений.mp4",
+      "description": "Нарезка выступлений",
+      "cover": "- Андрей Шевцов - Видео выступлений.webp"
+    }
+  ],
+  "photos": [
+    {
+      "title": "",
+      "file": "Фото_для_афиши_1.jpg",
+      "description": "",
+      "cover": ""
+    },
+    {
+      "title": "",
+      "file": "Фото_для_афиши_2.jpg",
+      "description": "",
+      "cover": ""
+    },
+    {
+      "title": "",
+      "file": "Фото_для_афиши_3.jpg",
+      "description": "",
+      "cover": ""
+    },
+    {
+      "title": "",
+      "file": "Фото_для_афиши_4.jpg",
+      "description": "",
+      "cover": ""
+    },
+    {
+      "title": "",
+      "file": "Фото_для_афиши_5.jpg",
+      "description": "",
+      "cover": ""
+    },
+    {
+      "title": "",
+      "file": "Фото_для_афиши_6.jpg",
+      "description": "",
+      "cover": ""
+    },
+    {
+      "title": "",
+      "file": "Фото_для_афиши_7.jpg",
+      "description": "",
+      "cover": ""
+    },
+    {
+      "title": "",
+      "file": "Фото_для_афиши_8.jpg",
+      "description": "",
+      "cover": ""
+    },
+    {
+      "title": "",
+      "file": "Фото_для_афиши_9.jpg",
+      "description": "",
+      "cover": ""
+    },
+    {
+      "title": "",
+      "file": "Фото_для_афиши_10.jpg",
+      "description": "",
+      "cover": ""
+    },
+    {
+      "title": "",
+      "file": "Фото_для_афиши_11.jpg",
+      "description": "",
+      "cover": ""
+    }
+  ]
+}
