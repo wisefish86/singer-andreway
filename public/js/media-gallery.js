@@ -69,6 +69,24 @@
     svg.append(path);
     return svg;
   }
+  function downloadIcon(){
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+    svg.setAttribute('viewBox','0 0 24 24');
+    svg.setAttribute('width','20');
+    svg.setAttribute('height','20');
+    svg.setAttribute('aria-hidden','true');
+    svg.setAttribute('focusable','false');
+    svg.classList.add('showcase-download-icon');
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d','M12 3v12m0 0 4-4m-4 4-4-4M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3');
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke','currentColor');
+    path.setAttribute('stroke-width','2');
+    path.setAttribute('stroke-linecap','round');
+    path.setAttribute('stroke-linejoin','round');
+    svg.append(path);
+    return svg;
+  }
   function navButton(direction,callback,disabled){
     const btn=elt('button','showcase-video-arrow '+(direction<0?'showcase-prev':'showcase-next'));
     btn.append(arrowIcon(direction));
@@ -120,7 +138,8 @@
     swipe(stage,changePhoto);
     const footer=elt('div','showcase-photo-footer');
     const count=elt('span','showcase-video-count',(photoIndex+1)+' / '+photos.length);
-    const download=elt('a','showcase-download','↓ Скачать фото');
+    const download=elt('a','showcase-download');
+    download.append(downloadIcon(),document.createTextNode('Скачать фото'));
     download.href=photo.src;download.download=item.file;
     download.setAttribute('aria-label','Скачать фото '+item.file);
     footer.append(count,download);
@@ -243,6 +262,76 @@
       obs.observe(thumb);
     }else start();
   }
+  function drawJustifiedPhotos(host,items){
+    // Justified photo rows: each image keeps its native aspect ratio. Unlike
+    // CSS columns, order stays left-to-right exactly as in the Google Sheet.
+    const GAP=4;
+    const buttons=items.map((item,i)=>card(item,'photos',i,false));
+    const ratios=buttons.map(()=>0.75);
+    const images=buttons.map(button=>button.querySelector('img'));
+    let active=true,scheduled=false;
+    function layout(){
+      scheduled=false;
+      if(!active||!host.isConnected)return;
+      const width=host.clientWidth;
+      if(!width)return;
+      const target=width>=1050?300:width>=680?240:width>=420?200:170;
+      const groups=[];
+      let current=[],sum=0;
+      buttons.forEach((button,i)=>{
+        current.push(i);sum+=ratios[i];
+        if(sum*target+GAP*(current.length-1)>=width && current.length){
+          groups.push(current);current=[];sum=0;
+        }
+      });
+      if(current.length)groups.push(current);
+      const fragment=document.createDocumentFragment();
+      groups.forEach((indexes,rowIndex)=>{
+        const ratioSum=indexes.reduce((v,i)=>v+ratios[i],0);
+        const fitted=(width-GAP*(indexes.length-1))/ratioSum;
+        const last=rowIndex===groups.length-1;
+        // A sparse final row is not blown up to giant portraits.
+        const height=Math.max(115,Math.min(last?target*1.12:target*1.50,fitted));
+        const row=elt('div','showcase-justified-row');
+        row.style.height=height+'px';
+        row.style.gap=GAP+'px';
+        // Fill complete rows edge-to-edge, leave short last row natural-sized.
+        row.style.justifyContent='flex-start';
+        indexes.forEach(i=>{
+          const button=buttons[i];
+          button.style.flex='0 0 '+(height*ratios[i])+'px';
+          row.append(button);
+        });
+        fragment.append(row);
+      });
+      host.replaceChildren(fragment);
+    }
+    const schedule=()=>{
+      if(scheduled)return;
+      scheduled=true;
+      requestAnimationFrame(layout);
+    };
+    images.forEach((img,i)=>{
+      const update=()=>{
+        if(img.naturalWidth&&img.naturalHeight){
+          ratios[i]=Math.max(0.25,Math.min(4,img.naturalWidth/img.naturalHeight));
+          schedule();
+        }
+      };
+      img.addEventListener('load',update);
+      if(img.complete)update();
+    });
+    const observer='ResizeObserver' in window?new ResizeObserver(schedule):null;
+    if(observer)observer.observe(host);
+    else window.addEventListener('resize',schedule,{passive:true});
+    // Avoid leaking an observer if the gallery is replaced after a Sheets update.
+    host._showcaseCleanup=()=>{
+      active=false;
+      observer?.disconnect();
+      if(!observer)window.removeEventListener('resize',schedule);
+    };
+    schedule();
+  }
   function drawCarousel(host,items,type){
     const shell=elt('div','showcase-carousel');
     const rail=elt('div','showcase-carousel-rail');
@@ -280,12 +369,16 @@
     document.querySelectorAll('[data-media-gallery]').forEach(host=>{
       const type=host.dataset.mediaGallery==='photos'?'photos':'videos';
       const items=collection[type];
+      if(typeof host._showcaseCleanup==='function'){
+        host._showcaseCleanup();host._showcaseCleanup=null;
+      }
       host.replaceChildren();
       if(!items.length){
         host.append(elt('p','showcase-empty',type==='photos'?'Фотографии скоро появятся здесь.':'Видео скоро появятся здесь.'));
         return;
       }
       if(host.classList.contains('showcase-home'))drawCarousel(host,items,type);
+      else if(type==='photos')drawJustifiedPhotos(host,items);
       else items.forEach((item,i)=>host.append(card(item,type,i,false)));
     });
   }
