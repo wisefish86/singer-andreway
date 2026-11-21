@@ -412,7 +412,7 @@ function doGet(e) {
       title: String(title || '').replace(/\s*\(\s*\d+\s*[кk]\s*\)/gi,'').trim(),
       start, end, location
     }));
-    const payload = JSON.stringify({events}).replace(/</g,'\u003c');
+    const payload = JSON.stringify({events}).replace(/</g, String.fromCharCode(92) + 'u003c');
     if (e.parameter.callback === 'singerEventsLoaded') {
       return ContentService.createTextOutput('window.singerEventsLoaded(' + payload + ');')
         .setMimeType(ContentService.MimeType.JAVASCRIPT);
