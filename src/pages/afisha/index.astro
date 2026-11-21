@@ -1,6 +1,7 @@
 ---
 import '../../styles/global.css';
 import SiteFavicons from '../../components/SiteFavicons.astro';
+import afishaSnapshot from '../../../public/data/afisha.public.json';
 ---
 <!doctype html>
 <html lang="ru">
@@ -40,6 +41,7 @@ import SiteFavicons from '../../components/SiteFavicons.astro';
     </div>
   </main>
   <footer class="footer"><div class="container">© {new Date().getFullYear()} Андрей Шевцов · <a href="/">На главную</a></div></footer>
-  <script src="/js/public-afisha.js?v=20261121-1" defer data-events-api="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec"></script>
+  <script type="application/json" id="afisha-snapshot" set:html={JSON.stringify(afishaSnapshot).replace(/</g, '\\u003c')}></script>
+  <script src="/js/public-afisha.js?v=20261121-static2" defer data-events-api="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec"></script>
 </body>
 </html>
