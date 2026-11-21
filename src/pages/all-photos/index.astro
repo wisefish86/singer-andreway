@@ -1,6 +1,7 @@
 ---
 import '../../styles/global.css';
 import SiteFavicons from '../../components/SiteFavicons.astro';
+import mediaSnapshot from '../../../public/media-catalog.json';
 const isVideo = false;
 const heading = isVideo ? 'Видео выступлений' : 'Фотографии с выступлений';
 ---
@@ -33,6 +34,7 @@ const heading = isVideo ? 'Видео выступлений' : 'Фотогра�
     </div>
   </main>
   <footer class="footer"><div class="container">© {new Date().getFullYear()} Андрей Шевцов</div></footer>
-  <script src="/js/media-gallery.js?v=20261121-mosaic3" defer data-media-api="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec"></script>
+  <script type="application/json" id="media-snapshot" set:html={JSON.stringify(mediaSnapshot).replace(/</g, '\\u003c')}></script>
+  <script src="/js/media-gallery.js?v=20261121-optimized4" defer data-media-api="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec"></script>
 </body>
 </html>
