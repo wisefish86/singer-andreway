@@ -59,7 +59,6 @@ jobs:
             **/images/**
             **/photos/**
             **/videos/**
-            **/covers/**
             **/audio/plus/**
 
       # The main FTP sync excludes user-uploaded media directories.
@@ -69,7 +68,7 @@ jobs:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
           set -euo pipefail
-          for folder in photos videos covers; do
+          for folder in photos videos; do
             curl --fail --show-error --silent \
               --retry 2 \
               --user "andreway:${FTP_PASSWORD}" \
