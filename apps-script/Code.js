@@ -397,7 +397,10 @@ function publicMedia_() {
       const valid = kind === 'video' ? (file.toLowerCase().endsWith('.mp4') || file.toLowerCase().endsWith('.webm'))
         : ['.jpg','.jpeg','.png','.webp','.avif'].some(ext => file.toLowerCase().endsWith(ext));
       if (!valid) return [];
-      return [{title:clean(row[0]),file,description:clean(row[2]),cover:kind === 'video' ? safeFile(row[3]) : ''}];
+      const extValue = kind === 'video' ? clean(row[3]).replace(/^\./,'').toLowerCase() : '';
+      const ext = ['webp','jpg','jpeg','png','avif'].includes(extValue) ? extValue : 'webp';
+      const cover = kind === 'video' ? file.replace(/\.[^.]+$/,'.' + ext) : '';
+      return [{title:clean(row[0]),file,description:clean(row[2]),cover}];
     });
   }
   return {updatedAt: new Date().toISOString(),videos:collect('Видео','video'),photos:collect('Фото','photo')};
