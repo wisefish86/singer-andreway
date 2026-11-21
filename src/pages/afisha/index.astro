@@ -1,0 +1,45 @@
+---
+import '../../styles/global.css';
+import SiteFavicons from '../../components/SiteFavicons.astro';
+---
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <SiteFavicons/>
+  <title>Афиша выступлений — Андрей Шевцов</title>
+  <meta name="description" content="Ближайшие открытые выступления певца Андрея Шевцова: даты, время и адреса в Краснодаре."/>
+  <link rel="canonical" href="https://singer.andreway.ru/afisha/"/>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="/">ANDREY-SPOET</a>
+      <a class="media-back" href="/">← На главную</a>
+    </div>
+  </header>
+  <main class="afisha-page">
+    <div class="container">
+      <p class="media-eyebrow">Андрей Шевцов · живой вокал</p>
+      <h1>Афиша выступлений</h1>
+      <p class="afisha-intro">Ближайшие открытые выступления. Приходите послушать любимые песни вживую.</p>
+      <div id="afisha-list" class="afisha-list" aria-live="polite">
+        <p class="afisha-empty">Загружаем ближайшие выступления…</p>
+      </div>
+      <div class="afisha-follow">
+        <div>
+          <h2>Не пропускайте новые выступления</h2>
+          <p>Анонсы — в Telegram-канале. Напоминания можно включить отдельно через бота.</p>
+        </div>
+        <div class="afisha-follow-actions">
+          <a class="btn primary" href="tg://resolve?domain=andrey_spoet">Telegram-канал ↗</a>
+          <a class="btn" href="tg://resolve?domain=andrey_spoet_bot&start=reminders">Включить напоминания</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="footer"><div class="container">© {new Date().getFullYear()} Андрей Шевцов · <a href="/">На главную</a></div></footer>
+  <script src="/js/public-afisha.js?v=20261121-1" defer data-events-api="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec"></script>
+</body>
+</html>
