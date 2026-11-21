@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: singer-public-cache-refresh
@@ -53,3 +54,6 @@ jobs:
           git fetch origin main
           git rebase -X theirs origin/main
           git push origin HEAD:main
+          # A push made with GITHUB_TOKEN does not trigger the normal push workflow.
+          # Explicitly run the static site deployment after updating snapshots.
+          GH_TOKEN="${{ github.token }}" gh workflow run deploy.yml --ref main
