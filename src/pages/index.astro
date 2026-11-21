@@ -3,7 +3,8 @@ import '../styles/global.css';
 import Icon from '../components/Icon.astro';
 import BrandIcon from '../components/BrandIcon.astro';
 import SiteFavicons from '../components/SiteFavicons.astro';
-import mediaSnapshot from '../../public/media-catalog.json';
+import { readFileSync } from 'node:fs';
+const mediaSnapshot = JSON.parse(readFileSync('public/media-catalog.json', 'utf8'));
 import { telegramWeb, telegramApp, whatsapp, contactMessages, directChatLinks } from '../config/contact-links';
 
 const phoneDisplay = '+7 918 114-26-93';
