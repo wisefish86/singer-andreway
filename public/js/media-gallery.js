@@ -16,6 +16,26 @@
     if(text !== undefined)node.textContent=text;
     return node;
   }
+  // Covers live beside the MP4. Prefer WebP, then JPG, then JPEG.
+  // An explicitly selected extension from the sheet takes priority.
+  function coverCandidates(video) {
+    const filename=String(video.file||'');
+    const stem=filename.replace(/\.[^.]+$/,'');
+    const preferred=String(video.cover||'').match(/\.(webp|jpe?g|png|avif)$/i)?.[1]?.toLowerCase();
+    const types=[preferred,'webp','jpg','jpeg','png','avif'].filter(Boolean);
+    return [...new Set(types)].map(ext=>mediaPath('videos',stem+'.'+ext)).filter(Boolean);
+  }
+  function imageWithFallback(paths,onSuccess,onMissing) {
+    let i=0;
+    const tryNext=()=>{
+      if(i>=paths.length){onMissing?.();return}
+      const probe=new Image();
+      probe.onload=()=>onSuccess(paths[i-1]);
+      probe.onerror=tryNext;
+      probe.src=paths[i++];
+    };
+    tryNext();
+  }
   let dialog;
   let activeVideoIndex = 0;
   let videoList = [];
@@ -46,8 +66,9 @@
     const player=element('video','showcase-player');
     player.controls=true;player.playsInline=true;player.preload='auto';
     player.src=mediaPath('videos',video.file);
-    const cover=mediaPath('videos',video.cover);
-    if(cover)player.poster=cover;
+    imageWithFallback(coverCandidates(video),url=>{
+      if(player.isConnected)player.poster=url;
+    });
     stage.append(player);
     const previous=element('button','showcase-video-arrow showcase-prev','‹');
     previous.type='button';previous.setAttribute('aria-label','Предыдущее видео');
@@ -126,13 +147,16 @@
     card.type='button';
     const thumb=element('span','showcase-thumb');
     if(type==='video') {
-      const cover=mediaPath('videos',item.cover);
-      if(cover) {
+      // A full, uncropped still fits within the card; no heavy video decoding
+      // unless every possible cover is missing.
+      imageWithFallback(coverCandidates(item),url=>{
+        if(!card.isConnected)return;
         const poster=element('img','showcase-poster');
-        poster.src=cover;poster.loading='lazy';poster.alt='';
-        poster.addEventListener('error',()=>{poster.remove();makeVideoPreview(thumb,item)});
-        thumb.append(poster);
-      } else makeVideoPreview(thumb,item);
+        poster.src=url;poster.alt='';poster.loading='lazy';
+        thumb.prepend(poster);
+      },()=>{
+        if(card.isConnected)makeVideoPreview(thumb,item);
+      });
       thumb.append(element('span','showcase-play',''));
       card.addEventListener('click',()=>showPlayer(item));
     } else {
