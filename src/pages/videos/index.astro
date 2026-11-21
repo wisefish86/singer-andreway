@@ -1,0 +1,38 @@
+---
+import '../../styles/global.css';
+import SiteFavicons from '../../components/SiteFavicons.astro';
+const isVideo = true;
+const heading = isVideo ? 'Видео выступлений' : 'Фотографии с выступлений';
+---
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{heading} — Андрей Шевцов</title>
+  <meta name="description" content={isVideo ? 'Видео живых выступлений Андрея Шевцова: лучшие моменты, песни и концерты.' : 'Фотографии с выступлений певца Андрея Шевцова.'}/>
+  <SiteFavicons/>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="/">ANDREY-SPOET</a>
+      <a class="media-back" href="/">← На главную</a>
+    </div>
+  </header>
+  <main class="media-page">
+    <div class="container">
+      <p class="media-eyebrow">Андрей Шевцов · живой вокал</p>
+      <h1>{heading}</h1>
+      <p class="media-intro">{isVideo ? 'Живое исполнение, любимые песни и атмосфера настоящих выступлений. Выбирайте ролик и смотрите прямо здесь.' : 'Сцена, зрители и моменты концертных вечеров.'}</p>
+      <div class="showcase-grid showcase-all" data-media-gallery={isVideo ? 'videos' : 'photos'}></div>
+      <div class="media-page-bottom">
+        <a class="btn primary" href="/#contact">Пригласить на мероприятие →</a>
+        <a class="btn" href="/">На главную</a>
+      </div>
+    </div>
+  </main>
+  <footer class="footer"><div class="container">© {new Date().getFullYear()} Андрей Шевцов</div></footer>
+  <script src="/js/media-gallery.js" defer data-media-api=""></script>
+</body>
+</html>
