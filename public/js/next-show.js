@@ -20,13 +20,31 @@ if(eventCard){
  };
  poster.src=fallbackImage;
  media.append(poster);
+ let hasCachedShow=false;
+ try {
+  const seed=document.getElementById('afisha-snapshot');
+  const events=seed?JSON.parse(seed.textContent).events:[];
+  const next=events.filter(item=>Number.isFinite(Date.parse(item.start)) &&
+    Date.parse(item.end)>Date.now()).sort((a,b)=>Date.parse(a.start)-Date.parse(b.start))[0];
+  if(next){
+   const start=new Date(next.start);
+   const name=String(next.title||'').replace(/\\s*\\(\\s*\\d+\\s*[кk]\\s*\\)/gi,'');
+   const match=name.match(/,\\s*(\\d{1,2}:\\d{2})\\s*[-–—]\\s*(\\d{1,2}:\\d{2})\\s*$/);
+   const venue=match?name.slice(0,match.index).trim():name.trim();
+   date.textContent=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',weekday:'short'}).format(start)
+    +(match?' · '+match[1]+'–'+match[2]:'');
+   title.textContent=venue||'Выступление Андрея';
+   place.textContent=next.location||'Место выступления уточняется';
+   hasCachedShow=true;
+  }
+ }catch(e){}
  const safeUrl=value=>{try{const url=new URL(value);return url.protocol==='https:'?url.href:''}catch{return ''}};
  async function loadNextShow(){
   try{
    const response=await fetch('https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-request?public_show=1');
    if(!response.ok)throw Error('unavailable');
    const {show}=await response.json();
-   if(!show){date.textContent='Следите за афишей';place.textContent='Новые даты появятся здесь';return}
+   if(!show){if(!hasCachedShow){date.textContent='Следите за афишей';place.textContent='Новые даты появятся здесь'}return}
    const start=new Date(show.show_at);
    if(!Number.isFinite(start.getTime()))throw Error('invalid date');
    date.textContent=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',weekday:'short'}).format(start)+(show.time?' · '+show.time:'');
@@ -82,7 +100,7 @@ if(eventCard){
     calendarLink.href='https://calendar.google.com/calendar/render?'+params.toString();
 
    }
-  }catch{date.textContent='Следите за афишей';place.textContent='Актуальное расписание — в Telegram-канале'}
+  }catch{if(!hasCachedShow){date.textContent='Следите за афишей';place.textContent='Актуальное расписание — в Telegram-канале'}}
  }
  loadNextShow();
 }
