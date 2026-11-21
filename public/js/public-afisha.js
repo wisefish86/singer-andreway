@@ -83,20 +83,35 @@
       host.append(card);
     });
   }
+  let displayed='';
+  function applyEvents(events) {
+    if(!Array.isArray(events))return;
+    const next=JSON.stringify(events);
+    if(next===displayed)return;
+    displayed=next;
+    render(events);
+    try{localStorage.setItem(cacheKey,JSON.stringify({date:Date.now(),events}));}catch{}
+  }
   window.singerEventsLoaded=payload=>{
-    if(!payload||!Array.isArray(payload.events))return;
-    render(payload.events);
-    try{localStorage.setItem(cacheKey,JSON.stringify({date:Date.now(),events:payload.events}));}catch{}
+    if(payload&&Array.isArray(payload.events))applyEvents(payload.events);
   };
+  // The static HTML already contains the last published public Calendar snapshot.
+  // It renders immediately, even on the first visit or if Google is unavailable.
   try{
+    const seed=document.getElementById('afisha-snapshot');
+    if(seed)applyEvents(JSON.parse(seed.textContent).events);
+  }catch{}
+  if(!displayed)try{
     const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
-    if(cached&&Array.isArray(cached.events)&&Date.now()-cached.date<86400000)render(cached.events);
+    if(cached&&Array.isArray(cached.events))applyEvents(cached.events);
   }catch{}
   const script=document.createElement('script');
   script.src=api+'?kind=events&callback=singerEventsLoaded&v='+Math.floor(Date.now()/300000);
   script.async=true;
+  script.onload=()=>script.remove();
   script.onerror=()=>{
-    if(!host.querySelector('.afisha-event'))host.replaceChildren(el('p','afisha-empty','Не удалось загрузить расписание. Обновите страницу чуть позже.'));
+    script.remove();
+    if(!displayed)host.replaceChildren(el('p','afisha-empty','Не удалось загрузить расписание. Обновите страницу чуть позже.'));
   };
   document.head.append(script);
 })();
