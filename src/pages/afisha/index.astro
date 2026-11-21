@@ -1,7 +1,8 @@
 ---
 import '../../styles/global.css';
 import SiteFavicons from '../../components/SiteFavicons.astro';
-import afishaSnapshot from '../../../public/data/afisha.public.json';
+import { readFileSync } from 'node:fs';
+const afishaSnapshot = JSON.parse(readFileSync('public/data/afisha.public.json', 'utf8'));
 ---
 <!doctype html>
 <html lang="ru">
