@@ -128,7 +128,7 @@ const repertoireUrl = '/podborka/';
       <div class="container">
         <div class="section-head">
           <div><h2>Ближайшее выступление</h2><p class="lead">Открытые выступления и события</p></div>
-          <a class="link" href={telegramChannelWeb} target="_blank" rel="noopener noreferrer">Вся афиша →</a>
+          <a class="link" href="/afisha/">Вся афиша →</a>
         </div>
         <article class="event-card">
           <div class="event-media" id="next-show-media"></div>
@@ -370,6 +370,7 @@ const repertoireUrl = '/podborka/';
 
     document.querySelectorAll('a[data-social-destination]').forEach((link) => {
       link.addEventListener('click', (event) => {
+        if (link.dataset.socialPlatform === 'telegram') return; // tg:// opens installed Telegram directly on mobile and desktop
         if (isMobileDevice() || !socialDialog || event.defaultPrevented) return;
         if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         const webUrl = link.dataset.socialWeb;
