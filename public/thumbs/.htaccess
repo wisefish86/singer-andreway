@@ -1,0 +1,6 @@
+# Browser-cache only generated previews; original uploaded photos/videos are untouched.
+<IfModule mod_headers.c>
+  <FilesMatch "\\.webp$">
+    Header set Cache-Control "public, max-age=7200"
+  </FilesMatch>
+</IfModule>
