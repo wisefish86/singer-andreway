@@ -16,6 +16,10 @@
     if(typeof name!=='string'||!name||name.includes('/')||name.includes('\\')||name.includes('..'))return '';
     return '/'+folder+'/'+encodeURIComponent(name);
   };
+  const thumbnailURL=(folder,file)=>{
+    if(typeof file!=='string'||!file.includes('.'))return '';
+    return fileURL('thumbs/'+folder,file.replace(/\.[^.]+$/,'.webp'));
+  };
   function coverCandidates(video){
     const stem=String(video.file||'').replace(/\.[^.]+$/,'');
     const preferred=String(video.cover||'').match(/\.(webp|jpe?g|png|avif)$/i)?.[1]?.toLowerCase();
@@ -26,7 +30,7 @@
   function resolveCover(video,callback){
     const key=video.file+'|'+(video.cover||'');
     if(imageCache.has(key)){callback(imageCache.get(key));return;}
-    const paths=coverCandidates(video);
+    const paths=[thumbnailURL('videos',video.file),...coverCandidates(video)].filter(Boolean);
     let index=0;
     const tryNext=()=>{
       if(index===paths.length){imageCache.set(key,'');callback('');return;}
@@ -201,7 +205,11 @@
     const thumb=elt('span','showcase-thumb');
     if(type==='photos'){
       const img=elt('img','showcase-poster');
-      img.src=fileURL('photos',item.file);
+      img.src=thumbnailURL('photos',item.file)||fileURL('photos',item.file);
+      img.onerror=()=>{
+        const original=fileURL('photos',item.file);
+        if(img.src!==new URL(original,location.href).href){img.onerror=null;img.src=original;}
+      };
       img.alt=item.title||'';
       img.loading=carousel&&index<4?'eager':'lazy';
       img.decoding='async';
@@ -361,7 +369,7 @@
     requestAnimationFrame(sync);
   }
   function warmImages(data){
-    const urls=data.photos.slice(0,5).map(p=>fileURL('photos',p.file));
+    const urls=data.photos.slice(0,5).map(p=>thumbnailURL('photos',p.file));
     urls.forEach(url=>{if(!url)return;const img=new Image();img.src=url;});
     data.videos.slice(0,3).forEach(v=>resolveCover(v,()=>{}));
   }
@@ -395,15 +403,24 @@
   }
   window.singerMediaLoaded=data=>{update(data);};
   let hasSaved=false;
+  // Embedded at build time: no network request to Google or even JSON required
+  // to display the first set of gallery cards.
   try{
-    const saved=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
-    if(saved?.data&&Date.now()-saved.time<7*86400000){
-      update(saved.data);
-      hasSaved=true;
+    const seed=document.getElementById('media-snapshot');
+    if(seed){
+      const data=JSON.parse(seed.textContent);
+      if(Array.isArray(data.photos)&&Array.isArray(data.videos)){
+        update(data);
+        hasSaved=true;
+      }
     }
   }catch(e){}
-  // This small, prebuilt catalog provides instant first-visit content, while
-  // Google Sheets remains authoritative and updates it asynchronously.
+  if(!hasSaved)try{
+    const saved=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
+    if(saved?.data&&Date.now()-saved.time<7*86400000){
+      update(saved.data);hasSaved=true;
+    }
+  }catch(e){}
   if(!hasSaved)fetch('/media-catalog.json',{cache:'force-cache'})
     .then(response=>response.ok?response.json():null)
     .then(data=>{if(!signature&&data)update(data);})
