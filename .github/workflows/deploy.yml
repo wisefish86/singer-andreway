@@ -63,6 +63,7 @@ jobs:
             **/photos/**
             **/videos/**
             **/audio/plus/**
+            **/reviews/uploads/**
 
       # The main FTP sync excludes user-uploaded media directories.
       # Create the root media folders independently; never synchronize/delete their contents.
@@ -71,7 +72,7 @@ jobs:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
           set -euo pipefail
-          for folder in photos videos; do
+          for folder in photos videos reviews/uploads; do
             curl --fail --show-error --silent \
               --retry 2 \
               --user "andreway:${FTP_PASSWORD}" \
