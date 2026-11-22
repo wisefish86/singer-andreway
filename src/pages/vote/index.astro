@@ -343,7 +343,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    updateButton();
   }catch(e){
    $('vote-voters').textContent=state?.active?'Результаты обновляются с задержкой. Голосование доступно.':'Свежие результаты пока недоступны.';
-   if(!statusKnown)$('vote-status').textContent='Проверяем доступность голосования…';
+   if(!statusKnown)$('vote-status').textContent='Выберите любимые песни · приём голосов уточняется';
    if(songs.length<3)await loadPublicCatalogue();
    updateButton();
   }finally{refreshBusy=false}
