@@ -32,6 +32,13 @@ const messageLinks = directChatLinks(contactMessages.feedback);
 .review-cta p{max-width:680px;color:var(--muted);line-height:1.65;margin:0 0 20px}
 .review-actions{display:flex;flex-wrap:wrap;gap:10px}
 .review-actions a{display:inline-flex;align-items:center;justify-content:center;min-height:45px}
+.review-dialog{box-sizing:border-box;width:min(90vw,470px);padding:26px;border-radius:20px;border:1px solid var(--line);background:#0b1b2a;color:var(--text)}
+.review-dialog::backdrop{background:rgba(0,0,0,.72)}
+.review-dialog h2{font-size:1.4rem;margin:0 0 10px}
+.review-dialog p{color:var(--muted);line-height:1.6}
+.review-dialog-links{display:grid;gap:12px;margin:18px 0}
+.review-dialog-links a{min-height:48px;display:flex;align-items:center;justify-content:center}
+.review-dialog .review-dialog-close{background:none;border:1px solid var(--line);color:var(--text);padding:9px 18px;border-radius:10px;font:inherit;cursor:pointer}
 </style>
 </head>
 <body>
@@ -57,10 +64,25 @@ const messageLinks = directChatLinks(contactMessages.feedback);
   <h2>Хотите поделиться впечатлениями?</h2>
   <p>Если вы были на моём выступлении, буду благодарен даже за пару слов. Можно написать в удобном мессенджере — ничего заполнять и регистрировать не нужно.</p>
   <div class="review-actions">
-   <a class="btn primary" href={messageLinks.whatsapp} target="_blank" rel="noopener noreferrer">Написать в WhatsApp ↗</a>
-   <a class="btn" href={messageLinks.telegramWeb} target="_blank" rel="noopener noreferrer">Написать в Telegram ↗</a>
+   <button id="review-open-dialog" class="btn primary" type="button">Оставить отзыв →</button>
   </div>
  </section>
 </main>
+<dialog class="review-dialog" id="review-dialog" aria-labelledby="review-dialog-title">
+ <h2 id="review-dialog-title">Сказать пару слов</h2>
+ <p>Выберите удобный мессенджер и отправьте впечатления текстом, голосовым сообщением или видео.</p>
+ <div class="review-dialog-links">
+  <a class="btn primary" href={messageLinks.whatsapp} target="_blank" rel="noopener noreferrer">Написать в WhatsApp ↗</a>
+  <a class="btn" href={messageLinks.telegramWeb} target="_blank" rel="noopener noreferrer">Написать в Telegram ↗</a>
+ </div>
+ <form method="dialog"><button class="review-dialog-close" type="submit">Закрыть</button></form>
+</dialog>
 <footer class="footer"><div class="container">© {new Date().getFullYear()} Андрей Шевцов · <a href="/">На главную</a></div></footer>
+<script is:inline>
+(()=>{
+ const dialog=document.getElementById('review-dialog');
+ document.getElementById('review-open-dialog')?.addEventListener('click',()=>dialog?.showModal());
+ dialog?.addEventListener('click',event=>{if(event.target===dialog)dialog.close()});
+})();
+</script>
 </body></html>
