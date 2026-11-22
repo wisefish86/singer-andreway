@@ -68,8 +68,8 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   <p class="vote-meta">Доступ только по секретному ключу администратора. Никогда не передавайте ключ гостям.</p>
   <label>Ключ администратора<input type="password" id="vote-key" autocomplete="off" placeholder="Секретный ключ"/></label>
   <button class="btn" id="vote-admin-check" type="button">Проверить результаты</button>
-  <label>Начало выступления<input id="vote-start" type="datetime-local"/></label>
-  <label>Окончание голосования<input id="vote-end" type="datetime-local"/></label>
+  <label>Начало голосования (время Москвы)<input id="vote-start" type="datetime-local"/></label>
+  <label>Окончание голосования (время Москвы)<input id="vote-end" type="datetime-local"/></label>
   <button class="btn" id="vote-admin-open" type="button">Открыть голосование</button>
   <button class="btn" id="vote-admin-close" type="button">Закрыть голосование</button>
   <div id="vote-admin-result" role="status" aria-live="polite"></div>
@@ -155,7 +155,10 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   updateButton();
  });
  const pad=n=>String(n).padStart(2,'0');
- const localValue=date=>{const d=new Date(date);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())};
+ const localValue=date=>{
+  const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(date)).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+  return parts.year+'-'+parts.month+'-'+parts.day+'T'+parts.hour+':'+parts.minute;
+ };
  if(admin){
   const now=Date.now();$('vote-start').value=localValue(now);$('vote-end').value=localValue(now+3*3600000);
  }
@@ -171,17 +174,29 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   const target=$('vote-admin-result');target.textContent='Выполняется…';
   try{
    const result=await api({action:'admin',operation,...extra},key);
-   if(operation==='status')target.textContent=adminReport(result);
+   if(operation==='status'){target.textContent=adminReport(result);adminVerified=true;}
    else {target.textContent=operation==='open'?'Голосование запланировано и включено':'Голосование закрыто';await refresh()}
   }catch(e){target.textContent='Ошибка: '+e.message}
  }
  $('vote-admin-result').style.whiteSpace='pre-wrap';
+ let adminVerified=false,adminRefreshing=false;
+ async function refreshAdmin(){
+  if(!adminVerified||document.hidden||adminRefreshing)return;
+  adminRefreshing=true;
+  try{
+   const result=await api({action:'admin',operation:'status'},$('vote-key').value);
+   $('vote-admin-result').textContent=adminReport(result);
+  }catch{ adminVerified=false; }
+  finally{adminRefreshing=false}
+ }
+ setInterval(refreshAdmin,5000);
+
  $('vote-admin-check').addEventListener('click',()=>manage('status'));
  $('vote-admin-open').addEventListener('click',()=>{
   const a=$('vote-start').value,b=$('vote-end').value;
   if(!a||!b)return;
   if(!confirm('Открыть новое голосование? Предыдущая активная сессия будет закрыта.'))return;
-  manage('open',{starts_at:new Date(a).toISOString(),ends_at:new Date(b).toISOString()});
+  manage('open',{starts_at:new Date(a+':00+03:00').toISOString(),ends_at:new Date(b+':00+03:00').toISOString()});
  });
  $('vote-admin-close').addEventListener('click',async()=>{
   try{
