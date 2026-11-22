@@ -111,6 +111,8 @@ assert.ok(vote.includes('vote-choice-hint') && vote.includes('Отправить
 assert.ok(vote.includes('vote-player button svg{display:block;flex:none}'), 'Player SVGs should be centered in circular buttons');
 assert.ok(vote.includes("'Изменить голос'") && vote.includes("'Сохранить изменения'"), 'Voters should be able to revise their ballot');
 assert.ok(vote.includes('STATUS_CACHE_KEY') && vote.includes('refreshBusy'), 'Voting should reuse recent state and avoid duplicate requests');
+assert.ok(vote.includes('checkStatus().finally(()=>{if(!document.hidden)refresh()})'), 'Fast vote status should complete before full tally fetch');
+assert.ok(!vote.includes('checkStatus();\n refresh();'), 'Avoid competing initial requests to the same Edge Function');
 assert.ok(vote.includes('testSubmissions++'), 'Test submissions should provide immediate feedback');
 assert.ok(vote.includes('PENDING_VOTE_KEY') && vote.includes('request_id:crypto.randomUUID()'), 'Failed votes must keep a durable request ID');
 assert.ok(vote.includes("$('vote-actions').hidden=n===0&&!pendingVote"), 'Pending vote must remain visible after reload');
