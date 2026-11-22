@@ -39,6 +39,7 @@ async function finalists():Promise<Song[]>{
 }
 type VoteTally={counts:Record<string,number>;voters:number};
 let tallyCache:{sessionId:string;expires:number;value:VoteTally}|null=null;
+let scheduleSyncStartedAt=0;
 async function getTally(db:any, sessionId:string):Promise<VoteTally>{
  if(tallyCache?.sessionId===sessionId && tallyCache.expires>Date.now())return tallyCache.value;
  const counts:Record<string,number>=Object.create(null);
@@ -165,10 +166,24 @@ Deno.serve(async req=>{
   if(req.method==="GET"){
    // Read public status from Supabase without blocking on slow Google services.
    // Keep calendar and Sheet synchronization alive after the response.
-   const sync=Promise.allSettled([ensureCalendarSessions(db),ensureManualSheetSession(db)]);
-   EdgeRuntime.waitUntil(sync.then(results=>{
-    for(const item of results)if(item.status==="rejected")console.warn("Voting schedule sync failed");
-   }));
+   // Avoid starting several slow Google fetches for simultaneous visitors.
+   if(Date.now()-scheduleSyncStartedAt>10000){
+    scheduleSyncStartedAt=Date.now();
+    const sync=Promise.allSettled([ensureCalendarSessions(db),ensureManualSheetSession(db)]);
+    EdgeRuntime.waitUntil(sync.then(results=>{
+     for(const item of results)if(item.status==="rejected")console.warn("Voting schedule sync failed");
+    }));
+   }
+   // Fast status route: one database lookup, no catalogue or tally fetch.
+   // Submission still verifies the session in PostgreSQL.
+   if(new URL(req.url).searchParams.get("status")==="1"){
+    const {data,error}=await db.from("singer_vote_sessions").select("id,ends_at,test_mode")
+     .eq("enabled",true).lte("starts_at",new Date().toISOString()).gt("ends_at",new Date().toISOString())
+     .order("starts_at",{ascending:false}).limit(1).maybeSingle();
+    if(error)throw error;
+    return json({active:Boolean(data),test_mode:Boolean(data?.test_mode),
+      session:data?{id:data.id,ends_at:data.ends_at}:null},200,origin);
+   }
    const catalogue=finalists();
    const sessionQuery=db.from("singer_vote_sessions").select("id,starts_at,ends_at,test_mode")
     .eq("enabled",true).lte("starts_at",new Date().toISOString()).gt("ends_at",new Date().toISOString())
