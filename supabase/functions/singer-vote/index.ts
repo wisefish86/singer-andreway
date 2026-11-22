@@ -246,9 +246,10 @@ Deno.serve(async req=>{
    return json({error:"invalid_operation"},400,origin);
   }
   if(payload?.action!=="vote")return json({error:"invalid_action"},400,origin);
-  const id=String(payload.session_id||""),voter=String(payload.voter_id||"");
+  const id=String(payload.session_id||""),voter=String(payload.voter_id||""),requestId=String(payload.request_id||"");
   const ids=payload.song_ids;
-  if(!/^[a-f0-9-]{36}$/.test(id)||!/^[a-f0-9-]{36}$/.test(voter)||!Array.isArray(ids)||
+  if(!/^[a-f0-9-]{36}$/.test(id)||!/^[a-f0-9-]{36}$/.test(voter)||
+     (requestId!==""&&!/^[a-f0-9-]{36}$/.test(requestId))||!Array.isArray(ids)||
      ids.length<1||ids.length>3||new Set(ids).size!==ids.length||ids.some((x:unknown)=>typeof x!=="string"||!/^[a-f0-9]{16}$/.test(x))){
     return json({error:"invalid_vote"},400,origin);
   }
@@ -265,7 +266,7 @@ Deno.serve(async req=>{
   const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-real-ip")||"voter:"+voter;
   const pepper=Deno.env.get("SINGER_VOTE_IP_PEPPER")||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
   if(pepper.length<32)return json({error:"not_configured"},503,origin);
-  const result=await db.rpc("singer_cast_vote",{p_session:id,p_voter_hash:await sha(id+":"+voter+(voteSession.test_mode?":"+crypto.randomUUID():"")),
+  const result=await db.rpc("singer_cast_vote",{p_session:id,p_voter_hash:await sha(id+":"+voter+(voteSession.test_mode?":"+(requestId||crypto.randomUUID()):"")),
    p_ip_hash:await sha(pepper+":"+ip),p_song_ids:ids});
   if(result.error)throw result.error;
   if(result.data!=="ok")return json({error:result.data},result.data==="rate_limited"?429:409,origin);
