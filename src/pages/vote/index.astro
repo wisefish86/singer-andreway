@@ -55,7 +55,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
 .vote-hidden{display:none!important}
 .vote-player{position:fixed;z-index:30;bottom:0;left:0;right:0;display:flex;align-items:center;gap:12px;padding:11px max(16px,calc((100vw - 760px)/2));background:rgba(8,20,31,.97);backdrop-filter:blur(15px);border-top:1px solid rgba(232,193,113,.42);box-shadow:0 -12px 30px #0005}
 .vote-player[hidden]{display:none!important}
-.vote-player button{background:var(--accent2);color:#071521;border:0;border-radius:50%;width:42px;height:42px;flex:0 0 42px;font-size:18px;cursor:pointer}
+.vote-player button{background:var(--accent2);color:#071521;border:0;border-radius:50%;width:42px;height:42px;flex:0 0 42px;font-size:18px;cursor:pointer;display:grid;place-items:center;padding:0;line-height:1}.vote-player button svg{display:block;flex:none}
 .vote-player-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem;font-weight:700}
 .vote-player input{width:min(26vw,210px);accent-color:var(--accent2)}
 .vote-player .vote-player-close{background:transparent;color:var(--text);border:1px solid var(--line)}
@@ -110,7 +110,9 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   return;
  }
  const storageKey='singer-vote-guest-v1';
- let state=null,selected=new Set(),songs=[],saved=false;
+ let state=null,selected=new Set(),songs=[],saved=false,editing=false,sending=false,refreshBusy=false;
+ let testSubmissions=0;
+ const STATUS_CACHE_KEY='singer-vote-live-snapshot-v1';
  const CATALOGUE_CACHE_KEY='singer-voting-finalists-v2';
  const cacheSongs=list=>{
   try{localStorage.setItem(CATALOGUE_CACHE_KEY,JSON.stringify({at:Date.now(),songs:list.map(({id,name,artist,preview_url})=>({id,name,artist,preview_url}))}));}catch{}
@@ -141,6 +143,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  }
  
  function setMessage(text){$('vote-message').textContent=text;$('vote-message').classList.remove('vote-hidden')}
+ function clearMessage(){$('vote-message').classList.add('vote-hidden')}
  function voterId(){
   try{
    let id=localStorage.getItem(storageKey);
@@ -161,8 +164,8 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   $('vote-actions').hidden=n===0;
   const hint=n===1?'Можно выбрать ещё 2 песни':n===2?'Можно выбрать ещё 1 песню':n===3?'Вы выбрали все 3 песни':'';
   $('vote-choice-hint').textContent=active?hint:hint+' · Голосование пока закрыто';
-  $('vote-send').disabled=n<1||n>3||songs.length<1||!active;
-  $('vote-send').textContent=!active?'Голосование пока закрыто':state?.test_mode?'Отправить пробный голос':saved?'Обновить мой голос':'Отправить голос';
+  $('vote-send').disabled=sending||n<1||n>3||songs.length<1||!active;
+  $('vote-send').textContent=sending?'Отправляем…':!active?'Голосование пока закрыто':state?.test_mode?'Отправить пробный голос':saved&&!editing?'Изменить голос':saved&&editing?'Сохранить изменения':'Отправить голос';
  }
  const voteLabel=(song,total)=>{
   const votes=Math.max(0,Number(song.votes)||0);
@@ -230,7 +233,8 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
     if(selected.has(song.id))selected.delete(song.id);
     else if(selected.size<3)selected.add(song.id);
     else{setMessage('Можно выбрать только три песни. Снимите один из предыдущих выборов.');return}
-    saved=false;updateButton();render();
+    if(saved&&!editing&&!state?.test_mode){setMessage('Чтобы поменять песни, нажмите «Изменить голос» внизу страницы.');return}
+    clearMessage();updateButton();render();
    });
    row.append(selector);
    const votes=document.createElement('span');votes.className='vote-count';
@@ -253,6 +257,8 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   synchronizeAudio();updateButton();
  }
  async function refresh(){
+  if(refreshBusy||sending||document.hidden)return;
+  refreshBusy=true;
   try{
    const result=await api();
    const active=Boolean(result.active);
@@ -261,7 +267,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    const oldId=window.__voteSessionId||null;
    const changedSession=newId!==null&&newId!==oldId;
    if(changedSession){
-    selected.clear();saved=false;
+    selected.clear();saved=false;editing=false;
     if(!result.test_mode){
      try{
       const ids=JSON.parse(localStorage.getItem('singer-vote-choice:'+newId)||'[]');
@@ -274,6 +280,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    }
    window.__voteSessionId=newId;
    state=result;
+   try{localStorage.setItem(STATUS_CACHE_KEY,JSON.stringify({at:Date.now(),value:result}));}catch{}
    cacheSongs(incoming);
    $('vote-open').hidden=false;
    $('vote-closed').hidden=active;
@@ -301,37 +308,78 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    $('vote-deadline').textContent=active?'Приём голосов до '+new Date(result.session.ends_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (МСК)':'';
    updateButton();
   }catch(e){
+   if(state?.active){$('vote-voters').textContent='Не удалось обновить результаты. Повторим попытку автоматически.';return}
    state={active:false};
    $('vote-status').textContent='Связь с голосованием временно недоступна';
    $('vote-closed').hidden=false;
    $('vote-closed').textContent='Не удалось проверить приём голосов. Подборку песен можно посмотреть, но отправка временно недоступна.';
    if(songs.length>=3){$('vote-open').hidden=false;render();$('vote-voters').textContent='Подборка доступна, состояние голосования временно не проверено.';}
    else await loadPublicCatalogue();
-  }
+  }finally{refreshBusy=false}
  }
  $('vote-search').addEventListener('input',render);
  $('vote-send').addEventListener('click',async()=>{
+  if(sending)return;
   if(!state?.active){setMessage('Голосование пока закрыто. Попробуйте во время выступления.');return}
+  const isTest=Boolean(state.test_mode);
+  if(saved&&!editing&&!isTest){
+   editing=true;
+   clearMessage();
+   updateButton();
+   return;
+  }
   const voter=voterId();
   if(!voter){setMessage('Браузер ограничивает хранение данных. Попробуйте открыть страницу в обычном браузере.');return}
-  $('vote-send').disabled=true;
-  try{
-   const sessionId=state.session.id,choices=[...selected],isTest=Boolean(state.test_mode);
-   await api({action:'vote',session_id:sessionId,voter_id:voter,song_ids:choices});
-   saved=true;
-   if(!isTest)try{localStorage.setItem('singer-vote-choice:'+sessionId,JSON.stringify(choices));}catch{}
-   setMessage(isTest?'Пробный голос добавлен в рейтинг. Можно нажать ещё раз для нового теста.':'Спасибо! Ваш выбор учтён. Можно добавить песни или изменить выбор, пока голосование открыто.');
-   refresh();
-  }catch(e){setMessage('Не удалось отправить голос: '+e.message)}
+  const sessionId=state.session.id,choices=[...selected];
+  if(!choices.length||choices.length>3)return;
+  sending=true;
+  setMessage('Отправляем выбранные песни…');
   updateButton();
+  try{
+   await api({action:'vote',session_id:sessionId,voter_id:voter,song_ids:choices});
+   saved=true;editing=false;
+   if(!isTest)try{localStorage.setItem('singer-vote-choice:'+sessionId,JSON.stringify(choices));}catch{}
+   if(isTest){
+    testSubmissions++;
+    state.voters=(Number(state.voters)||0)+1;
+    songs=songs.map(song=>({...song,votes:(Number(song.votes)||0)+(selected.has(song.id)?1:0)}));
+    render();
+   }
+   setMessage(isTest?'Пробный голос №'+testSubmissions+' принят! Можно голосовать ещё раз.':'Голос принят! Вы можете изменить выбранные песни, пока голосование открыто.');
+  }catch(e){
+   setMessage('Не удалось отправить голос: '+(e.message==='rate_limited'?'слишком много отправок с одного подключения. Повторите позже.':e.message));
+  }finally{
+   sending=false;
+   updateButton();
+   refresh();
+  }
  });
+ let restored=false;
  try{
+  const snapshot=JSON.parse(localStorage.getItem(STATUS_CACHE_KEY)||'null');
+  if(snapshot&&Date.now()-snapshot.at<30000&&snapshot.value?.session?.id&&Date.parse(snapshot.value.session.ends_at)>Date.now()&&Array.isArray(snapshot.value.songs)){
+   state=snapshot.value;songs=state.songs;restored=true;
+   window.__voteSessionId=state.session.id;
+   if(!state.test_mode)try{
+    const ids=JSON.parse(localStorage.getItem('singer-vote-choice:'+state.session.id)||'[]');
+    if(Array.isArray(ids)&&ids.length<=3&&ids.length>0){selected=new Set(ids);saved=true}
+   }catch{}
+   $('vote-open').hidden=false;$('vote-closed').hidden=true;
+   $('vote-test-note').hidden=!state.test_mode;
+   $('vote-status').textContent=state.test_mode?'● Тестовое голосование — голоса пробные':'● Голосование открыто';
+   $('vote-voters').textContent='Загружаем свежие результаты…';
+   $('vote-deadline').textContent='Приём голосов до '+new Date(state.session.ends_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (МСК)';
+   render();
+  }
+ }catch{}
+ if(!restored)try{
   const cached=JSON.parse(localStorage.getItem(CATALOGUE_CACHE_KEY)||'null');
   if(cached&&Date.now()-cached.at<7*86400000)usePreview(cached.songs);
  }catch{}
  loadPublicCatalogue();
  refresh();
- setInterval(refresh,12000);
+ setInterval(refresh,6000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
 })();
 </script>
 </body></html>
