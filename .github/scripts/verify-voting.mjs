@@ -37,7 +37,7 @@ assert.ok(admin.includes('id="vm-key"'), 'Dedicated password-protected admin pag
 assert.ok(admin.includes('noindex,nofollow'), 'Admin page should not be indexed');
 assert.ok(admin.includes('setInterval(()=>refreshStatus(true),5000)'), 'Owner results must refresh every 5s');
 assert.ok(vote.includes('vote-count'), 'Guest results must display votes per song');
-assert.ok(vote.includes('setInterval(refresh,10000)'), 'Guest votes must refresh live');
+assert.ok(vote.includes('setInterval(refresh,12000)'), 'Guest votes must refresh live');
 assert.ok(backend.includes('getTally(db,data.id)'), 'Public API must return aggregated vote tallies');
 assert.ok(grants.includes('grant select, insert, update, delete on public.singer_vote_sessions to service_role'), 'Missing required voting table permission fix');
 assert.ok(!grants.includes('to anon'), 'Vote tables must not be granted to anonymous clients');
@@ -72,5 +72,12 @@ assert.ok(reviews.includes('singerReviewsLoaded'), 'Review page must consume She
 assert.ok(reviews.includes("avatarType==='female'"), 'Customisable gender avatar defaults required');
 assert.ok(siteWorkflow.includes('**/reviews/uploads/**'), 'FTP deployment must protect user-uploaded avatars');
 assert.ok(scriptWorkflow.includes('clasp deploy --deploymentId'), 'Apps Script web app needs versioned redeploy to update production endpoint');
-console.log('Finale voting, preview and reviews integration checks passed.');
+assert.ok(backend.includes('Promise.allSettled([ensureCalendarSessions(db),ensureManualSheetSession(db)])'), 'Schedule lookups must run concurrently');
+assert.ok(vote.includes('CATALOGUE_CACHE_KEY'), 'Voting must show fast cached repertoire');
+assert.ok(vote.includes("fetch('/data/repertoire.public.json'"), 'Static catalogue should work even during voting API outages');
+assert.ok(vote.includes('vote-progress-fill'), 'Each active song must display its voting progress');
+assert.ok(home.includes('class="section home-reviews"') && home.includes('home-reviews-track'), 'Homepage must have swipable reviews carousel');
+assert.ok(home.includes('reviews.length<2'), 'Do not show fake or empty testimonial blocks');
+assert.ok(contact.includes('whatsapp://send?phone='), 'Mobile WhatsApp deep link missing');
+console.log('Finale voting, caching, carousel and mobile deep links checks passed.');
 
