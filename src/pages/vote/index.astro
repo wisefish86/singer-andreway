@@ -1,0 +1,195 @@
+---
+import '../../styles/global.css';
+import SiteFavicons from '../../components/SiteFavicons.astro';
+const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-vote';
+---
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<SiteFavicons />
+<title>Голосование за хиты вечера — Андрей Шевцов</title>
+<meta name="description" content="Выберите три любимые песни для финалов выступления Андрея Шевцова."/>
+<meta name="robots" content="noindex,follow"/>
+<style>
+.vote-main{max-width:780px;margin:0 auto;padding:30px 20px 100px;min-height:80vh}
+.vote-hero{padding:26px 0 18px}.vote-hero h1{font-size:clamp(32px,7vw,53px);line-height:1.08;margin:8px 0 16px}
+.vote-hero p{color:var(--muted);line-height:1.65}
+.vote-status{font-size:14px;color:var(--accent2);font-weight:700}
+.vote-card{border:1px solid var(--line);border-radius:22px;background:var(--surface);padding:clamp(16px,4vw,28px);margin:18px 0}
+.vote-card h2{font-size:22px;margin:0 0 12px}
+.vote-search{width:100%;box-sizing:border-box;font:inherit;color:var(--text);border-radius:12px;padding:15px;background:#081725;border:1px solid var(--line);margin:10px 0 14px}
+.vote-option{display:flex;gap:13px;align-items:center;width:100%;box-sizing:border-box;padding:13px 10px;margin:4px 0;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer}
+.vote-option:hover,.vote-option:focus-visible{border-color:var(--accent2)}
+.vote-option[aria-pressed="true"]{border-color:var(--accent2);background:rgba(220,176,94,.12)}
+.vote-option .check{flex:0 0 26px;width:26px;height:26px;border:2px solid var(--accent2);border-radius:7px;display:grid;place-items:center;color:var(--accent2)}
+.vote-option strong{display:block}.vote-option small{display:block;color:var(--muted);margin-top:3px}
+.vote-actions{position:sticky;bottom:0;padding:14px 0 8px;background:linear-gradient(transparent,#07131e 16%);z-index:2}
+.vote-actions .btn{width:100%;justify-content:center;min-height:52px}.vote-actions .btn:disabled{opacity:.48;cursor:not-allowed}
+.vote-meta{color:var(--muted);font-size:13px;margin-top:8px}
+.vote-alert{padding:16px 18px;border-radius:12px;background:rgba(220,176,94,.1);border:1px solid var(--line);line-height:1.55}
+.vote-price{font-size:24px;font-weight:800;color:var(--accent2)}
+.vote-hidden{display:none!important}
+.vote-admin input{width:100%;box-sizing:border-box;min-height:44px;padding:10px;color:var(--text);background:#081725;border:1px solid var(--line);border-radius:10px;margin:6px 0 13px}
+.vote-admin label{display:block;margin:12px 0}
+.vote-admin .btn{margin:6px 8px 8px 0}.vote-admin pre{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text)}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="container topbar-inner"><a class="brand" href="/">ANDREY-SPOET</a><a class="media-back" href="/#live">← Для гостей</a></div></header>
+<main class="vote-main">
+ <header class="vote-hero">
+  <span class="vote-status" id="vote-status">Проверяем голосование…</span>
+  <h1>🔥 Выбираем хиты вечера!</h1>
+  <p>Проголосуйте за три песни, которые хотите услышать в финалах музыкальных блоков. Главный фаворит завершит вечер!</p>
+ </header>
+ <section id="vote-closed" class="vote-card" hidden>
+  <h2>Голосование пока закрыто</h2>
+  <p>Оно открывается только на время конкретного выступления. Следите за объявлением со сцены!</p>
+ </section>
+ <section id="vote-open" class="vote-card" hidden>
+  <h2>Ваши три любимые песни</h2>
+  <p class="vote-meta">Это специальная подборка финальных хитов, а не весь репертуар. Можно изменить свой выбор, пока голосование открыто.</p>
+  <label for="vote-search" class="vote-meta">Найти песню или исполнителя</label>
+  <input id="vote-search" class="vote-search" type="search" placeholder="Название или исполнитель" autocomplete="off"/>
+  <div id="vote-songs" aria-label="Песни для голосования"></div>
+  <div class="vote-actions"><button id="vote-send" class="btn primary" disabled type="button">Выберите 3 песни</button></div>
+  <div id="vote-message" class="vote-alert vote-hidden" role="status" aria-live="polite"></div>
+  <p id="vote-deadline" class="vote-meta"></p>
+ </section>
+ <section class="vote-card">
+  <h2>🎤 Хотите услышать другую песню?</h2>
+  <p>Выберите любую песню из моего репертуара и закажите её исполнение во время вечера.</p>
+  <p><span class="vote-price">1 000 ₽</span> за песню · исполнение согласовывается с артистом</p>
+  <a class="btn" href="/podborka/">Посмотреть репертуар и заказать песню →</a>
+ </section>
+ <section id="vote-admin" class="vote-card vote-admin vote-hidden" aria-label="Управление голосованием">
+  <h2>Управление голосованием</h2>
+  <p class="vote-meta">Доступ только по секретному ключу администратора. Никогда не передавайте ключ гостям.</p>
+  <label>Ключ администратора<input type="password" id="vote-key" autocomplete="off" placeholder="Секретный ключ"/></label>
+  <button class="btn" id="vote-admin-check" type="button">Проверить результаты</button>
+  <label>Начало выступления<input id="vote-start" type="datetime-local"/></label>
+  <label>Окончание голосования<input id="vote-end" type="datetime-local"/></label>
+  <button class="btn" id="vote-admin-open" type="button">Открыть голосование</button>
+  <button class="btn" id="vote-admin-close" type="button">Закрыть голосование</button>
+  <div id="vote-admin-result" role="status" aria-live="polite"></div>
+ </section>
+</main>
+<footer class="footer"><div class="container">© {new Date().getFullYear()} Андрей Шевцов · <a href="/">На главную</a></div></footer>
+<script define:vars={{endpoint}}>
+(()=>{
+ const $=id=>document.getElementById(id);
+ const admin=new URLSearchParams(location.search).has('manage');
+ if(admin)$('vote-admin').classList.remove('vote-hidden');
+ const storageKey='singer-vote-guest-v1';
+ let state=null,selected=new Set(),songs=[],saved=false;
+ function setMessage(text){$('vote-message').textContent=text;$('vote-message').classList.remove('vote-hidden')}
+ function voterId(){
+  try{
+   let id=localStorage.getItem(storageKey);
+   if(!id||!/^[a-f0-9-]{36}$/.test(id)){id=crypto.randomUUID();localStorage.setItem(storageKey,id)}
+   return id;
+  }catch{return null}
+ }
+ async function api(body,key){
+  const response=await fetch(endpoint,{method:body?'POST':'GET',cache:'no-store',
+   headers:body?{'content-type':'application/json',...(key?{authorization:'Bearer '+key}:{})}:{},
+   ...(body?{body:JSON.stringify(body)}:{})});
+  const result=await response.json();
+  if(!response.ok)throw new Error(result.error||'Сервис временно недоступен');
+  return result;
+ }
+ function updateButton(){
+  $('vote-send').disabled=selected.size!==3;
+  $('vote-send').textContent=saved?'Обновить мои голоса':selected.size===3?'Проголосовать за 3 песни':'Выбрано '+selected.size+' из 3';
+ }
+ function render(){
+  const query=$('vote-search').value.trim().toLocaleLowerCase('ru');
+  $('vote-songs').replaceChildren();
+  for(const song of songs){
+   if(!(song.name+' '+song.artist).toLocaleLowerCase('ru').includes(query))continue;
+   const row=document.createElement('button');row.type='button';row.className='vote-option';
+   row.setAttribute('aria-pressed',String(selected.has(song.id)));
+   const mark=document.createElement('span');mark.className='check';mark.setAttribute('aria-hidden','true');mark.textContent=selected.has(song.id)?'✓':'';
+   const text=document.createElement('span'),name=document.createElement('strong'),artist=document.createElement('small');
+   name.textContent=song.name;artist.textContent=song.artist;text.append(name,artist);row.append(mark,text);
+   row.addEventListener('click',()=>{
+    if(selected.has(song.id))selected.delete(song.id);
+    else if(selected.size<3)selected.add(song.id);
+    else{setMessage('Можно выбрать только три песни. Снимите один из предыдущих выборов.');return}
+    saved=false;updateButton();render();
+   });
+   $('vote-songs').append(row);
+  }
+  updateButton();
+ }
+ async function refresh(){
+  try{
+   const result=await api();
+   state=result;
+   const active=Boolean(result.active)&&Array.isArray(result.songs)&&result.songs.length>=3;
+   $('vote-open').hidden=!active;$('vote-closed').hidden=active;
+   $('vote-status').textContent=active?'● Голосование открыто':'Голосование неактивно';
+   if(active){
+    const previous=songs.map(s=>s.id).join(',');
+    songs=result.songs;
+    if(previous!==songs.map(s=>s.id).join(','))render();
+    $('vote-deadline').textContent='Приём голосов до '+new Date(result.session.ends_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (МСК)';
+   }
+  }catch{
+   $('vote-status').textContent='Не удалось проверить голосование';
+   $('vote-open').hidden=true;$('vote-closed').hidden=false;
+  }
+ }
+ $('vote-search').addEventListener('input',render);
+ $('vote-send').addEventListener('click',async()=>{
+  const voter=voterId();
+  if(!voter){setMessage('Браузер ограничивает хранение данных. Попробуйте открыть страницу в обычном браузере.');return}
+  $('vote-send').disabled=true;
+  try{
+   await api({action:'vote',session_id:state.session.id,voter_id:voter,song_ids:[...selected]});
+   saved=true;setMessage('Спасибо! Ваши три голоса учтены. Вы можете изменить выбор до закрытия голосования.');
+  }catch(e){setMessage('Не удалось отправить голос: '+e.message)}
+  updateButton();
+ });
+ const pad=n=>String(n).padStart(2,'0');
+ const localValue=date=>{const d=new Date(date);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())};
+ if(admin){
+  const now=Date.now();$('vote-start').value=localValue(now);$('vote-end').value=localValue(now+3*3600000);
+ }
+ function adminReport(result){
+  if(!result.session)return 'Сессий ещё нет';
+  const end=new Date(result.session.ends_at).toLocaleString('ru-RU');
+  const labels=new Map(songs.map(s=>[s.id,s.artist+' — '+s.name]));
+  return (result.session.enabled?'Включено':'Закрыто')+' · до '+end+' · участников: '+(result.ballots||0)+'\n'+
+   (result.results||[]).map((r,i)=>(i+1)+'. '+(labels.get(r.id)||r.id)+' — '+r.votes).join('\n');
+ }
+ async function manage(operation,extra={}){
+  const key=$('vote-key').value;
+  const target=$('vote-admin-result');target.textContent='Выполняется…';
+  try{
+   const result=await api({action:'admin',operation,...extra},key);
+   if(operation==='status')target.textContent=adminReport(result);
+   else {target.textContent=operation==='open'?'Голосование запланировано и включено':'Голосование закрыто';await refresh()}
+  }catch(e){target.textContent='Ошибка: '+e.message}
+ }
+ $('vote-admin-result').style.whiteSpace='pre-wrap';
+ $('vote-admin-check').addEventListener('click',()=>manage('status'));
+ $('vote-admin-open').addEventListener('click',()=>{
+  const a=$('vote-start').value,b=$('vote-end').value;
+  if(!a||!b)return;
+  if(!confirm('Открыть новое голосование? Предыдущая активная сессия будет закрыта.'))return;
+  manage('open',{starts_at:new Date(a).toISOString(),ends_at:new Date(b).toISOString()});
+ });
+ $('vote-admin-close').addEventListener('click',async()=>{
+  try{
+   const result=await api({action:'admin',operation:'status'},$('vote-key').value);
+   if(!result.session){$('vote-admin-result').textContent='Активной сессии нет';return}
+   if(confirm('Закрыть текущее голосование?'))manage('close',{id:result.session.id});
+  }catch(e){$('vote-admin-result').textContent='Ошибка: '+e.message}
+ });
+ refresh();
+ setInterval(refresh,15000);
+})();
+</script>
+</body></html>
