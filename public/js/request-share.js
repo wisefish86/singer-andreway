@@ -37,18 +37,14 @@
       name.trim() ? 'Имя: ' + name.trim() : '',
       phone.trim() ? 'Телефон для связи: ' + phone.trim() : '',
     ].filter(line => line !== null && line !== undefined).join('\n').trim();
-    // Telegram's official share flow starts with a fresh draft instead of reusing
-    // an old draft from the owner's existing chat (e.g. a previous feedback form).
-    // Telegram displays its recipient chooser; the visitor selects @${recipient}.
-    const telegramMessage = message.replace('🎵 Подборка песен:' + String.fromCharCode(10) + link, '').trim();
+    // Public username links open Andreys specific chat and can prepare its draft.
+    // The playlist URL remains part of that draft, rather than invoking share chooser.
     return {
       smsMessage: 'Подборка песен: ' + link,
       sms: 'sms:+79181142693?body=' + encodeURIComponent('Подборка песен: ' + link),
       whatsapp: whatsappUrl + '?text=' + encodeURIComponent(message),
-      // A fresh Telegram share draft, with the editable playlist link as the URL.
-      // Direct username links may reopen unrelated cloud drafts in an existing chat.
-      telegram: telegram.origin + '/share/url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(telegramMessage),
-      telegramApp: 'tg://msg_url?url=' + encodeURIComponent(link) + '&text=' + encodeURIComponent(telegramMessage),
+      telegram: telegram.origin + '/' + recipient + '?text=' + encodeURIComponent(message),
+      telegramApp: 'tg://resolve?domain=' + recipient + '&text=' + encodeURIComponent(message),
       whatsappApp: 'whatsapp://send?phone=' + new URL(whatsappUrl).pathname.slice(1) + '&text=' + encodeURIComponent(message),
       // Verified public profile URL; MAX cannot prefill a particular recipient chat.
       maxDirect: 'https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHMK3ejGSQ',
