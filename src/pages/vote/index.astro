@@ -124,8 +124,8 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   songs=list.map(song=>({...song,votes:0}));
   state={...state,songs,voters:Number(state?.voters)||0};
   $('vote-open').hidden=false;$('vote-closed').hidden=!statusKnown||Boolean(state?.active);
-  if(!statusKnown)$('vote-status').textContent='Проверяем доступность голосования…';
-  $('vote-voters').textContent='Загружено '+songs.length+' песен · ожидаем состояние голосования…';
+  if(!statusKnown)$('vote-status').textContent='Выберите любимые песни · приём голосов уточняется';
+  $('vote-voters').textContent='Доступно '+songs.length+' песен для выбора';
   render();
  };
  async function loadPublicCatalogue(){
@@ -198,7 +198,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    $('vote-deadline').textContent=next.active?'Приём голосов до '+new Date(next.session.ends_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (МСК)':'';
    render();
   }catch{
-   if(!statusKnown)$('vote-status').textContent='Проверяем голосование — сервер отвечает медленно…';
+   if(!statusKnown)$('vote-status').textContent='Выберите любимые песни · ждём подтверждения приёма голосов';
   }finally{statusBusy=false}
  }
  const voteLabel=(song,total)=>{
@@ -445,12 +445,13 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   const cached=JSON.parse(localStorage.getItem(CATALOGUE_CACHE_KEY)||'null');
   if(cached&&Date.now()-cached.at<7*86400000)usePreview(cached.songs);
  }catch{}
+ // Start fast status first; do not compete with the heavier full tally request.
+ // The public song catalogue remains independent, so visitors can choose while status resolves.
  loadPublicCatalogue();
- checkStatus();
- refresh();
+ checkStatus().finally(()=>{if(!document.hidden)refresh()});
  setInterval(checkStatus,6000);
  setInterval(refresh,18000);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkStatus();refresh()}});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkStatus().finally(()=>refresh())}});
 })();
 </script>
 </body></html>
