@@ -36,11 +36,11 @@ console.log('Shared QR checked for contact messengers and Instagram subscription
 // Mobile media reliability and sticky-header anchor regressions.
 const media = readFileSync(new URL('../../public/js/media-gallery.js', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../../src/styles/global.css', import.meta.url), 'utf8');
-assert.ok(media.includes("player.preload='metadata'"), 'Video must not eagerly download an entire clip before playback');
+assert.ok(media.includes("player.preload='auto'"), 'Opened video must allow progressive buffering ahead of playback');
 assert.ok(media.includes("fetch('/data/media.json',{cache:'no-cache'})"), 'Media must load its public snapshot from the same origin');
 assert.ok(!media.includes('kind=media&callback=') && !media.includes('setInterval(refresh,300000)') && !media.includes('data-media-api'), 'Visitors must not poll Google for media');
 assert.ok(!media.includes('dialog.requestFullscreen()'), 'Opening a video must not trigger a disruptive fullscreen transition');
-assert.ok(html.includes('media-gallery.js?v=20261122-cache1') && !html.includes('data-media-api='), 'Home must use cached media script without Google endpoint');
+assert.ok(html.includes('media-gallery.js?v=20261122-buffer2') && !html.includes('data-media-api='), 'Home must use cached media script without Google endpoint');
 const videoPage=readFileSync(new URL('../../src/pages/all-videos/index.astro',import.meta.url),'utf8');
 const photosPage=readFileSync(new URL('../../src/pages/all-photos/index.astro',import.meta.url),'utf8');
 assert.ok(!videoPage.includes('data-media-api=')&&!photosPage.includes('data-media-api='),'Gallery pages must not poll Google');
