@@ -121,10 +121,6 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   $('vote-voters').textContent='Загружено '+songs.length+' песен · ожидаем состояние голосования…';
   render();
  };
- try{
-  const cached=JSON.parse(localStorage.getItem(CATALOGUE_CACHE_KEY)||'null');
-  if(cached&&Date.now()-cached.at<7*86400000)usePreview(cached.songs);
- }catch{}
  async function loadPublicCatalogue(){
   if(songs.length>=3)return;
   try{
@@ -302,6 +298,10 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   }catch(e){setMessage('Не удалось отправить голос: '+e.message)}
   updateButton();
  });
+ try{
+  const cached=JSON.parse(localStorage.getItem(CATALOGUE_CACHE_KEY)||'null');
+  if(cached&&Date.now()-cached.at<7*86400000)usePreview(cached.songs);
+ }catch{}
  loadPublicCatalogue();
  refresh();
  setInterval(refresh,12000);
