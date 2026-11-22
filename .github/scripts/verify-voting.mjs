@@ -4,6 +4,10 @@ const home=readFileSync('src/pages/index.astro','utf8');
 const vote=readFileSync('src/pages/vote/index.astro','utf8');
 const admin=readFileSync('src/pages/vote/manage/index.astro','utf8');
 const reviews=readFileSync('src/pages/reviews/index.astro','utf8');
+const reviewApp=readFileSync('apps-script/Code.js','utf8');
+const scriptWorkflow=readFileSync('.github/workflows/deploy-apps-script.yml','utf8');
+const siteWorkflow=readFileSync('.github/workflows/deploy.yml','utf8');
+
 const reviewData=readFileSync('src/data/reviews.ts','utf8');
 const grants=readFileSync('supabase/migrations/20261122150000_singer_vote_service_role_grants.sql','utf8');
 const backend=readFileSync('supabase/functions/singer-vote/index.ts','utf8');
@@ -46,4 +50,16 @@ assert.ok(backend.includes('singer_cast_vote'), 'Atomic ballot submission missin
 assert.ok(sql.includes('enabled boolean not null default false'), 'Database default must remain closed');
 assert.ok(sql.includes('primary key (session_id, voter_hash)'), 'One ballot per guest must be enforced');
 assert.ok(sql.includes('enable row level security'), 'RLS missing');
-console.log('Finale voting and reviews checks passed (static validation only).');
+
+assert.ok(vote.includes('<style is:global>'), 'Dynamically generated voting rows must receive CSS styles');
+assert.ok(vote.includes('vote-preview') && vote.includes('vote-player'), 'Voting should use inline song previews');
+assert.ok(backend.includes('preview_url'), 'Voting API should return public safe audio previews');
+assert.ok(reviewApp.includes('function publicReviews_()'), 'Reviews must come from the existing photo/video Sheet');
+assert.ok(reviewApp.includes('row[6]===true&&row[9]===true'), 'Only approved and consented testimonials may be published');
+assert.ok(reviewApp.includes("e.parameter.kind === 'reviews'"), 'Approved reviews endpoint must exist');
+assert.ok(reviews.includes('singerReviewsLoaded'), 'Review page must consume Sheet data');
+assert.ok(reviews.includes("avatarType==='female'"), 'Customisable gender avatar defaults required');
+assert.ok(siteWorkflow.includes('**/reviews/uploads/**'), 'FTP deployment must protect user-uploaded avatars');
+assert.ok(scriptWorkflow.includes('clasp deploy --deploymentId'), 'Apps Script web app needs versioned redeploy to update production endpoint');
+console.log('Finale voting, preview and reviews integration checks passed.');
+

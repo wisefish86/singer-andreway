@@ -407,6 +407,33 @@ function publicMedia_() {
 }
 
 /**
+ * Site reviews share the existing photo/video management spreadsheet.
+ * Only explicitly approved rows become public. Do not return private notes or consent metadata.
+ */
+function publicReviews_() {
+  const sheet = SpreadsheetApp.openById('1BwmXTVFysgzZq_UbCvrk98seMtOuUYj34Lwym371-hU').getSheetByName('Отзывы');
+  if (!sheet) return {updatedAt:new Date().toISOString(),reviews:[]};
+  const rows=sheet.getDataRange().getValues();
+  const safe=value=>String(value||'').trim().slice(0,2200);
+  const avatarUrl=value=>{
+    const v=safe(value).slice(0,440);
+    if (!v) return '';
+    if (/^https:\/\/singer\.andreway\.ru\/reviews\/uploads\/[a-zA-Z0-9_() .%-]+\.(?:png|webp|jpe?g)$/i.test(v))return v;
+    if (/^[a-zA-Z0-9_() .-]+\.(?:png|webp|jpe?g)$/i.test(v))return 'https://singer.andreway.ru/reviews/uploads/'+encodeURIComponent(v);
+    return '';
+  };
+  const reviews=rows.slice(1).filter(row=>row[6]===true&&row[9]===true&&safe(row[0])&&safe(row[4]))
+   .map(row=>{
+     const d=row[2] instanceof Date?Utilities.formatDate(row[2],'Europe/Moscow','MMMM yyyy'):safe(row[2]);
+     return {author:safe(row[0]).slice(0,100),event:safe(row[1]).slice(0,150),
+       dateLabel:d.slice(0,90),city:safe(row[3]).slice(0,100),
+       text:safe(row[4]).slice(0,2000),avatar:avatarUrl(row[5]),
+       avatarType:safe(row[10])==='Женщина'?'female':safe(row[10])==='Мужчина'?'male':'neutral'};
+   }).slice(0,100);
+  return {updatedAt:new Date().toISOString(),reviews};
+}
+
+/**
  * Only performances marked !В in the calendar can activate public guest UI.
  * The Calendar's start/end may include private load-in logistics. If the title
  * specifies "20:00-22:00", those public on-stage hours take precedence.
@@ -453,6 +480,14 @@ function doGet(e) {
     const payload = JSON.stringify({events}).replace(/</g, String.fromCharCode(92) + 'u003c');
     if (e.parameter.callback === 'singerEventsLoaded') {
       return ContentService.createTextOutput('window.singerEventsLoaded(' + payload + ');')
+        .setMimeType(ContentService.MimeType.JAVASCRIPT);
+    }
+    return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JSON);
+  }
+  if (e && e.parameter && e.parameter.kind === 'reviews') {
+    const payload = JSON.stringify(publicReviews_()).replace(/</g, '\\u003c');
+    if (e.parameter.callback === 'singerReviewsLoaded') {
+      return ContentService.createTextOutput('window.singerReviewsLoaded(' + payload + ');')
         .setMimeType(ContentService.MimeType.JAVASCRIPT);
     }
     return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JSON);

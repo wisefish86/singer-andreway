@@ -8,7 +8,7 @@ const json = (body: unknown, status: number, origin: string) => new Response(JSO
  "access-control-allow-origin":origin,"access-control-allow-methods":"GET,POST,OPTIONS",
  "access-control-allow-headers":"content-type,authorization","vary":"Origin"}
 });
-type Song={id:string;name:string;artist:string};
+type Song={id:string;name:string;artist:string;preview_url:string};
 let songCache: {until:number;songs:Song[]} | null = null;
 async function finalists():Promise<Song[]>{
  if(songCache && songCache.until > Date.now())return songCache.songs;
@@ -24,7 +24,14 @@ async function finalists():Promise<Song[]>{
    const filename=String(variant?.relative_path||variant?.filename||"").split(/[\\/]/).pop()||"";
    return filename.includes("@") || String(variant?.title||"").includes("@");
   }) || String(song.name||"").includes("@");
-  if(eligible)songs.push({id:song.id,name:String(song.name||"").replace(/@/g,"").trim(),artist:String(song.artist||"")});
+  if(eligible){
+   let preview_url="";
+   try{
+    const u=new URL(String(song.preview_url||""));
+    if(u.protocol==="https:"&&u.hostname==="singer.andreway.ru"&&u.pathname.startsWith("/audio/plus/")&&!u.search&&!u.hash)preview_url=u.href;
+   }catch{}
+   songs.push({id:song.id,name:String(song.name||"").replace(/@/g,"").trim(),artist:String(song.artist||""),preview_url});
+  }
  }
  songs.sort((a,b)=>(a.artist+" "+a.name).localeCompare(b.artist+" "+b.name,"ru"));
  songCache={until:Date.now()+120000,songs};

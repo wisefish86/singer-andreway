@@ -13,7 +13,7 @@ const messageLinks = directChatLinks(contactMessages.feedback);
 <title>Отзывы о выступлениях — Андрей Шевцов</title>
 <meta name="description" content="Отзывы гостей о выступлениях певца Андрея Шевцова. Страница готовится к публикации первых отзывов."/>
 <meta name="robots" content="noindex,follow"/>
-<style>
+<style is:global>
 .reviews-main{max-width:1000px;margin:0 auto;padding:clamp(36px,6vw,72px) 20px 100px;min-height:75vh}
 .reviews-eyebrow{color:var(--accent2);font-size:.78rem;font-weight:700;letter-spacing:.11em;text-transform:uppercase}
 .reviews-main h1{font-size:clamp(2.6rem,7vw,4.9rem);letter-spacing:-.047em;line-height:1.05;margin:14px 0 20px}
@@ -47,7 +47,7 @@ const messageLinks = directChatLinks(contactMessages.feedback);
  <p class="reviews-eyebrow">Андрей Шевцов · живой вокал</p>
  <h1>Отзывы о выступлениях</h1>
  <p class="reviews-intro">Самое ценное после выступления — впечатления людей. Здесь будут появляться настоящие слова гостей с праздников, музыкальных вечеров и частных мероприятий.</p>
- <div class="review-grid" aria-label="Отзывы">
+ <div class="review-grid" id="reviews-demo" aria-label="Пример карточки">
   {reviews.map(review=>(
    <article class="review-card">
     {review.demo && <span class="review-badge">ПРИМЕР ОФОРМЛЕНИЯ · НЕ НАСТОЯЩИЙ ОТЗЫВ</span>}
@@ -60,6 +60,7 @@ const messageLinks = directChatLinks(contactMessages.feedback);
    </article>
   ))}
  </div>
+ <div class="review-grid" id="reviews-live" aria-label="Отзывы гостей" hidden></div>
  <section class="review-cta">
   <h2>Хотите поделиться впечатлениями?</h2>
   <p>Если вы были на моём выступлении, буду благодарен даже за пару слов. Можно написать в удобном мессенджере — ничего заполнять и регистрировать не нужно.</p>
@@ -78,6 +79,42 @@ const messageLinks = directChatLinks(contactMessages.feedback);
  <form method="dialog"><button class="review-dialog-close" type="submit">Закрыть</button></form>
 </dialog>
 <footer class="footer"><div class="container">© {new Date().getFullYear()} Андрей Шевцов · <a href="/">На главную</a></div></footer>
+<script is:inline>
+(()=>{
+ const live=document.getElementById('reviews-live');
+ const demo=document.getElementById('reviews-demo');
+ const placeholder='/reviews/avatars/';
+ function addText(parent,tag,klass,value){
+  const el=document.createElement(tag);if(klass)el.className=klass;el.textContent=value;parent.append(el);return el;
+ }
+ window.singerReviewsLoaded=payload=>{
+  if(!Array.isArray(payload?.reviews)||!payload.reviews.length)return;
+  live.replaceChildren();
+  for(const review of payload.reviews){
+   const card=document.createElement('article');card.className='review-card';
+   const person=document.createElement('div');person.className='review-person';
+   const avatar=document.createElement('img');avatar.className='review-avatar';avatar.width=66;avatar.height=66;
+   avatar.loading='lazy';avatar.alt='Аватар автора отзыва';
+   const fallback=review.avatarType==='female'?placeholder+'female.svg':review.avatarType==='male'?placeholder+'male.svg':'/reviews/placeholder-cat.svg';
+   const safe=typeof review.avatar==='string'&&review.avatar.startsWith('https://singer.andreway.ru/reviews/uploads/')?review.avatar:'';
+   avatar.src=safe||fallback;avatar.onerror=()=>{if(avatar.src!==new URL(fallback,location.origin).href)avatar.src=fallback;};
+   const identity=document.createElement('div');
+   addText(identity,'strong','',String(review.author||'Гость'));
+   const details=[review.event,review.city].filter(Boolean).join(' · ');
+   if(details)addText(identity,'small','',details);
+   if(review.dateLabel)addText(identity,'small','',String(review.dateLabel));
+   person.append(avatar,identity);card.append(person);
+   addText(card,'p','review-quote',String(review.text||''));
+   live.append(card);
+  }
+  demo.hidden=true;live.hidden=false;
+ };
+ const script=document.createElement('script');
+ script.async=true;
+ script.src='https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec?kind=reviews&callback=singerReviewsLoaded';
+ document.head.append(script);
+})();
+</script>
 <script is:inline>
 (()=>{
  const dialog=document.getElementById('review-dialog');
