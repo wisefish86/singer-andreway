@@ -84,7 +84,7 @@ assert.ok(vote.includes('CATALOGUE_CACHE_KEY'), 'Voting must show fast cached re
 assert.ok(vote.includes("fetch('/data/repertoire.public.json'"), 'Static catalogue should work even during voting API outages');
 assert.ok(vote.includes('vote-progress-fill'), 'Each active song must display its voting progress');
 assert.ok(home.includes('class="section home-reviews"') && home.includes('home-reviews-track'), 'Homepage must have swipable reviews carousel');
-assert.ok(home.includes('if(!reviews.length)return;') && home.includes('section.hidden=false;requestAnimationFrame(controls)'), 'Only show homepage reviews after approved reviews load');
+assert.ok(home.includes('if(!reviews.length){track.replaceChildren();section.hidden=true;return;}') && home.includes('section.hidden=false;requestAnimationFrame(controls)'), 'Only show homepage reviews after approved reviews load');
 assert.ok(!home.includes('Не настоящий отзыв') && !home.includes('Пример оформления'), 'Public homepage must not show demo reviews');
 assert.ok(contact.includes('whatsapp://send?phone='), 'Mobile WhatsApp deep link missing');
 const testMigration=readFileSync('supabase/migrations/20261122190000_singer_vote_test_mode.sql','utf8');
