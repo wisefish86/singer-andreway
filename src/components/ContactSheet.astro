@@ -9,6 +9,7 @@ const max='https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHM
     <div>
       <h3 id="sheet-title">Написать Андрею</h3>
       <p id="sheet-copy">Выберите удобный способ связи.</p>
+      <p id="sheet-video-hint" hidden>Если возможно, отправьте видео как <strong>файл</strong> без сжатия мессенджером — так сохранится исходное качество. Буду очень благодарен!</p>
     </div>
     <button class="sheet-close" type="button" aria-label="Закрыть"><Icon name="close" size={20}/></button>
   </div>
@@ -18,7 +19,7 @@ const max='https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHM
     <Icon name="arrow" size={18}/>
   </a>
   <div class="sheet-messengers">
-    <a data-messenger="telegram" href={telegramApp} data-social-destination data-social-web={telegramWeb} data-social-platform="telegram" data-social-name="отправить сообщение через Telegram" aria-label="Отправить сообщение через Telegram — потребуется выбрать получателя" target="_blank" rel="noopener noreferrer"><BrandIcon name="telegram" size={23}/><span>Telegram</span></a>
+    <a data-messenger="telegram" href={telegramApp} data-social-destination data-social-web={telegramWeb} data-social-platform="telegram" data-social-name="отправить сообщение через Telegram" aria-label="Открыть личный чат Андрея в Telegram" target="_blank" rel="noopener noreferrer"><BrandIcon name="telegram" size={23}/><span>Telegram</span></a>
     <a data-messenger="whatsapp" data-direct-messenger="true" data-chat-base-web={whatsapp} href={whatsapp} data-social-destination data-social-web={whatsapp} data-social-platform="whatsapp" data-social-name="написать в WhatsApp" target="_blank" rel="noopener noreferrer"><BrandIcon name="whatsapp" size={23}/><span>WhatsApp</span></a>
     <a data-messenger="max" href={max} data-social-destination data-social-web={max} data-social-platform="max" data-social-name="написать в MAX" target="_blank" rel="noopener noreferrer" aria-label="Написать в MAX"><BrandIcon name="max" size={23}/><span>MAX</span></a>
   </div>
@@ -34,6 +35,7 @@ const max='https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHM
    title.textContent=trigger.dataset.title||'Написать Андрею';
    copy.textContent=trigger.dataset.copy||'Выберите удобный способ связи.';
    repertoire.hidden=trigger.dataset.repertoire!=='true';
+   sheet.querySelector('#sheet-video-hint').hidden=trigger.dataset.title!=='Отправить видео';
    const message=trigger.dataset.template||'';
    const encoded=message?encodeURIComponent(message):'';
    const wa=sheet.querySelector('[data-messenger="whatsapp"]');
@@ -42,12 +44,9 @@ const max='https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHM
    wa.href=directUrl;
    wa.dataset.socialWeb=webUrl;
    const tg=sheet.querySelector('[data-messenger="telegram"]');
-   // Build a new share draft for each intent; direct tg://resolve chat links
-   // may reopen an unrelated draft stored by Telegram (for example, feedback).
-   const page=encodeURIComponent('https://singer.andreway.ru/');
-   tg.href='tg://msg_url?url='+page+'&text='+encoded;
-   tg.dataset.socialWeb='https://t.me/share/url?url='+page+'&text='+encoded;
-   if(copy.textContent)copy.textContent+=' В Telegram выберите чат Андрея Шевцова для отправки подготовленного сообщения.';
+   // Each guest action opens Andreys specific chat with its own draft.
+   tg.href='tg://resolve?domain=shevtsov_andrey'+(encoded?'&text='+encoded:'');
+   tg.dataset.socialWeb='https://t.me/shevtsov_andrey'+(encoded?'?text='+encoded:'');
    sheet.showModal();
   });
  });
