@@ -418,8 +418,8 @@ function publicReviews_() {
   const avatarUrl=value=>{
     const v=safe(value).slice(0,440);
     if (!v) return '';
-    if (/^https:\/\/singer\.andreway\.ru\/reviews\/avatars\/[a-zA-Z0-9_() .%-]+\.(?:png|webp|jpe?g)$/i.test(v))return v;
-    if (/^[a-zA-Z0-9_() .-]+\.(?:png|webp|jpe?g)$/i.test(v))return 'https://singer.andreway.ru/reviews/avatars/'+encodeURIComponent(v);
+    if (/^https:\/\/singer\.andreway\.ru\/reviews\/uploads\/[a-zA-Z0-9_() .%-]+\.(?:png|webp|jpe?g)$/i.test(v))return v;
+    if (/^[a-zA-Z0-9_() .-]+\.(?:png|webp|jpe?g)$/i.test(v))return 'https://singer.andreway.ru/reviews/uploads/'+encodeURIComponent(v);
     return '';
   };
   const reviews=rows.slice(1).filter(row=>row[6]===true&&row[9]===true&&safe(row[0])&&safe(row[4]))
