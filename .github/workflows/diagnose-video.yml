@@ -1,0 +1,30 @@
+name: Diagnose video delivery
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose-video.yml']
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check origin headers, byte ranges and throughput
+        shell: bash
+        run: |
+          set -uo pipefail
+          url="https://singer.andreway.ru/videos/-%20%D0%90%D0%BD%D0%B4%D1%80%D0%B5%D0%B9%20%D0%A8%D0%B5%D0%B2%D1%86%D0%BE%D0%B2%20-%20%D0%92%D0%B8%D0%B4%D0%B5%D0%BE%20%D0%B2%D1%8B%D1%81%D1%82%D1%83%D0%BF%D0%BB%D0%B5%D0%BD%D0%B8%D0%B9.mp4"
+          echo '=== HEAD metadata ==='
+          curl -sSIL --connect-timeout 10 --max-time 25 "$url" | grep -Ei '^(HTTP/|content-type:|content-length:|accept-ranges:|content-range:|cache-control:|server:|location:)' || true
+          echo '=== First 1024 bytes ==='
+          curl -sS -D /tmp/range-head -o /tmp/range-body -H 'Range: bytes=0-1023' --connect-timeout 10 --max-time 35 --max-filesize 4000000 "$url" || true
+          grep -Ei '^(HTTP/|content-type:|content-length:|accept-ranges:|content-range:|cache-control:|server:)' /tmp/range-head || true
+          wc -c /tmp/range-body || true
+          if test -s /tmp/range-body; then xxd -l 96 /tmp/range-body; fi
+          echo '=== Mid-file byte range ==='
+          curl -sS -D /tmp/range-mid-head -o /tmp/range-mid -H 'Range: bytes=1048576-1049599' --connect-timeout 10 --max-time 35 --max-filesize 4000000 "$url" || true
+          grep -Ei '^(HTTP/|content-type:|content-length:|accept-ranges:|content-range:)' /tmp/range-mid-head || true
+          wc -c /tmp/range-mid || true
+          echo '=== 4MB download timing ==='
+          curl -sSL -o /dev/null -H 'Range: bytes=0-4194303' --connect-timeout 10 --max-time 35 --max-filesize 5000000 -w 'http=%{http_code} bytes=%{size_download} time=%{time_total}s avg_bytes_s=%{speed_download}\n' "$url" || true
