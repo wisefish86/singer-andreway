@@ -7,6 +7,8 @@
   let collection=EMPTY, signature='', modal=null, mode='', photoIndex=0, videoIndex=0;
   let photos=[],videos=[];
   let activeHls=null, playerGeneration=0, hlsScriptPromise=null;
+  const videoDebug=new URLSearchParams(location.search).has('video-debug');
+  const reportVideoSource=(player,message)=>{if(player._videoDebugOutput)player._videoDebugOutput.textContent='Видео: '+message;};
   function clearStream(){
     playerGeneration++;
     if(activeHls){activeHls.destroy();activeHls=null;}
@@ -26,8 +28,9 @@
   }
   async function startVideoSource(player,item){
     const generation=playerGeneration;
-    const fallback=()=>{
+    const fallback=(reason='недоступен HLS')=>{
       if(generation!==playerGeneration||!player.isConnected)return;
+      reportVideoSource(player,'MP4 · '+reason);
       if(activeHls){activeHls.destroy();activeHls=null;}
       player.src=fileURL('videos',item.file);
       player.play().catch(()=>{});
@@ -47,8 +50,9 @@
       }finally{clearTimeout(limit);}
     }catch(e){}
     if(generation!==playerGeneration||!player.isConnected)return;
-    if(!manifest){fallback();return;}
+    if(!manifest){fallback('нет готового потока для файла');return;}
     if(player.canPlayType('application/vnd.apple.mpegurl')){
+      reportVideoSource(player,'HLS · нативный');
       player.src=manifest;
       player.play().catch(()=>{});
       return;
@@ -56,7 +60,7 @@
     try{
       const Hls=await loadHlsClient();
       if(generation!==playerGeneration||!player.isConnected)return;
-      if(!Hls.isSupported()){fallback();return;}
+      if(!Hls.isSupported()){fallback('HLS не поддерживается');return;}
       const hls=new Hls({
         startLevel:-1,
         maxBufferLength:45,
@@ -65,15 +69,31 @@
         enableWorker:true
       });
       activeHls=hls;
+      reportVideoSource(player,'HLS · hls.js · подключение');
+      let recoveryAttempted=false;
       hls.on(Hls.Events.ERROR,(_event,data)=>{
-        if(data.fatal&&generation===playerGeneration)fallback();
+        if(!data.fatal||generation!==playerGeneration)return;
+        if(!recoveryAttempted){
+          recoveryAttempted=true;
+          reportVideoSource(player,'HLS · восстановление · '+String(data.details||data.type));
+          if(data.type===Hls.ErrorTypes.MEDIA_ERROR){
+            hls.recoverMediaError();
+            return;
+          }
+          if(data.type===Hls.ErrorTypes.NETWORK_ERROR){
+            hls.stopLoad();
+            hls.startLoad(Math.max(0,player.currentTime));
+            return;
+          }
+        }
+        fallback(String(data.details||data.type||'ошибка потока'));
       });
       hls.on(Hls.Events.MANIFEST_PARSED,()=>{
-        if(generation===playerGeneration)player.play().catch(()=>{});
+        if(generation===playerGeneration){reportVideoSource(player,'HLS · hls.js');player.play().catch(()=>{});}
       });
       hls.attachMedia(player);
       hls.loadSource(manifest);
-    }catch(e){fallback();}
+    }catch(e){fallback('ошибка запуска hls.js');}
   }
 
   const elt=(tag,className,text)=>{
@@ -319,6 +339,18 @@
       feedback.hidden=false;
     });
     stage.append(player,feedback);
+    if(videoDebug){
+      const diagnostics=elt('div','showcase-video-diagnostics','Видео: определяем поток…');
+      diagnostics.setAttribute('role','status');
+      player._videoDebugOutput=diagnostics;
+      stage.append(diagnostics);
+      const updateDiagnostics=()=>{
+        const buffered=player.buffered;
+        const end=buffered.length?buffered.end(buffered.length-1).toFixed(0):'0';
+        diagnostics.title='Время: '+player.currentTime.toFixed(1)+' с, загружено до: '+end+' с, readyState: '+player.readyState;
+      };
+      for(const eventName of ['progress','waiting','seeked','playing','stalled'])player.addEventListener(eventName,updateDiagnostics);
+    }
     addMobileSeekControls(stage,player);
     resolveCover(item,url=>{if(url&&player.isConnected)player.poster=url;});
     if(videos.length>1)stage.append(navButton(-1,()=>changeVideo(-1),videoIndex===0),
