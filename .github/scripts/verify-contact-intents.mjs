@@ -71,7 +71,7 @@ const telegram = {
 const whatsapp = { dataset: { chatBaseWeb: 'https://wa.me/79181142693' }, href: '' };
 const videoHint = { hidden: true };
 const triggers = Object.entries(expected).filter(([kind]) => kind !== 'event').map(([kind, message]) => ({
-  dataset: { title: kind, copy: kind, template: message, repertoire: 'false' },
+  dataset: { title: kind, copy: kind, template: message, repertoire: 'false', sendVideo:kind==='video'?'true':'false' },
   addEventListener(event, callback) { assert.equal(event, 'click'); this.click = callback; }
 }));
 const sheet = {
@@ -108,7 +108,7 @@ for (const trigger of triggers) {
   assert.equal(new URL(telegram.href).searchParams.get('text'), message);
   assert.equal(new URL(telegram.dataset.socialWeb).pathname, '/shevtsov_andrey');
   assert.equal(new URL(telegram.dataset.socialWeb).searchParams.get('text'), message);
-  assert.equal(videoHint.hidden, trigger.dataset.title!=='video');
+  assert.equal(videoHint.hidden, trigger.dataset.sendVideo!=='true');
   assert.ok(!new URL(telegram.href).searchParams.get('text').includes('поделиться впечатлениями') || trigger.dataset.title==='feedback', 'Old feedback message must not leak into another contact intent');
 }
 assert.ok(sheet.opened, 'Guest sheet never opened');
