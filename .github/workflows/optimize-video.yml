@@ -54,6 +54,6 @@ jobs:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
           set -euo pipefail
-          remote="ftp://andreway.ru//www/singer.andreway.ru/videos/- Андрей Шевцов - Видео выступлений - web.mp4"
+          remote="ftp://andreway.ru//www/singer.andreway.ru/videos/-%20%D0%90%D0%BD%D0%B4%D1%80%D0%B5%D0%B9%20%D0%A8%D0%B5%D0%B2%D1%86%D0%BE%D0%B2%20-%20%D0%92%D0%B8%D0%B4%D0%B5%D0%BE%20%D0%B2%D1%8B%D1%81%D1%82%D1%83%D0%BF%D0%BB%D0%B5%D0%BD%D0%B8%D0%B9%20-%20web.mp4"
           curl --fail --show-error --silent --retry 2 --user "andreway:${FTP_PASSWORD}" --ftp-create-dirs --upload-file /tmp/performance-web.mp4 "$remote"
           echo 'Optimized MP4 uploaded separately; original remains untouched'
