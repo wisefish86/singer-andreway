@@ -49,6 +49,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
 .vote-actions .btn{width:100%;justify-content:center;min-height:54px;border-radius:13px;font-weight:800}
 .vote-actions .btn:disabled{opacity:.56;cursor:not-allowed}
 .vote-meta{color:var(--muted);font-size:.84rem;line-height:1.55;margin:9px 0}
+.vote-test-note{padding:12px 16px;border:1px solid rgba(255,195,85,.6);background:rgba(255,195,85,.1);color:var(--text);border-radius:12px;margin:12px 0;font-size:.9rem}
 .vote-alert{padding:16px 18px;border-radius:12px;background:rgba(220,176,94,.1);border:1px solid rgba(220,176,94,.24);line-height:1.55;margin:12px 0}
 .vote-price{font-size:24px;font-weight:800;color:var(--accent2)}
 .vote-hidden{display:none!important}
@@ -69,6 +70,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   <h1>🔥 Выбираем хиты вечера!</h1>
   <p>Выберите от одной до трёх песен, которые хотите услышать в финалах музыкальных блоков. Главный фаворит завершит вечер!</p>
  </header>
+ <div id="vote-test-note" class="vote-test-note" hidden>Тестовый режим: каждое нажатие «Отправить» добавляет пробные голоса. После отключения режима они не попадут в настоящее голосование.</div>
  <div id="vote-closed" class="vote-alert" hidden role="status">
   Голосование пока закрыто. Список финальных песен можно посмотреть и выбрать до трёх любимых уже сейчас, а отправить голоса — во время выступления.
  </div>
@@ -155,7 +157,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  }
  function updateButton(){
   $('vote-send').disabled=selected.size<1||selected.size>3||songs.length<1||!state?.active;
-  $('vote-send').textContent=songs.length<1?'Список песен пока недоступен':!state?.active?'Голосование пока закрыто':saved?'Обновить мой выбор':selected.size>0?'Проголосовать ('+selected.size+' из 3)':'Выберите от 1 до 3 песен';
+  $('vote-send').textContent=songs.length<1?'Список песен пока недоступен':!state?.active?'Голосование пока закрыто':selected.size<1?'Выберите от 1 до 3 песен':state.test_mode?'Тестовый голос ('+selected.size+' из 3) · отправить':saved?'Обновить мой выбор':'Проголосовать ('+selected.size+' из 3)';
  }
  const audio=$('vote-audio');
  let playingId=null;
@@ -246,14 +248,26 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    const incoming=Array.isArray(result.songs)?result.songs:[];
    const newId=active?result.session.id:null;
    const oldId=window.__voteSessionId||null;
-   const changedSession=oldId!==null&&newId!==oldId;
-   if(changedSession){selected.clear();saved=false;}
+   const changedSession=newId!==null&&newId!==oldId;
+   if(changedSession){
+    selected.clear();saved=false;
+    if(!result.test_mode){
+     try{
+      const ids=JSON.parse(localStorage.getItem('singer-vote-choice:'+newId)||'[]');
+      if(Array.isArray(ids)&&ids.length>=1&&ids.length<=3&&new Set(ids).size===ids.length){
+       for(const id of ids)selected.add(id);
+       saved=true;
+      }
+     }catch{}
+    }
+   }
    window.__voteSessionId=newId;
    state=result;
    cacheSongs(incoming);
    $('vote-open').hidden=false;
    $('vote-closed').hidden=active;
-   $('vote-status').textContent=active?'● Голосование открыто':'Голосование пока закрыто';
+   $('vote-test-note').hidden=!(active&&result.test_mode);
+   $('vote-status').textContent=active?(result.test_mode?'● Тестовое голосование — голоса пробные':'● Голосование открыто'):'Голосование пока закрыто';
    const incomingMap=new Map(incoming.map(song=>[song.id,song]));
    const sameOrder=songs.length===incoming.length&&songs.every(song=>incomingMap.has(song.id));
    // Don't reorder while someone is actively choosing songs.
@@ -291,8 +305,12 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   if(!voter){setMessage('Браузер ограничивает хранение данных. Попробуйте открыть страницу в обычном браузере.');return}
   $('vote-send').disabled=true;
   try{
-   await api({action:'vote',session_id:state.session.id,voter_id:voter,song_ids:[...selected]});
-   saved=true;setMessage('Спасибо! Ваш выбор учтён. Вы можете изменить его до закрытия голосования.');
+   const sessionId=state.session.id,choices=[...selected],isTest=Boolean(state.test_mode);
+   await api({action:'vote',session_id:sessionId,voter_id:voter,song_ids:choices});
+   saved=true;
+   if(!isTest)try{localStorage.setItem('singer-vote-choice:'+sessionId,JSON.stringify(choices));}catch{}
+   setMessage(isTest?'Пробный голос добавлен в рейтинг. Можно нажать ещё раз для нового теста.':'Спасибо! Ваш выбор учтён. Можно добавить песни или изменить выбор, пока голосование открыто.');
+   refresh();
   }catch(e){setMessage('Не удалось отправить голос: '+e.message)}
   updateButton();
  });
