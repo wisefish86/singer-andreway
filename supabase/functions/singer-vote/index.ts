@@ -32,12 +32,47 @@ async function finalists():Promise<Song[]>{
 function dbClient(){
  return createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,{auth:{persistSession:false}});
 }
-function authorized(req:Request):boolean{
- const expected=Deno.env.get("SINGER_VOTE_ADMIN_TOKEN")||"";
- const supplied=(req.headers.get("authorization")||"").replace(/^Bearer\s+/i,"");
- // Admin access requires a separately configured high-entropy secret.
- if(expected.length<32||supplied.length!==expected.length)return false;
- let mismatch=0;for(let i=0;i<expected.length;i++)mismatch|=expected.charCodeAt(i)^supplied.charCodeAt(i);
+// Public calendar exposes only !В (open) performances, never private event details.
+// The existing guest-mode endpoint adds 2h; voting is open until just 1h after the show.
+const CALENDAR = "https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec?kind=guest-mode";
+let calendarCache: {until:number;windows:{start:string;end:string}[]} | null = null;
+async function currentPublicWindows(){
+ if(calendarCache && calendarCache.until>Date.now())return calendarCache.windows;
+ const response=await fetch(CALENDAR,{signal:AbortSignal.timeout(8000),cache:"no-store"});
+ if(!response.ok)throw new Error("calendar_unavailable");
+ const data=await response.json();
+ const windows=Array.isArray(data.windows)?data.windows.flatMap((w:{start:string;end:string})=>{
+  const start=Date.parse(w.start), originalEnd=Date.parse(w.end);
+  const end=originalEnd-3600000;
+  if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start||end-start>12*3600000)return [];
+  return [{start:new Date(start).toISOString(),end:new Date(end).toISOString()}];
+ }):[];
+ calendarCache={until:Date.now()+60000,windows};
+ return windows;
+}
+async function ensureCalendarSessions(db:any){
+ try{
+  const windows=(await currentPublicWindows()).filter(w=>Date.parse(w.start)<=Date.now() && Date.parse(w.end)>Date.now());
+  for(const window of windows){
+   const {error}=await db.from("singer_vote_sessions").upsert({
+    title:"Голосование вечера", starts_at:window.start,ends_at:window.end,
+    enabled:true, source_key:"calendar:"+window.start
+   },{onConflict:"source_key",ignoreDuplicates:true});
+   if(error)throw error;
+  }
+ }catch(e){
+  // Calendar outages never open unexpected events; manually opened sessions still work.
+  console.warn("Public calendar unavailable",e instanceof Error?e.message:"unknown");
+ }
+}
+async function authorized(req:Request,db:any):Promise<boolean>{
+ const supplied=(req.headers.get("authorization")||"").replace(/^Bearer\\s+/i,"");
+ if(supplied.length<32||supplied.length>256)return false;
+ const {data,error}=await db.from("singer_vote_admin").select("token_hash").eq("id",1).maybeSingle();
+ if(error||!data?.token_hash)return false;
+ const actual=await sha(supplied),expected=String(data.token_hash);
+ if(actual.length!==expected.length)return false;
+ let mismatch=0;for(let i=0;i<actual.length;i++)mismatch|=actual.charCodeAt(i)^expected.charCodeAt(i);
  return mismatch===0;
 }
 Deno.serve(async req=>{
@@ -47,6 +82,7 @@ Deno.serve(async req=>{
  try{
   const db=dbClient();
   if(req.method==="GET"){
+   await ensureCalendarSessions(db);
    const {data,error}=await db.from("singer_vote_sessions").select("id,starts_at,ends_at")
     .eq("enabled",true).lte("starts_at",new Date().toISOString()).gt("ends_at",new Date().toISOString())
     .order("starts_at",{ascending:false}).limit(1).maybeSingle();
@@ -58,7 +94,7 @@ Deno.serve(async req=>{
   if(Number(req.headers.get("content-length")||0)>5000)return json({error:"too_large"},413,origin);
   const payload=await req.json();
   if(payload?.action==="admin"){
-   if(!authorized(req))return json({error:"unauthorized"},401,origin);
+   if(!(await authorized(req,db)))return json({error:"unauthorized"},401,origin);
    const op=payload.operation;
    if(op==="status"){
     const {data,error}=await db.from("singer_vote_sessions").select("id,starts_at,ends_at,enabled,created_at")
@@ -104,7 +140,7 @@ Deno.serve(async req=>{
   const eligible=new Set((await finalists()).map(s=>s.id));
   if(ids.some((x:string)=>!eligible.has(x)))return json({error:"ineligible_song"},400,origin);
   const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-real-ip")||"voter:"+voter;
-  const pepper=Deno.env.get("SINGER_VOTE_IP_PEPPER")||"";
+  const pepper=Deno.env.get("SINGER_VOTE_IP_PEPPER")||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
   if(pepper.length<32)return json({error:"not_configured"},503,origin);
   const result=await db.rpc("singer_cast_vote",{p_session:id,p_voter_hash:await sha(id+":"+voter),
    p_ip_hash:await sha(pepper+":"+ip),p_song_ids:ids});
