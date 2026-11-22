@@ -266,7 +266,7 @@ const api = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-reques
 <button type="button" data-share="whatsapp"><BrandIcon name="whatsapp" size={22}/>WhatsApp</button>
 <button type="button" data-share="sms"><Icon name="message" size={22}/>SMS</button>
 </div>
-<p class="rep-saving-notice">Telegram и WhatsApp откроют чат с готовым сообщением. SMS откроет приложение сообщений с короткой ссылкой на подборку.</p>
+<p class="rep-saving-notice">Telegram предложит выбрать получателя — выберите Андрея Шевцова. WhatsApp откроет чат с готовым сообщением. SMS откроет приложение сообщений со ссылкой на подборку.</p>
 <div class="rep-save-area">
 <button type="submit" id="save-link" class="rep-save-link">Сохранить себе подборку</button>
 <p class="rep-saving-notice">Сохраним подборку и попробуем скопировать ссылку. Вставьте её в заметки или отправьте себе, чтобы позже вернуться к песням. Андрею ничего не отправится.</p>
@@ -770,9 +770,9 @@ async function shareSelection(service){
  open.href=destination;
  open.target='_self';
  open.textContent=service==='sms'?'Открыть SMS с подборкой'
-   :'Открыть '+(service==='telegram'?'Telegram':'WhatsApp')+' с сообщением';
+   :service==='telegram'?'Открыть Telegram и выбрать Андрея':'Открыть WhatsApp с сообщением';
  $('share-result-title').textContent='Подборка сохранена';
- $('share-result-help').textContent='Если приложение не открылось автоматически, нажмите кнопку ниже. Сообщение останется подготовленным — отправку подтвердите сами.';
+ $('share-result-help').textContent=service==='telegram'?'В Telegram выберите чат Андрея Шевцова (@shevtsov_andrey) и отправьте подготовленную ссылку на подборку. Если приложение не открылось, нажмите кнопку ниже.':'Если приложение не открылось автоматически, нажмите кнопку ниже. Отправку подтвердите сами.';
  // Keep a fallback on the original page in case browser blocks custom schemes.
  $('share-result').hidden=false;
  status('Подборка сохранена. Открываем приложение…');
