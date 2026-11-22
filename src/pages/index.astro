@@ -185,6 +185,9 @@ const repertoireUrl = '/podborka/';
           <div><h2>Для гостей</h2><p class="lead">Закажите песню, передайте пожелание или поделитесь моментом выступления</p></div>
         </div>
         <div class="live-actions">
+          <a class="action-wide" href="/vote/" id="live-voting-link" style="display:none">
+            <div class="action-icon"><Icon name="music" size={24} /></div><div class="action-copy"><strong>🔥 Голосовать за финальные песни</strong><small>бесплатно · выбрать три хита вечера</small></div><Icon name="arrow" size={20} />
+          </a>
           <button class="action-wide js-contact-sheet" type="button"
             data-title="Заказать песню"
             data-copy="Можно сначала выбрать песню из репертуара или написать в удобный мессенджер."
@@ -480,6 +483,23 @@ const repertoireUrl = '/podborka/';
 
   </script>
 
+
+  <script is:inline data-voting-visibility>
+    (() => {
+      const link = document.getElementById('live-voting-link');
+      if (!link) return;
+      async function refreshVoting() {
+        try {
+          const response = await fetch('https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-vote', { cache:'no-store' });
+          if (!response.ok) throw new Error('Unavailable');
+          const data = await response.json();
+          link.style.display = data.active && Array.isArray(data.songs) && data.songs.length >= 3 ? '' : 'none';
+        } catch { link.style.display = 'none'; }
+      }
+      refreshVoting();
+      window.setInterval(refreshVoting, 60000);
+    })();
+  </script>
 
   <script is:inline data-guest-evening-hours>
     (() => {
