@@ -3,9 +3,13 @@ on:
   pull_request:
     paths:
       - 'src/pages/vote/**'
+      - 'src/pages/reviews/**'
+      - 'src/data/reviews.ts'
+      - 'public/reviews/**'
       - 'src/pages/index.astro'
       - 'supabase/functions/singer-vote/**'
       - 'supabase/migrations/*singer_finale_voting.sql'
+      - 'supabase/migrations/*singer_vote_service_role_grants.sql'
       - '.github/scripts/verify-voting.mjs'
       - '.github/workflows/verify-voting.yml'
 permissions:
@@ -21,4 +25,5 @@ jobs:
       - run: npm install
       - run: npm run build
       - run: node .github/scripts/verify-voting.mjs
+      - run: node .github/scripts/probe-live-voting.mjs
       - run: node .github/scripts/verify-contact-intents.mjs
