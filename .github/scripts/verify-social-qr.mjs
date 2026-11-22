@@ -37,6 +37,11 @@ console.log('Shared QR checked for contact messengers and Instagram subscription
 const media = readFileSync(new URL('../../public/js/media-gallery.js', import.meta.url), 'utf8');
 const styles = readFileSync(new URL('../../src/styles/global.css', import.meta.url), 'utf8');
 assert.ok(media.includes("player.preload='auto'"), 'Opened video must allow progressive buffering ahead of playback');
+assert.ok(media.includes('function addMobileSeekControls(') && media.includes('addMobileSeekControls(stage,player)'), 'Touch seeking controls must be attached to actual video player');
+assert.ok(media.includes('desired+direction*10') && media.includes('player.currentTime=position'), 'Seek taps must combine before changing playback position');
+assert.ok(media.includes('},240)') && media.includes("'(pointer: coarse)'"), 'Seek controls must batch taps on coarse-pointer devices');
+assert.ok(styles.includes('.showcase-touch-seek') && styles.includes('@media(pointer:coarse)'), 'Mobile seek overlay must be styled only for touch devices');
+
 assert.ok(media.includes("fetch('/data/video-hls.json'") && media.includes('Hls.isSupported()'), 'HLS must be resolved from server mapping when available');
 assert.ok(media.includes('maxBufferLength:45') && media.includes('maxMaxBufferLength:120'), 'HLS should have a meaningful playback buffer');
 assert.ok(media.includes("player.src=fileURL('videos',item.file)") && media.includes('activeHls.destroy()'), 'HLS must safely fall back to MP4 and free resources');
@@ -44,7 +49,7 @@ assert.ok(media.includes("player.src=fileURL('videos',item.file)") && media.incl
 assert.ok(media.includes("fetch('/data/media.json',{cache:'no-cache'})"), 'Media must load its public snapshot from the same origin');
 assert.ok(!media.includes('kind=media&callback=') && !media.includes('setInterval(refresh,300000)') && !media.includes('data-media-api'), 'Visitors must not poll Google for media');
 assert.ok(!media.includes('dialog.requestFullscreen()'), 'Opening a video must not trigger a disruptive fullscreen transition');
-assert.ok(html.includes('media-gallery.js?v=20261122-hls1') && !html.includes('data-media-api='), 'Home must use cached media script without Google endpoint');
+assert.ok(html.includes('media-gallery.js?v=20261122-seek2') && !html.includes('data-media-api='), 'Home must use cached media script without Google endpoint');
 const videoPage=readFileSync(new URL('../../src/pages/all-videos/index.astro',import.meta.url),'utf8');
 const photosPage=readFileSync(new URL('../../src/pages/all-photos/index.astro',import.meta.url),'utf8');
 assert.ok(!videoPage.includes('data-media-api=')&&!photosPage.includes('data-media-api='),'Gallery pages must not poll Google');
