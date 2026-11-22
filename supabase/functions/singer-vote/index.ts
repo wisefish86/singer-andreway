@@ -103,7 +103,7 @@ Deno.serve(async req=>{
   }
   const eligible=new Set((await finalists()).map(s=>s.id));
   if(ids.some((x:string)=>!eligible.has(x)))return json({error:"ineligible_song"},400,origin);
-  const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-real-ip")||"unknown";
+  const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-real-ip")||"voter:"+voter;
   const pepper=Deno.env.get("SINGER_VOTE_IP_PEPPER")||"";
   if(pepper.length<32)return json({error:"not_configured"},503,origin);
   const result=await db.rpc("singer_cast_vote",{p_session:id,p_voter_hash:await sha(id+":"+voter),
