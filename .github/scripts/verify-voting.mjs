@@ -103,6 +103,8 @@ assert.ok(vote.includes('vote-player button svg{display:block;flex:none}'), 'Pla
 assert.ok(vote.includes("'Изменить голос'") && vote.includes("'Сохранить изменения'"), 'Voters should be able to revise their ballot');
 assert.ok(vote.includes('STATUS_CACHE_KEY') && vote.includes('refreshBusy'), 'Voting should reuse recent state and avoid duplicate requests');
 assert.ok(vote.includes('testSubmissions++'), 'Test submissions should provide immediate feedback');
+assert.ok(vote.includes("key?'application/json':'text/plain;charset=UTF-8'"), 'Guest vote POST must avoid unnecessary CORS preflight');
+assert.ok(backend.includes('const [sessionResult,eligibleSongs]=await Promise.all(['), 'Server vote validation lookups must be concurrent');
 assert.ok(vote.includes("$('vote-actions').hidden=n===0") && !vote.includes("$('vote-actions').hidden=!active||n===0"), 'Selected songs must reveal the CTA even if poll is closed');
 assert.ok(vote.indexOf('id="vote-actions"')>vote.indexOf('</main>'), 'Fixed CTA must not be clipped by vote card overflow');
 assert.ok(vote.includes('voteLabel(song,total)') && vote.includes("if(!votes)return ''"), 'Zero votes must not display percentages');
