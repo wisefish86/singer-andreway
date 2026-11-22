@@ -380,6 +380,31 @@ function authorizeMediaGallery() {
   console.log('Доступ к таблице получен. Видео: ' + data.videos.length + '; фото: ' + data.photos.length);
 }
 
+/**
+ * Manual voting timetable managed in the SAME owner-only spreadsheet.
+ * Public endpoint returns only an enabled flag and times, never private
+ * details, names, tokens or other sheet contents.
+ * Times are entered as Moscow clock text to avoid spreadsheet timezone drift.
+ */
+function publicVotingSchedule_() {
+  const sheet=SpreadsheetApp.openById('1BwmXTVFysgzZq_UbCvrk98seMtOuUYj34Lwym371-hU').getSheetByName('Голосование');
+  if (!sheet)return {enabled:false};
+  const values=sheet.getRange('B3:B6').getDisplayValues().map(row=>String(row[0]||'').trim());
+  const enabled=sheet.getRange('B6').getValue()===true;
+  if (!enabled)return {enabled:false};
+  const date=values[0].match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  const clock=values[1].match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
+  const hours=Number(values[2].replace(',','.'));
+  if (!date||!clock||!Number.isFinite(hours)||hours<1||hours>12)return {enabled:false,invalid:true};
+  const startStr=date[3]+'-'+date[2]+'-'+date[1]+'T'+clock[1].padStart(2,'0')+':'+clock[2]+':00+03:00';
+  const start=Date.parse(startStr);
+  if(!Number.isFinite(start))return {enabled:false,invalid:true};
+  const actual=new Date(start);
+  const moscow=Utilities.formatDate(actual,'Europe/Moscow','dd.MM.yyyy HH:mm');
+  if(moscow!==date[1]+'.'+date[2]+'.'+date[3]+' '+clock[1].padStart(2,'0')+':'+clock[2])return {enabled:false,invalid:true};
+  return {enabled:true,start:new Date(start).toISOString(),end:new Date(start+hours*3600000).toISOString()};
+}
+
 function publicMedia_() {
   const book = SpreadsheetApp.openById('1BwmXTVFysgzZq_UbCvrk98seMtOuUYj34Lwym371-hU');
   const clean = value => String(value || '').trim().slice(0, 240);
@@ -482,6 +507,10 @@ function doGet(e) {
       return ContentService.createTextOutput('window.singerEventsLoaded(' + payload + ');')
         .setMimeType(ContentService.MimeType.JAVASCRIPT);
     }
+    return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JSON);
+  }
+  if (e && e.parameter && e.parameter.kind === 'vote-config') {
+    const payload = JSON.stringify(publicVotingSchedule_());
     return ContentService.createTextOutput(payload).setMimeType(ContentService.MimeType.JSON);
   }
   if (e && e.parameter && e.parameter.kind === 'reviews') {
