@@ -179,9 +179,35 @@
     close.addEventListener('click',()=>dialog.close());
     const stage=elt('div','showcase-video-stage');
     const player=elt('video','showcase-player');
-    player.controls=true;player.playsInline=true;player.preload='auto';
+    player.controls=true;player.playsInline=true;player.preload='metadata';
+    // Inform mobile users about buffering instead of leaving a frozen frame.
+    const feedback=elt('div','showcase-video-feedback');
+    feedback.setAttribute('role','status');
+    feedback.setAttribute('aria-live','polite');
+    feedback.hidden=true;
+    let feedbackDelay=0;
+    const hideFeedback=()=>{clearTimeout(feedbackDelay);feedbackDelay=0;feedback.hidden=true;};
+    const showBuffering=()=>{
+      clearTimeout(feedbackDelay);
+      feedbackDelay=setTimeout(()=>{
+        if(player.isConnected&&!player.paused&&player.readyState<3){
+          feedback.textContent='Загружаем видео…';
+          feedback.hidden=false;
+        }
+      },500);
+    };
+    player.addEventListener('waiting',showBuffering);
+    player.addEventListener('stalled',showBuffering);
+    player.addEventListener('playing',hideFeedback);
+    player.addEventListener('canplay',hideFeedback);
+    player.addEventListener('pause',hideFeedback);
+    player.addEventListener('error',()=>{
+      clearTimeout(feedbackDelay);
+      feedback.textContent='Видео не загрузилось. Попробуйте открыть его повторно.';
+      feedback.hidden=false;
+    });
     player.src=fileURL('videos',item.file);
-    stage.append(player);
+    stage.append(player,feedback);
     resolveCover(item,url=>{if(url&&player.isConnected)player.poster=url;});
     if(videos.length>1)stage.append(navButton(-1,()=>changeVideo(-1),videoIndex===0),
       navButton(1,()=>changeVideo(1),videoIndex===videos.length-1));
