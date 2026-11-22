@@ -35,7 +35,7 @@ const max='https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHM
    title.textContent=trigger.dataset.title||'Написать Андрею';
    copy.textContent=trigger.dataset.copy||'Выберите удобный способ связи.';
    repertoire.hidden=trigger.dataset.repertoire!=='true';
-   sheet.querySelector('#sheet-video-hint').hidden=trigger.dataset.title!=='Отправить видео';
+   sheet.querySelector('#sheet-video-hint').hidden=trigger.dataset.sendVideo!=='true';
    const message=trigger.dataset.template||'';
    const encoded=message?encodeURIComponent(message):'';
    const wa=sheet.querySelector('[data-messenger="whatsapp"]');
