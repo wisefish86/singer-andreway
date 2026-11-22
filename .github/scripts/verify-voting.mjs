@@ -102,7 +102,8 @@ const cacheSync=readFileSync('.github/scripts/sync-reviews.py','utf8');
 assert.ok(home.includes("fetch('/data/reviews.json'") && reviews.includes("fetch('/data/reviews.json'"), 'Both pages must use the fast same-origin reviews snapshot');
 assert.ok(!home.includes('exec?kind=reviews&callback=') && !reviews.includes('exec?kind=reviews&callback='), 'Visitors must not wait for Google Apps Script');
 assert.ok(home.includes('singer-public-reviews-v1') && reviews.includes('singer-public-reviews-v1'), 'Review pages must render a recent local snapshot immediately');
-assert.ok(cacheWorkflow.includes("cron: '*/30 * * * *'") && cacheSync.includes('ftp.rename("reviews.json.tmp", "reviews.json")'), 'Reviews must refresh automatically via atomic FTP publication');
+assert.ok(cacheWorkflow.includes('workflow_dispatch:') && !cacheWorkflow.includes('cron:') && !cacheWorkflow.includes('  schedule:') && !cacheWorkflow.includes('  push:'), 'Reviews must refresh only when explicitly requested');
+assert.ok(cacheSync.includes('ftp.rename("reviews.json.tmp", "reviews.json")'), 'Public reviews must publish atomically without an empty-state window');
 assert.ok(siteWorkflow.includes('**/data/reviews.json'), 'Main site deploy must preserve the independently updated review cache');
 
 assert.ok(home.includes('home-reviews-carousel') && home.includes('id="reviews-controls" hidden'), 'Carousel arrows must overlay cards only when scrolling is possible');
