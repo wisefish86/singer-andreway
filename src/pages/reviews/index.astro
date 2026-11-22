@@ -1,7 +1,6 @@
 ---
 import '../../styles/global.css';
 import SiteFavicons from '../../components/SiteFavicons.astro';
-import { reviews } from '../../data/reviews';
 import { contactMessages } from '../../config/contact-links';
 import ContactSheet from '../../components/ContactSheet.astro';
 ---
@@ -11,7 +10,7 @@ import ContactSheet from '../../components/ContactSheet.astro';
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <SiteFavicons/>
 <title>Отзывы о выступлениях — Андрей Шевцов</title>
-<meta name="description" content="Отзывы гостей о выступлениях певца Андрея Шевцова. Страница готовится к публикации первых отзывов."/>
+<meta name="description" content="Отзывы гостей о выступлениях певца Андрея Шевцова. Читайте впечатления гостей и поделитесь своим отзывом."/>
 <meta name="robots" content="noindex,follow"/>
 <style is:global>
 .reviews-main{max-width:1000px;margin:0 auto;padding:clamp(36px,6vw,72px) 20px 100px;min-height:75vh}
@@ -47,19 +46,6 @@ import ContactSheet from '../../components/ContactSheet.astro';
  <p class="reviews-eyebrow">Андрей Шевцов · живой вокал</p>
  <h1>Отзывы о выступлениях</h1>
  <p class="reviews-intro">Самое ценное после выступления — впечатления людей. Здесь будут появляться настоящие слова гостей с праздников, музыкальных вечеров и частных мероприятий.</p>
- <div class="review-grid" id="reviews-demo" aria-label="Пример карточки">
-  {reviews.map(review=>(
-   <article class="review-card">
-    {review.demo && <span class="review-badge">ПРИМЕР ОФОРМЛЕНИЯ · НЕ НАСТОЯЩИЙ ОТЗЫВ</span>}
-    <div class="review-person">
-     <img src={review.avatar} alt="Иллюстрация кота — временная заглушка аватара" class="review-avatar" loading="lazy" width="66" height="66"/>
-     <div><strong>{review.author}</strong><small>{review.event} · {review.city}</small><small>{review.dateLabel}</small></div>
-    </div>
-    <p class="review-quote">{review.text}</p>
-    {review.demo && <p class="review-note">Карточка демонстрирует расположение аватара, имени, формата мероприятия, даты и текста. После согласования здесь появится реальный отзыв.</p>}
-   </article>
-  ))}
- </div>
  <div class="review-grid" id="reviews-live" aria-label="Отзывы гостей" hidden></div>
  <section class="review-cta">
   <h2>Хотите поделиться впечатлениями?</h2>
@@ -74,7 +60,6 @@ import ContactSheet from '../../components/ContactSheet.astro';
 <script is:inline>
 (()=>{
  const live=document.getElementById('reviews-live');
- const demo=document.getElementById('reviews-demo');
  const placeholder='/reviews/avatars/';
  function addText(parent,tag,klass,value){
   const el=document.createElement(tag);if(klass)el.className=klass;el.textContent=value;parent.append(el);return el;
@@ -99,7 +84,7 @@ import ContactSheet from '../../components/ContactSheet.astro';
    addText(card,'p','review-quote',String(review.text||''));
    live.append(card);
   }
-  demo.hidden=true;live.hidden=false;
+  live.hidden=false;
  };
  const script=document.createElement('script');
  script.async=true;
