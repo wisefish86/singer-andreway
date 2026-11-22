@@ -14,12 +14,10 @@ export const contactMessages = {
 /** Build a direct chat with its own message, not a generic sharing link. */
 export function directChatLinks(message: string) {
   const encoded = encodeURIComponent(message);
-  // Telegram resolve links can reopen an unrelated draft left in the owner's chat.
-  // A share composer creates a fresh message and asks the visitor to choose the recipient.
-  const site = encodeURIComponent('https://singer.andreway.ru/');
+  // Telegram public username links always target Andreys conversation, never a share chooser.
   return {
-    telegramApp: 'tg://msg_url?url=' + site + '&text=' + encoded,
-    telegramWeb: 'https://t.me/share/url?url=' + site + '&text=' + encoded,
+    telegramApp: telegramApp + '&text=' + encoded,
+    telegramWeb: telegramWeb + '?text=' + encoded,
     whatsapp: whatsapp + '?text=' + encoded
   };
 }
