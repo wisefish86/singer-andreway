@@ -160,8 +160,9 @@
     videos=collection.videos;
     videoIndex=Math.max(0,videos.findIndex(v=>v.file===item.file));
     mode='video';renderVideo();
-    const dialog=getModal();
-    if(dialog.requestFullscreen&&!document.fullscreenElement)dialog.requestFullscreen().catch(()=>{});
+    // The dialog itself already fills the mobile viewport. Switching the document to
+    // fullscreen during play() can interrupt mobile playback; leave native fullscreen
+    // available from the video's own controls instead.
   }
   function changeVideo(delta){
     const next=videoIndex+delta;
