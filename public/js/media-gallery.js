@@ -182,7 +182,9 @@
     close.addEventListener('click',()=>dialog.close());
     const stage=elt('div','showcase-video-stage');
     const player=elt('video','showcase-player');
-    player.controls=true;player.playsInline=true;player.preload='metadata';
+    player.controls=true;player.playsInline=true;player.preload='auto';
+    // Allow progressive buffering of the ~60 MB clip while it plays. Browsers may
+    // limit preloading on mobile/metered networks and seeks can still issue range requests.
     // Inform mobile users about buffering instead of leaving a frozen frame.
     const feedback=elt('div','showcase-video-feedback');
     feedback.setAttribute('role','status');
