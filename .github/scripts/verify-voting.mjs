@@ -37,7 +37,7 @@ assert.ok(admin.includes('id="vm-key"'), 'Dedicated password-protected admin pag
 assert.ok(admin.includes('noindex,nofollow'), 'Admin page should not be indexed');
 assert.ok(admin.includes('setInterval(()=>refreshStatus(true),5000)'), 'Owner results must refresh every 5s');
 assert.ok(vote.includes('vote-count'), 'Guest results must display votes per song');
-assert.ok(vote.includes('setInterval(refresh,12000)'), 'Guest votes must refresh live');
+assert.ok(vote.includes('setInterval(refresh,6000)'), 'Guest votes must refresh live');
 assert.ok(backend.includes('getTally(db,data.id)'), 'Public API must return aggregated vote tallies');
 assert.ok(grants.includes('grant select, insert, update, delete on public.singer_vote_sessions to service_role'), 'Missing required voting table permission fix');
 assert.ok(!grants.includes('to anon'), 'Vote tables must not be granted to anonymous clients');
@@ -76,7 +76,7 @@ assert.ok(reviews.includes('singerReviewsLoaded'), 'Review page must consume She
 assert.ok(reviews.includes("avatarType==='female'"), 'Customisable gender avatar defaults required');
 assert.ok(siteWorkflow.includes('**/reviews/uploads/**'), 'FTP deployment must protect user-uploaded avatars');
 assert.ok(scriptWorkflow.includes('clasp deploy --deploymentId'), 'Apps Script web app needs versioned redeploy to update production endpoint');
-assert.ok(backend.includes('ensureCalendarSessions(db),ensureManualSheetSession(db),finalists()'), 'Calendar, Sheet and repertoire must all load concurrently');
+assert.ok(backend.includes('EdgeRuntime.waitUntil(sync.then') && backend.includes('ensureCalendarSessions(db),ensureManualSheetSession(db)'), 'Calendar, Sheet and repertoire must all load concurrently');
 assert.ok(vote.includes('CATALOGUE_CACHE_KEY'), 'Voting must show fast cached repertoire');
 assert.ok(vote.includes("fetch('/data/repertoire.public.json'"), 'Static catalogue should work even during voting API outages');
 assert.ok(vote.includes('vote-progress-fill'), 'Each active song must display its voting progress');
@@ -96,6 +96,10 @@ assert.ok(!reviewApp.includes("row[6]===true&&row[9]===true"), 'Removed consent 
 assert.ok(home.includes('aria-label="Отзывы гостей" hidden'), 'Homepage reviews stay hidden until approved reviews arrive');
 assert.ok(home.includes('home-reviews-carousel') && home.includes('id="reviews-controls" hidden'), 'Carousel arrows must overlay cards only when scrolling is possible');
 assert.ok(vote.includes('vote-choice-hint') && vote.includes('Отправить голос'), 'Voting must have floating CTA and selection guidance');
+assert.ok(vote.includes('vote-player button svg{display:block;flex:none}'), 'Player SVGs should be centered in circular buttons');
+assert.ok(vote.includes("'Изменить голос'") && vote.includes("'Сохранить изменения'"), 'Voters should be able to revise their ballot');
+assert.ok(vote.includes('STATUS_CACHE_KEY') && vote.includes('refreshBusy'), 'Voting should reuse recent state and avoid duplicate requests');
+assert.ok(vote.includes('testSubmissions++'), 'Test submissions should provide immediate feedback');
 assert.ok(vote.includes("$('vote-actions').hidden=n===0") && !vote.includes("$('vote-actions').hidden=!active||n===0"), 'Selected songs must reveal the CTA even if poll is closed');
 assert.ok(vote.indexOf('id="vote-actions"')>vote.indexOf('</main>'), 'Fixed CTA must not be clipped by vote card overflow');
 assert.ok(vote.includes('voteLabel(song,total)') && vote.includes("if(!votes)return ''"), 'Zero votes must not display percentages');
