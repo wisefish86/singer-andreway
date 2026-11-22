@@ -82,7 +82,7 @@ const document = {
   getElementById: id => byId[id],
   querySelectorAll: () => triggers
 };
-runInNewContext(inline, { document, encodeURIComponent, decodeURIComponent, URLSearchParams, location:{search:'',hash:''} });
+runInNewContext(inline, { document, encodeURIComponent, decodeURIComponent, URLSearchParams, location:{search:'',hash:''}, navigator:{userAgent:'Linux x86_64'} });
 for (const trigger of triggers) {
   trigger.click();
   const message = trigger.dataset.template;
@@ -91,6 +91,7 @@ for (const trigger of triggers) {
   assert.equal(new URL(telegram.dataset.socialWeb).searchParams.get('text'), message);
 }
 assert.ok(sheet.opened, 'Guest sheet never opened');
+assert.ok(shared.includes('whatsapp://send?phone=79181142693'), 'Mobile WhatsApp deep link is required');
 const selected = [...home.matchAll(/data-title="(Отправить видео|Сказать пару слов|Заказать песню)"/g)];
 assert.equal(selected.length, 3, 'Guest action buttons missing');
 assert.deepEqual(selected.map(match => match[1]), ['Заказать песню', 'Отправить видео', 'Сказать пару слов'], 'Guest button order');

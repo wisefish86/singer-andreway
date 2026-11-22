@@ -391,17 +391,32 @@ function publicVotingSchedule_() {
   if (!sheet)return {enabled:false};
   const values=sheet.getRange('B3:B6').getDisplayValues().map(row=>String(row[0]||'').trim());
   const enabled=sheet.getRange('B6').getValue()===true;
-  if (!enabled)return {enabled:false};
+  const props=PropertiesService.getScriptProperties();
+  const frozenKey='SINGER_VOTE_SHEET_START';
+  if (!enabled){
+    props.deleteProperty(frozenKey);
+    return {enabled:false};
+  }
   const date=values[0].match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
   const clock=values[1].match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
   const hours=Number(values[2].replace(',','.'));
   if (!date||!clock||!Number.isFinite(hours)||hours<1||hours>12)return {enabled:false,invalid:true};
   const startStr=date[3]+'-'+date[2]+'-'+date[1]+'T'+clock[1].padStart(2,'0')+':'+clock[2]+':00+03:00';
-  const start=Date.parse(startStr);
+  let start=Date.parse(startStr);
   if(!Number.isFinite(start))return {enabled:false,invalid:true};
   const actual=new Date(start);
   const moscow=Utilities.formatDate(actual,'Europe/Moscow','dd.MM.yyyy HH:mm');
   if(moscow!==date[1]+'.'+date[2]+'.'+date[3]+' '+clock[1].padStart(2,'0')+':'+clock[2])return {enabled:false,invalid:true};
+  // NOW() formulas are useful defaults, but their changing minutes must never
+  // restart a running poll. Freeze the first resolved start on activation.
+  const automatic=sheet.getRange('B3:B4').getFormulas().some(row=>Boolean(row[0]));
+  if(automatic){
+    const saved=Number(props.getProperty(frozenKey));
+    if(Number.isFinite(saved)&&saved>0)start=saved;
+    else props.setProperty(frozenKey,String(start));
+  }else{
+    props.deleteProperty(frozenKey); // Manual dates remain editable while active.
+  }
   return {enabled:true,start:new Date(start).toISOString(),end:new Date(start+hours*3600000).toISOString()};
 }
 

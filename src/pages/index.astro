@@ -66,7 +66,8 @@ const repertoireUrl = '/podborka/';
     .guest-evening-link:focus-visible{outline:3px solid #fff;outline-offset:3px}
     #live{scroll-margin-top:92px}
     @media(max-width:600px){.guest-evening-inner{gap:9px}.guest-evening-label{font-size:.86rem;text-align:center}.guest-evening-link{width:100%}}
-  </style>
+  .home-reviews[hidden]{display:none!important}.home-reviews-controls{display:flex;gap:10px;justify-content:flex-end;margin:-9px 0 12px}.home-reviews-controls button{border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--text);width:38px;height:38px;cursor:pointer}.home-reviews-controls button:disabled{opacity:.35}.home-reviews-track{display:flex;gap:16px;overflow:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;padding:4px 0 16px}.home-review{box-sizing:border-box;flex:0 0 min(375px,calc(100% - 16px));scroll-snap-align:start;padding:23px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#152737,#0e1d29)}.home-review-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}.home-review-head img{height:54px;width:54px;border-radius:50%;object-fit:cover}.home-review-head strong{display:block}.home-review-head small{display:block;color:var(--muted);font-size:.79rem;margin-top:4px}.home-review p{font-size:.98rem;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}@media(min-width:800px){.home-review{flex-basis:calc((100% - 32px)/3)}}
+</style>
 </head>
 <body>
   <header class="topbar">
@@ -226,7 +227,11 @@ const repertoireUrl = '/podborka/';
       </div>
     </section>
 
-    <section class="section" id="contact">
+    <section class="section home-reviews" id="reviews" hidden aria-label="Отзывы гостей">
+<div class="container"><div class="section-head"><div><h2>Отзывы о выступлениях</h2><p class="lead">Впечатления гостей</p></div><a class="link" href="/reviews/">Все отзывы →</a></div>
+<div class="home-reviews-controls"><button id="reviews-back" type="button" aria-label="Предыдущие отзывы">←</button><button id="reviews-forward" type="button" aria-label="Следующие отзывы">→</button></div>
+<div class="home-reviews-track" id="reviews-track" tabindex="0" aria-label="Отзывы гостей"></div></div></section>
+<section class="section" id="contact">
       <div class="container">
         <div class="contact">
           <div class="contact-media"></div>
@@ -364,7 +369,7 @@ const repertoireUrl = '/podborka/';
 
     document.querySelectorAll('a[data-social-destination]').forEach((link) => {
       link.addEventListener('click', (event) => {
-        if (link.dataset.socialPlatform === 'telegram') return; // tg:// opens installed Telegram directly on mobile and desktop
+        if (link.dataset.socialPlatform === 'telegram' || link.dataset.directMessenger === 'true') return; // Open installed apps via their direct links
         if (isMobileDevice() || !socialDialog || event.defaultPrevented) return;
         if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
         const webUrl = link.dataset.socialWeb;
@@ -527,5 +532,32 @@ const repertoireUrl = '/podborka/';
 
   <script type="application/json" id="media-snapshot" set:html={JSON.stringify(mediaSnapshot).replace(/</g, '\\u003c')}></script>
   <script src="/js/media-gallery.js?v=20261121-optimized4" defer data-media-api="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec"></script>
+<script is:inline data-home-reviews>
+(()=>{
+ const section=document.getElementById('reviews'),track=document.getElementById('reviews-track');
+ const back=document.getElementById('reviews-back'),forward=document.getElementById('reviews-forward');
+ const fallback=r=>r.avatarType==='female'?'/reviews/avatars/female.svg':r.avatarType==='male'?'/reviews/avatars/male.svg':'/reviews/placeholder-cat.svg';
+ const append=(p,tag,cls,value)=>{const n=document.createElement(tag);n.className=cls||'';n.textContent=String(value||'');p.append(n);return n};
+ const controls=()=>{back.disabled=track.scrollLeft<2;forward.disabled=track.scrollLeft>=track.scrollWidth-track.clientWidth-2};
+ window.singerReviewsLoaded=payload=>{
+  const reviews=Array.isArray(payload?.reviews)?payload.reviews:[];if(reviews.length<2)return;
+  track.replaceChildren();
+  for(const r of reviews.slice(0,10)){
+   const card=document.createElement('article');card.className='home-review';
+   const head=document.createElement('div');head.className='home-review-head';
+   const img=document.createElement('img');img.width=54;img.height=54;img.loading='lazy';img.alt='Аватар гостя';
+   const safe=typeof r.avatar==='string'&&r.avatar.startsWith('https://singer.andreway.ru/reviews/uploads/')?r.avatar:'';
+   img.src=safe||fallback(r);img.onerror=()=>{const url=new URL(fallback(r),location.href).href;if(img.src!==url)img.src=url};
+   const who=document.createElement('div');append(who,'strong','',r.author);append(who,'small','',[r.event,r.city,r.dateLabel].filter(Boolean).join(' · '));
+   head.append(img,who);card.append(head);append(card,'p','',r.text);track.append(card);
+  }
+  section.hidden=false;requestAnimationFrame(controls);
+ };
+ back.addEventListener('click',()=>track.scrollBy({left:-Math.max(260,track.clientWidth*.8),behavior:'smooth'}));
+ forward.addEventListener('click',()=>track.scrollBy({left:Math.max(260,track.clientWidth*.8),behavior:'smooth'}));
+ track.addEventListener('scroll',controls,{passive:true});window.addEventListener('resize',controls);
+ const src=document.createElement('script');src.async=true;src.src='https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec?kind=reviews&callback=singerReviewsLoaded';document.head.append(src);
+})();
+</script>
 </body>
 </html>
