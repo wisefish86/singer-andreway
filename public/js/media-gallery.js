@@ -23,8 +23,10 @@
   function coverCandidates(video){
     const stem=String(video.file||'').replace(/\.[^.]+$/,'');
     const preferred=String(video.cover||'').match(/\.(webp|jpe?g|png|avif)$/i)?.[1]?.toLowerCase();
-    return [...new Set([preferred,'webp','jpg','jpeg','png','avif'].filter(Boolean))]
-      .map(ext=>fileURL('videos',stem+'.'+ext)).filter(Boolean);
+    // Keep the explicitly supplied cover when the optimized MP4 has a different name.
+    const supplied=video.cover?fileURL('videos',video.cover):'';
+    return [...new Set([supplied,...[preferred,'webp','jpg','jpeg','png','avif'].filter(Boolean)
+      .map(ext=>fileURL('videos',stem+'.'+ext))])].filter(Boolean);
   }
   const imageCache=new Map();
   function resolveCover(video,callback){
