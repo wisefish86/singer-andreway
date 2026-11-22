@@ -72,7 +72,7 @@ assert.ok(reviews.includes('singerReviewsLoaded'), 'Review page must consume She
 assert.ok(reviews.includes("avatarType==='female'"), 'Customisable gender avatar defaults required');
 assert.ok(siteWorkflow.includes('**/reviews/uploads/**'), 'FTP deployment must protect user-uploaded avatars');
 assert.ok(scriptWorkflow.includes('clasp deploy --deploymentId'), 'Apps Script web app needs versioned redeploy to update production endpoint');
-assert.ok(backend.includes('Promise.allSettled([ensureCalendarSessions(db),ensureManualSheetSession(db)])'), 'Schedule lookups must run concurrently');
+assert.ok(backend.includes('ensureCalendarSessions(db),ensureManualSheetSession(db),finalists()'), 'Calendar, Sheet and repertoire must all load concurrently');
 assert.ok(vote.includes('CATALOGUE_CACHE_KEY'), 'Voting must show fast cached repertoire');
 assert.ok(vote.includes("fetch('/data/repertoire.public.json'"), 'Static catalogue should work even during voting API outages');
 assert.ok(vote.includes('vote-progress-fill'), 'Each active song must display its voting progress');
