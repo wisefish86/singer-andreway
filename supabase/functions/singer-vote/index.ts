@@ -163,21 +163,19 @@ Deno.serve(async req=>{
  try{
   const db=dbClient();
   if(req.method==="GET"){
-   // Fetch songs alongside calendar and Sheet settings to minimize cold-start delay.
-   const [calendarCheck,sheetCheck,catalogueCheck]=await Promise.allSettled([
-    ensureCalendarSessions(db),ensureManualSheetSession(db),finalists()
-   ]);
-   if(catalogueCheck.status!=="fulfilled")throw new Error("catalogue_unavailable");
-   const songs=catalogueCheck.value;
-   for(const check of [calendarCheck,sheetCheck]){
-    if(check.status==="rejected")console.warn("Voting schedule source temporarily unavailable");
-   }
-   const {data,error}=await db.from("singer_vote_sessions").select("id,starts_at,ends_at,test_mode")
+   // Read public status from Supabase without blocking on slow Google services.
+   // Keep calendar and Sheet synchronization alive after the response.
+   const sync=Promise.allSettled([ensureCalendarSessions(db),ensureManualSheetSession(db)]);
+   EdgeRuntime.waitUntil(sync.then(results=>{
+    for(const item of results)if(item.status==="rejected")console.warn("Voting schedule sync failed");
+   }));
+   const catalogue=finalists();
+   const sessionQuery=db.from("singer_vote_sessions").select("id,starts_at,ends_at,test_mode")
     .eq("enabled",true).lte("starts_at",new Date().toISOString()).gt("ends_at",new Date().toISOString())
     .order("starts_at",{ascending:false}).limit(1).maybeSingle();
+   const [songs,sessionResult]=await Promise.all([catalogue,sessionQuery]);
+   const {data,error}=sessionResult;
    if(error)throw error;
-   // The public catalogue is always available for preview even outside an event.
-   // Only active sessions expose vote counts or accept ballots.
    if(!data){
     return json({active:false,test_mode:false,songs:songs.map(song=>({...song,votes:0})),voters:0,catalogue_ready:songs.length>=3},200,origin);
    }
