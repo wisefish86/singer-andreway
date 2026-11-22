@@ -89,7 +89,7 @@ assert.ok(!home.includes('Не настоящий отзыв') && !home.includes
 assert.ok(contact.includes('whatsapp://send?phone='), 'Mobile WhatsApp deep link missing');
 const testMigration=readFileSync('supabase/migrations/20261122190000_singer_vote_test_mode.sql','utf8');
 assert.ok(testMigration.includes('test_mode boolean not null default false'), 'Existing real sessions must stay normal by default');
-assert.ok(backend.includes('voteSession.test_mode?":"+crypto.randomUUID():""'), 'Only test submissions may count repeatedly');
+assert.ok(backend.includes('voteSession.test_mode?":"+(requestId||crypto.randomUUID()):""'), 'Only test submissions may count repeatedly, with stable retry IDs');
 assert.ok(backend.includes('runId==="legacy"'), 'Legacy live votes must be preserved on initial transition');
 assert.ok(vote.includes("singer-vote-choice:") && vote.includes('localStorage.setItem'), 'Normal voters should be able to add to and revise their earlier choice');
 assert.ok(vote.includes('Отправить пробный голос') && vote.includes('vote-test-note'), 'Public page should clearly disclose test voting');
@@ -103,6 +103,9 @@ assert.ok(vote.includes('vote-player button svg{display:block;flex:none}'), 'Pla
 assert.ok(vote.includes("'Изменить голос'") && vote.includes("'Сохранить изменения'"), 'Voters should be able to revise their ballot');
 assert.ok(vote.includes('STATUS_CACHE_KEY') && vote.includes('refreshBusy'), 'Voting should reuse recent state and avoid duplicate requests');
 assert.ok(vote.includes('testSubmissions++'), 'Test submissions should provide immediate feedback');
+assert.ok(vote.includes('PENDING_VOTE_KEY') && vote.includes('request_id:crypto.randomUUID()'), 'Failed votes must keep a durable request ID');
+assert.ok(vote.includes("$('vote-actions').hidden=n===0&&!pendingVote"), 'Pending vote must remain visible after reload');
+assert.ok(vote.includes('if(pendingVote){await sendPendingVote();return}'), 'Manual retries must reuse pending request');
 assert.ok(vote.includes("key?'application/json':'text/plain;charset=UTF-8'"), 'Guest vote POST must avoid unnecessary CORS preflight');
 assert.ok(backend.includes('const [sessionResult,eligibleSongs]=await Promise.all(['), 'Server vote validation lookups must be concurrent');
 assert.ok(vote.includes("$('vote-actions').hidden=n===0") && !vote.includes("$('vote-actions').hidden=!active||n===0"), 'Selected songs must reveal the CTA even if poll is closed');
