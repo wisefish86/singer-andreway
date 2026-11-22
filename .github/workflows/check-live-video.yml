@@ -1,0 +1,51 @@
+name: Check actual video selected by website
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/check-live-video.yml']
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compare static and live Google media catalogs
+        shell: bash
+        run: |
+          set -uo pipefail
+          echo '=== Static media catalog ==='
+          curl -fLsS --max-time 35 'https://singer.andreway.ru/media-catalog.json' -o /tmp/static.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open('/tmp/static.json'))
+          for v in x.get('videos',[]): print('STATIC FILE:',repr(v.get('file')))
+          PY
+          echo '=== Google public media catalog ==='
+          curl -fLsS --max-time 50 'https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec?kind=media' -o /tmp/google.json
+          python3 - <<'PY'
+          import json
+          a=json.load(open('/tmp/static.json'));b=json.load(open('/tmp/google.json'))
+          for v in b.get('videos',[]): print('GOOGLE FILE:',repr(v.get('file')))
+          print('SAME VIDEO ENTRIES:',a.get('videos')==b.get('videos'))
+          PY
+      - name: Inspect actual public MP4 used by both catalogs
+        shell: bash
+        run: |
+          set -uo pipefail
+          python3 - <<'PY'
+          import json,urllib.parse,urllib.request
+          for origin in ['static','google']:
+            try:
+              d=json.load(open('/tmp/'+origin+'.json'))
+              for v in d.get('videos',[]):
+                u='https://singer.andreway.ru/videos/'+urllib.parse.quote(v['file'])
+                req=urllib.request.Request(u,method='HEAD')
+                with urllib.request.urlopen(req,timeout=30) as r:
+                  print(origin,'HTTP',r.status,'size',r.headers.get('Content-Length'),'type',r.headers.get('Content-Type'),'ranges',r.headers.get('Accept-Ranges'))
+                req=urllib.request.Request(u,headers={'Range':'bytes=0-2047'})
+                with urllib.request.urlopen(req,timeout=30) as r:
+                  data=r.read(2048)
+                  print(origin,'range HTTP',r.status,'moov in first 2KB',b'moov' in data,'content range',r.headers.get('Content-Range'))
+            except Exception as e: print(origin,'FAIL',type(e).__name__,str(e)[:240])
+          PY
