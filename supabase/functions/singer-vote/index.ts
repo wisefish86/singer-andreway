@@ -65,7 +65,7 @@ const CALENDAR = "https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58
 let calendarCache: {until:number;windows:{start:string;end:string}[]} | null = null;
 async function currentPublicWindows(){
  if(calendarCache && calendarCache.until>Date.now())return calendarCache.windows;
- const response=await fetch(CALENDAR,{signal:AbortSignal.timeout(1600),cache:"no-store"});
+ const response=await fetch(CALENDAR,{signal:AbortSignal.timeout(2800),cache:"no-store"});
  if(!response.ok)throw new Error("calendar_unavailable");
  const data=await response.json();
  const windows=Array.isArray(data.windows)?data.windows.flatMap((w:{start:string;end:string})=>{
@@ -98,7 +98,7 @@ const VOTE_CONFIG_URL="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx
 let scheduleCache:{until:number;config:{enabled:boolean;start?:string;end?:string}}|null=null;
 async function manualSchedule(){
  if(scheduleCache&&scheduleCache.until>Date.now())return scheduleCache.config;
- const response=await fetch(VOTE_CONFIG_URL,{redirect:"follow",cache:"no-store",signal:AbortSignal.timeout(1600)});
+ const response=await fetch(VOTE_CONFIG_URL,{redirect:"follow",cache:"no-store",signal:AbortSignal.timeout(3500)});
  if(!response.ok)throw new Error("vote_sheet_unavailable");
  const data=await response.json();
  const config:{enabled:boolean;start?:string;end?:string}={enabled:false};
