@@ -27,6 +27,7 @@
     try{localStorage.setItem(VIDEO_LOG_KEY,JSON.stringify(videoLog));}catch{}
   }
   const reportVideoSource=(player,message)=>{
+    player._videoSourceDescription=message;
     if(player._videoDebugOutput)player._videoDebugOutput.textContent='Видео: '+message;
     recordVideoEvent(player,'source',message);
   };
@@ -362,7 +363,10 @@
     };
     player.addEventListener('waiting',()=>{showBuffering();reportBuffer('waiting');});
     player.addEventListener('stalled',()=>{showBuffering();reportBuffer('stalled');});
-    player.addEventListener('playing',hideFeedback);
+    player.addEventListener('playing',()=>{
+      hideFeedback();
+      recordVideoEvent(player,'playing',player._videoSourceDescription||'неизвестный источник');
+    });
     player.addEventListener('canplay',hideFeedback);
     player.addEventListener('pause',hideFeedback);
     player.addEventListener('error',()=>{
