@@ -66,7 +66,7 @@ async function ensureCalendarSessions(db:any){
  }
 }
 async function authorized(req:Request,db:any):Promise<boolean>{
- const supplied=(req.headers.get("authorization")||"").replace(/^Bearer\\s+/i,"");
+ const supplied=(req.headers.get("authorization")||"").replace(/^Bearer\s+/i,"");
  if(supplied.length<32||supplied.length>256)return false;
  const {data,error}=await db.from("singer_vote_admin").select("token_hash").eq("id",1).maybeSingle();
  if(error||!data?.token_hash)return false;
