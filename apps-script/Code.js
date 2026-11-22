@@ -391,10 +391,13 @@ function publicVotingSchedule_() {
   if (!sheet)return {enabled:false};
   const values=sheet.getRange('B3:B6').getDisplayValues().map(row=>String(row[0]||'').trim());
   const enabled=sheet.getRange('B6').getValue()===true;
+  const testMode=sheet.getRange('B8').getValue()===true;
   const props=PropertiesService.getScriptProperties();
   const frozenKey='SINGER_VOTE_SHEET_START';
   if (!enabled){
     props.deleteProperty(frozenKey);
+    props.deleteProperty('SINGER_VOTE_SHEET_SIGNATURE');
+    props.deleteProperty('SINGER_VOTE_SHEET_RUN_ID');
     return {enabled:false};
   }
   const date=values[0].match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
@@ -417,7 +420,24 @@ function publicVotingSchedule_() {
   }else{
     props.deleteProperty(frozenKey); // Manual dates remain editable while active.
   }
-  return {enabled:true,start:new Date(start).toISOString(),end:new Date(start+hours*3600000).toISOString()};
+  // Switching test mode creates an isolated session; the first live session
+  // retains its original source key to preserve already submitted votes.
+  const signature=String(start)+'|'+hours+'|'+String(testMode);
+  const signatureKey='SINGER_VOTE_SHEET_SIGNATURE';
+  const runKey='SINGER_VOTE_SHEET_RUN_ID';
+  let runId=props.getProperty(runKey);
+  const previous=props.getProperty(signatureKey);
+  if (!previous){
+    runId=testMode?Utilities.getUuid():'legacy';
+    props.setProperty(signatureKey,signature);
+    props.setProperty(runKey,runId);
+  }else if(previous!==signature){
+    runId=Utilities.getUuid();
+    props.setProperty(signatureKey,signature);
+    props.setProperty(runKey,runId);
+  }
+  return {enabled:true,start:new Date(start).toISOString(),end:new Date(start+hours*3600000).toISOString(),
+    test_mode:testMode,run_id:runId};
 }
 
 function publicMedia_() {
@@ -462,13 +482,13 @@ function publicReviews_() {
     if (/^[a-zA-Z0-9_() .-]+\.(?:png|webp|jpe?g)$/i.test(v))return 'https://singer.andreway.ru/reviews/uploads/'+encodeURIComponent(v);
     return '';
   };
-  const reviews=rows.slice(1).filter(row=>row[6]===true&&row[9]===true&&safe(row[0])&&safe(row[4]))
+  const reviews=rows.slice(1).filter(row=>row[6]===true&&safe(row[0])&&safe(row[4]))
    .map(row=>{
      const d=row[2] instanceof Date?Utilities.formatDate(row[2],'Europe/Moscow','MMMM yyyy'):safe(row[2]);
      return {author:safe(row[0]).slice(0,100),event:safe(row[1]).slice(0,150),
        dateLabel:d.slice(0,90),city:safe(row[3]).slice(0,100),
        text:safe(row[4]).slice(0,2000),avatar:avatarUrl(row[5]),
-       avatarType:safe(row[10])==='Женщина'?'female':safe(row[10])==='Мужчина'?'male':'neutral'};
+       avatarType:safe(row[9])==='Женщина'?'female':safe(row[9])==='Мужчина'?'male':'neutral'};
    }).slice(0,100);
   return {updatedAt:new Date().toISOString(),reviews};
 }
