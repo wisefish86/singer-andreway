@@ -67,14 +67,14 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  <header class="vote-hero">
   <span class="vote-status" id="vote-status">Подборка финальных песен</span>
   <h1>🔥 Выбираем хиты вечера!</h1>
-  <p>Проголосуйте за три песни, которые хотите услышать в финалах музыкальных блоков. Главный фаворит завершит вечер!</p>
+  <p>Выберите от одной до трёх песен, которые хотите услышать в финалах музыкальных блоков. Главный фаворит завершит вечер!</p>
  </header>
  <div id="vote-closed" class="vote-alert" hidden role="status">
-  Голосование пока закрыто. Список финальных песен можно посмотреть и выбрать любимые уже сейчас, а отправить голоса — во время выступления.
+  Голосование пока закрыто. Список финальных песен можно посмотреть и выбрать до трёх любимых уже сейчас, а отправить голоса — во время выступления.
  </div>
  <section id="vote-open" class="vote-card" hidden>
-  <h2>Ваши три любимые песни</h2>
-  <p class="vote-meta">Специальная подборка финальных хитов, а не весь репертуар. Выберите три песни: голоса принимаются только во время активного выступления.</p>
+  <h2>Ваши любимые песни</h2>
+  <p class="vote-meta">Специальная подборка финальных хитов, а не весь репертуар. Выберите от одной до трёх песен: голоса принимаются только во время активного выступления.</p>
   <label for="vote-search" class="vote-meta">Найти песню или исполнителя</label>
   <input id="vote-search" class="vote-search" type="search" placeholder="Название или исполнитель" autocomplete="off"/>
   <p id="vote-voters" class="vote-leaders" aria-live="polite">Результаты голосования обновляются автоматически.</p>
@@ -154,8 +154,8 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   return result;
  }
  function updateButton(){
-  $('vote-send').disabled=selected.size!==3||songs.length<3||!state?.active;
-  $('vote-send').textContent=songs.length<3?'Список песен пока недоступен':!state?.active?'Голосование пока закрыто':saved?'Обновить мои голоса':selected.size===3?'Проголосовать за 3 песни':'Выбрано '+selected.size+' из 3';
+  $('vote-send').disabled=selected.size<1||selected.size>3||songs.length<1||!state?.active;
+  $('vote-send').textContent=songs.length<1?'Список песен пока недоступен':!state?.active?'Голосование пока закрыто':saved?'Обновить мой выбор':selected.size>0?'Проголосовать ('+selected.size+' из 3)':'Выберите от 1 до 3 песен';
  }
  const audio=$('vote-audio');
  let playingId=null;
@@ -292,7 +292,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   $('vote-send').disabled=true;
   try{
    await api({action:'vote',session_id:state.session.id,voter_id:voter,song_ids:[...selected]});
-   saved=true;setMessage('Спасибо! Ваши три голоса учтены. Вы можете изменить выбор до закрытия голосования.');
+   saved=true;setMessage('Спасибо! Ваш выбор учтён. Вы можете изменить его до закрытия голосования.');
   }catch(e){setMessage('Не удалось отправить голос: '+e.message)}
   updateButton();
  });
