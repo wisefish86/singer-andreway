@@ -12,13 +12,10 @@ import { telegramWeb, telegramApp, whatsapp, contactMessages, directChatLinks } 
 const phoneDisplay = '+7 918 114-26-93';
 const phoneLink = 'tel:+79181142693';
 const eventChat = directChatLinks(contactMessages.event);
-const instagram = 'https://www.instagram.com/andrey_spoet/';
-const instagramDirect = 'https://ig.me/m/andrey_spoet';
 const telegramChannelWeb = 'https://t.me/andrey_spoet';
 const reminderBotUrl = 'tg://resolve?domain=andrey_spoet_bot&start=reminders';
 const reminderBotWeb = 'https://t.me/andrey_spoet_bot?start=reminders';
 const telegramChannelApp = 'tg://resolve?domain=andrey_spoet';
-const vk = 'https://vk.me/andrey_spoet';
 const max = 'https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHMK3ejGSQ';
 
 const seoTitle = 'Певец на мероприятие в Краснодаре — Андрей Шевцов';
@@ -52,7 +49,7 @@ const repertoireUrl = '/podborka/';
     "url":canonical,
     "telephone":"+79181142693",
     "areaServed":["Краснодар","Краснодарский край"],
-    "sameAs":[telegramWeb,instagram,vk,max]
+    "sameAs":[telegramWeb,telegramChannelWeb,max]
   })}></script>
 
   <style is:global>
@@ -82,7 +79,6 @@ const repertoireUrl = '/podborka/';
       </nav>
       <div class="social-mini">
         <a class="icon-btn" href={telegramChannelApp} data-social-destination data-social-web={telegramChannelWeb} data-social-platform="telegram" data-social-name="Telegram-канал с афишей" aria-label="Telegram-канал"><BrandIcon name="telegram" size={19} /></a>
-        <a class="icon-btn" href={instagram} data-social-destination data-social-web={instagram} data-social-platform="instagram" data-social-name="Instagram" aria-label="Instagram"><BrandIcon name="instagram" size={19} /></a>
       </div>
     </div>
   </header>
@@ -243,12 +239,10 @@ const repertoireUrl = '/podborka/';
 
               <div class="contact-write">
                 <div class="contact-group-label">Написать</div>
-                <div class="contact-socials" aria-label="Написать в мессенджере или соцсети">
+                <div class="contact-socials" aria-label="Написать в мессенджере">
                   <a href={eventChat.telegramApp} data-social-destination data-social-web={eventChat.telegramWeb} data-social-platform="telegram" data-social-name="написать в Telegram"><BrandIcon name="telegram" size={22} /><span>Telegram</span></a>
                   <a href={eventChat.whatsapp} data-social-destination data-social-web={eventChat.whatsapp} data-social-platform="whatsapp" data-social-name="написать в WhatsApp"><BrandIcon name="whatsapp" size={22} /><span>WhatsApp</span></a>
                   <a href={max} data-social-destination data-social-web={max} data-social-platform="max" data-social-name="написать в MAX" aria-label="Написать в MAX"><BrandIcon name="max" size={22} /><span>MAX</span></a>
-                  <a href={vk} data-social-destination data-social-web={vk} data-social-platform="vk" data-social-name="написать ВКонтакте"><BrandIcon name="vk" size={22} /><span>ВКонтакте</span></a>
-                  <a href={instagramDirect} data-social-destination data-social-web={instagramDirect} data-social-platform="instagram" data-social-name="написать в Instagram"><BrandIcon name="instagram" size={22} /><span>Instagram</span></a>
                 </div>
               </div>
 
@@ -257,10 +251,9 @@ const repertoireUrl = '/podborka/';
 
             <div class="stay-connected">
               <div class="stay-title">Останемся на связи</div>
-              <div class="stay-copy">Афиши, новые видео и новости — подпишитесь там, где удобнее.</div>
+              <div class="stay-copy">Афиши, новые видео и новости — в моём Telegram-канале.</div>
               <div class="stay-links">
                 <a href={telegramChannelApp} data-social-destination data-social-web={telegramChannelWeb} data-social-platform="telegram" data-social-name="Telegram-канал с афишей"><BrandIcon name="telegram" size={22} /><span><strong>Telegram</strong><small>подписаться на канал</small></span></a>
-                <a href={instagram} data-social-destination data-social-web={instagram} data-social-platform="instagram" data-social-name="Instagram"><BrandIcon name="instagram" size={22} /><span><strong>Instagram</strong><small>подписаться</small></span></a>
               </div>
             </div>
           </div>
@@ -378,10 +371,8 @@ const repertoireUrl = '/podborka/';
         event.preventDefault();
 
         const platform = link.dataset.socialPlatform;
-        const serviceNames = { instagram: 'Instagram', whatsapp: 'WhatsApp',
-          telegram: 'Telegram', max: 'MAX', vk: 'ВКонтакте' };
-        const qrColors = { instagram: '#642c86', whatsapp: '#12683e',
-          telegram: '#075778', max: '#244c81', vk: '#1863a9' };
+        const serviceNames = { whatsapp: 'WhatsApp', telegram: 'Telegram', max: 'MAX' };
+        const qrColors = { whatsapp: '#12683e', telegram: '#075778', max: '#244c81' };
         const service = serviceNames[platform] || 'соцсеть';
         lastSocialTrigger = link;
         socialTitle.textContent = 'Открыть ' + service;
