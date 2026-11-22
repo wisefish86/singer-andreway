@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 const source = readFileSync(new URL('../../src/pages/index.astro', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../../dist/index.html', import.meta.url), 'utf8');
 
-const platforms = ['telegram', 'whatsapp', 'max'];
+const platforms = ['telegram', 'whatsapp', 'max', 'instagram'];
 for (const platform of platforms) {
   assert.ok(html.includes('data-social-platform="' + platform + '"'),
     'No desktop QR chooser trigger for ' + platform);
@@ -29,8 +29,9 @@ assert.ok(source.includes('drawRoundedQr(socialQr, webUrl'),
   'QR must encode the actual public profile URL');
 assert.ok(source.includes("if (isMobileDevice()"),
   'Mobile should follow the normal link without forcing a desktop QR');
-assert.ok(!html.includes('data-social-platform="instagram"') && !html.includes('data-social-platform="vk"'), 'Inactive networks must not appear as visitor contact choices');
-console.log('Shared desktop QR checked for Telegram, WhatsApp and MAX');
+assert.ok(!html.includes('data-social-platform="vk"'), 'VK must not be a visitor contact channel');
+assert.ok(html.includes('data-social-platform="instagram"'), 'Instagram must be available in the final subscription section');
+console.log('Shared QR checked for contact messengers and Instagram subscription');
 
 // Mobile media reliability and sticky-header anchor regressions.
 const media = readFileSync(new URL('../../public/js/media-gallery.js', import.meta.url), 'utf8');
