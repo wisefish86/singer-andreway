@@ -21,7 +21,7 @@ assert.ok(!home.includes('aria-label="Посмотреть тестовую ст
 assert.ok(home.includes('data-voting-visibility'), 'Homepage must check server poll status');
 assert.ok(vote.includes('Голосование пока закрыто'), 'Closed state missing');
 assert.ok(vote.includes('1 000 ₽'), 'Paid ordering information missing');
-assert.ok(vote.includes('song_ids:[...selected]'), 'Three-song ballot missing');
+assert.ok(vote.includes('song_ids:choices'), 'Selected 1–3 songs must be submitted');
 assert.ok(vote.includes('selected.size<1||selected.size>3'), 'Allow 1–3 songs and reject empty selection');
 assert.ok(backend.includes('return json({active:false,songs:'), 'Inactive polls must return preview catalogue');
 assert.ok(vote.includes("const incoming=Array.isArray(result.songs)?result.songs:[]"), 'Closed catalogue must still populate song list');
