@@ -24,6 +24,8 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
 .vote-option[aria-pressed="true"]{border-color:var(--accent2);background:rgba(220,176,94,.12)}
 .vote-option .check{flex:0 0 26px;width:26px;height:26px;border:2px solid var(--accent2);border-radius:7px;display:grid;place-items:center;color:var(--accent2)}
 .vote-option strong{display:block}.vote-option small{display:block;color:var(--muted);margin-top:3px}
+.vote-option .vote-songtext{flex:1;min-width:0}.vote-option .vote-count{font-size:.77rem;white-space:nowrap;color:var(--accent2);font-variant-numeric:tabular-nums;font-weight:650}
+.vote-leaders{color:var(--muted);font-size:.84rem;margin-bottom:12px}
 .vote-actions{position:sticky;bottom:0;padding:14px 0 8px;background:linear-gradient(transparent,#07131e 16%);z-index:2}
 .vote-actions .btn{width:100%;justify-content:center;min-height:52px}.vote-actions .btn:disabled{opacity:.48;cursor:not-allowed}
 .vote-meta{color:var(--muted);font-size:13px;margin-top:8px}
@@ -52,6 +54,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   <p class="vote-meta">Это специальная подборка финальных хитов, а не весь репертуар. Можно изменить свой выбор, пока голосование открыто.</p>
   <label for="vote-search" class="vote-meta">Найти песню или исполнителя</label>
   <input id="vote-search" class="vote-search" type="search" placeholder="Название или исполнитель" autocomplete="off"/>
+  <p id="vote-voters" class="vote-leaders" aria-live="polite">Результаты голосования обновляются автоматически.</p>
   <div id="vote-songs" aria-label="Песни для голосования"></div>
   <div class="vote-actions"><button id="vote-send" class="btn primary" disabled type="button">Выберите 3 песни</button></div>
   <div id="vote-message" class="vote-alert vote-hidden" role="status" aria-live="polite"></div>
@@ -63,24 +66,16 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   <p><span class="vote-price">1 000 ₽</span> за песню · исполнение согласовывается с артистом</p>
   <a class="btn" href="/podborka/">Посмотреть репертуар и заказать песню →</a>
  </section>
- <section id="vote-admin" class="vote-card vote-admin vote-hidden" aria-label="Управление голосованием">
-  <h2>Управление голосованием</h2>
-  <p class="vote-meta">Доступ только по секретному ключу администратора. Никогда не передавайте ключ гостям.</p>
-  <label>Ключ администратора<input type="password" id="vote-key" autocomplete="off" placeholder="Секретный ключ"/></label>
-  <button class="btn" id="vote-admin-check" type="button">Проверить результаты</button>
-  <label>Начало голосования (время Москвы)<input id="vote-start" type="datetime-local"/></label>
-  <label>Окончание голосования (время Москвы)<input id="vote-end" type="datetime-local"/></label>
-  <button class="btn" id="vote-admin-open" type="button">Открыть голосование</button>
-  <button class="btn" id="vote-admin-close" type="button">Закрыть голосование</button>
-  <div id="vote-admin-result" role="status" aria-live="polite"></div>
- </section>
+
 </main>
 <footer class="footer"><div class="container">© {new Date().getFullYear()} Андрей Шевцов · <a href="/">На главную</a></div></footer>
 <script define:vars={{endpoint}}>
 (()=>{
  const $=id=>document.getElementById(id);
- const admin=new URLSearchParams(location.search).has('manage');
- if(admin)$('vote-admin').classList.remove('vote-hidden');
+ if(new URLSearchParams(location.search).has('manage')){
+  location.replace('/vote/manage/');
+  return;
+ }
  const storageKey='singer-vote-guest-v1';
  let state=null,selected=new Set(),songs=[],saved=false;
  function setMessage(text){$('vote-message').textContent=text;$('vote-message').classList.remove('vote-hidden')}
@@ -100,8 +95,8 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   return result;
  }
  function updateButton(){
-  $('vote-send').disabled=selected.size!==3;
-  $('vote-send').textContent=saved?'Обновить мои голоса':selected.size===3?'Проголосовать за 3 песни':'Выбрано '+selected.size+' из 3';
+  $('vote-send').disabled=selected.size!==3||songs.length<3;
+  $('vote-send').textContent=songs.length<3?'Список песен пока недоступен':saved?'Обновить мои голоса':selected.size===3?'Проголосовать за 3 песни':'Выбрано '+selected.size+' из 3';
  }
  function render(){
   const query=$('vote-search').value.trim().toLocaleLowerCase('ru');
@@ -111,8 +106,10 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    const row=document.createElement('button');row.type='button';row.className='vote-option';
    row.setAttribute('aria-pressed',String(selected.has(song.id)));
    const mark=document.createElement('span');mark.className='check';mark.setAttribute('aria-hidden','true');mark.textContent=selected.has(song.id)?'✓':'';
-   const text=document.createElement('span'),name=document.createElement('strong'),artist=document.createElement('small');
-   name.textContent=song.name;artist.textContent=song.artist;text.append(name,artist);row.append(mark,text);
+   const text=document.createElement('span'),name=document.createElement('strong'),artist=document.createElement('small'),total=document.createElement('span');
+   text.className='vote-songtext';total.className='vote-count';total.textContent=(Number(song.votes)||0)+' голосов';
+   name.textContent=song.name;artist.textContent=song.artist;text.append(name,artist);row.append(mark,text,total);
+   row.dataset.voteId=song.id;
    row.addEventListener('click',()=>{
     if(selected.has(song.id))selected.delete(song.id);
     else if(selected.size<3)selected.add(song.id);
@@ -127,16 +124,28 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   try{
    const result=await api();
    state=result;
-   const active=Boolean(result.active)&&Array.isArray(result.songs)&&result.songs.length>=3;
+   const active=Boolean(result.active);
    $('vote-open').hidden=!active;$('vote-closed').hidden=active;
    $('vote-status').textContent=active?'● Голосование открыто':'Голосование неактивно';
    if(active){
-    const previous=songs.map(s=>s.id).join(',');
-    songs=result.songs;
-    const changedSession = window.__voteSessionId !== result.session.id;
+    const incoming=Array.isArray(result.songs)?result.songs:[];
+    const changedSession=window.__voteSessionId!==result.session.id;
     if(changedSession){selected.clear();saved=false;window.__voteSessionId=result.session.id;}
-    if(changedSession||previous!==songs.map(s=>s.id).join(','))render();
+    // Keep the current order stable while a guest is selecting three songs.
+    const incomingMap=new Map(incoming.map(song=>[song.id,song]));
+    const sameOrder=songs.length===incoming.length&&songs.every(song=>incomingMap.has(song.id));
+    songs=!changedSession&&selected.size>0&&!saved&&sameOrder?songs.map(song=>incomingMap.get(song.id)):incoming;
+    const DOMids=[...$('vote-songs').children].map(node=>node.dataset.voteId);
+    const orderedIds=songs.filter(song=>(song.name+' '+song.artist).toLocaleLowerCase('ru').includes($('vote-search').value.trim().toLocaleLowerCase('ru'))).map(song=>song.id);
+    if(changedSession||orderedIds.join('|')!==DOMids.join('|'))render();
+    else for(const song of songs){
+      const item=[...$('vote-songs').children].find(node=>node.dataset.voteId===song.id);
+      if(item){const count=item.querySelector('.vote-count');if(count)count.textContent=(Number(song.votes)||0)+' голосов';}
+    }
+    $('vote-voters').textContent=incoming.length<3?'Пока нет подходящей подборки песен. Проверьте её настройку.':
+      'Участников: '+(Number(result.voters)||0)+' · Лидеры голосования показаны первыми. Рейтинг обновляется автоматически.';
     $('vote-deadline').textContent='Приём голосов до '+new Date(result.session.ends_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (МСК)';
+    updateButton();
    }
   }catch{
    $('vote-status').textContent='Не удалось проверить голосование';
@@ -154,59 +163,8 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   }catch(e){setMessage('Не удалось отправить голос: '+e.message)}
   updateButton();
  });
- const pad=n=>String(n).padStart(2,'0');
- const localValue=date=>{
-  const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(date)).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
-  return parts.year+'-'+parts.month+'-'+parts.day+'T'+parts.hour+':'+parts.minute;
- };
- if(admin){
-  const now=Date.now();$('vote-start').value=localValue(now);$('vote-end').value=localValue(now+3*3600000);
- }
- function adminReport(result){
-  if(!result.session)return 'Сессий ещё нет';
-  const end=new Date(result.session.ends_at).toLocaleString('ru-RU');
-  const labels=new Map(songs.map(s=>[s.id,s.artist+' — '+s.name]));
-  return (result.session.enabled?'Включено':'Закрыто')+' · до '+end+' · участников: '+(result.ballots||0)+'\n'+
-   (result.results||[]).map((r,i)=>(i+1)+'. '+(labels.get(r.id)||r.id)+' — '+r.votes).join('\n');
- }
- async function manage(operation,extra={}){
-  const key=$('vote-key').value;
-  const target=$('vote-admin-result');target.textContent='Выполняется…';
-  try{
-   const result=await api({action:'admin',operation,...extra},key);
-   if(operation==='status'){target.textContent=adminReport(result);adminVerified=true;}
-   else {target.textContent=operation==='open'?'Голосование запланировано и включено':'Голосование закрыто';await refresh()}
-  }catch(e){target.textContent='Ошибка: '+e.message}
- }
- $('vote-admin-result').style.whiteSpace='pre-wrap';
- let adminVerified=false,adminRefreshing=false;
- async function refreshAdmin(){
-  if(!adminVerified||document.hidden||adminRefreshing)return;
-  adminRefreshing=true;
-  try{
-   const result=await api({action:'admin',operation:'status'},$('vote-key').value);
-   $('vote-admin-result').textContent=adminReport(result);
-  }catch{ adminVerified=false; }
-  finally{adminRefreshing=false}
- }
- setInterval(refreshAdmin,5000);
-
- $('vote-admin-check').addEventListener('click',()=>manage('status'));
- $('vote-admin-open').addEventListener('click',()=>{
-  const a=$('vote-start').value,b=$('vote-end').value;
-  if(!a||!b)return;
-  if(!confirm('Открыть новое голосование? Предыдущая активная сессия будет закрыта.'))return;
-  manage('open',{starts_at:new Date(a+':00+03:00').toISOString(),ends_at:new Date(b+':00+03:00').toISOString()});
- });
- $('vote-admin-close').addEventListener('click',async()=>{
-  try{
-   const result=await api({action:'admin',operation:'status'},$('vote-key').value);
-   if(!result.session){$('vote-admin-result').textContent='Активной сессии нет';return}
-   if(confirm('Закрыть текущее голосование?'))manage('close',{id:result.session.id});
-  }catch(e){$('vote-admin-result').textContent='Ошибка: '+e.message}
- });
  refresh();
- setInterval(refresh,15000);
+ setInterval(refresh,10000);
 })();
 </script>
 </body></html>
