@@ -96,6 +96,8 @@ assert.ok(!reviewApp.includes("row[6]===true&&row[9]===true"), 'Removed consent 
 assert.ok(home.includes('aria-label="Отзывы гостей" hidden'), 'Homepage reviews stay hidden until approved reviews arrive');
 assert.ok(home.includes('home-reviews-carousel') && home.includes('id="reviews-controls" hidden'), 'Carousel arrows must overlay cards only when scrolling is possible');
 assert.ok(vote.includes('vote-choice-hint') && vote.includes('Отправить голос'), 'Voting must have floating CTA and selection guidance');
+assert.ok(vote.includes("$('vote-actions').hidden=n===0") && !vote.includes("$('vote-actions').hidden=!active||n===0"), 'Selected songs must reveal the CTA even if poll is closed');
+assert.ok(vote.indexOf('id="vote-actions"')>vote.indexOf('</main>'), 'Fixed CTA must not be clipped by vote card overflow');
 assert.ok(vote.includes('voteLabel(song,total)') && vote.includes("if(!votes)return ''"), 'Zero votes must not display percentages');
 console.log('Finale voting, isolated test mode, editable ballots and reviews carousel checks passed.');
 
