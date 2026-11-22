@@ -229,7 +229,7 @@ Deno.serve(async req=>{
   const id=String(payload.session_id||""),voter=String(payload.voter_id||"");
   const ids=payload.song_ids;
   if(!/^[a-f0-9-]{36}$/.test(id)||!/^[a-f0-9-]{36}$/.test(voter)||!Array.isArray(ids)||
-     ids.length!==3||new Set(ids).size!==3||ids.some((x:unknown)=>typeof x!=="string"||!/^[a-f0-9]{16}$/.test(x))){
+     ids.length<1||ids.length>3||new Set(ids).size!==ids.length||ids.some((x:unknown)=>typeof x!=="string"||!/^[a-f0-9]{16}$/.test(x))){
     return json({error:"invalid_vote"},400,origin);
   }
   const eligible=new Set((await finalists()).map(s=>s.id));
