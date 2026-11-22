@@ -2,6 +2,7 @@ name: Verify finale voting proposal
 on:
   pull_request:
     paths:
+      - 'apps-script/**'
       - 'src/pages/vote/**'
       - 'src/pages/reviews/**'
       - 'src/data/reviews.ts'
@@ -24,6 +25,7 @@ jobs:
           node-version: '20'
       - run: npm install
       - run: npm run build
+      - run: node --check apps-script/Code.js
       - run: node .github/scripts/verify-voting.mjs
       - run: node .github/scripts/probe-live-voting.mjs
       - run: node .github/scripts/verify-contact-intents.mjs
