@@ -36,9 +36,12 @@ jobs:
           url="https://singer.andreway.ru/videos/-%20%D0%90%D0%BD%D0%B4%D1%80%D0%B5%D0%B9%20%D0%A8%D0%B5%D0%B2%D1%86%D0%BE%D0%B2%20-%20%D0%92%D0%B8%D0%B4%D0%B5%D0%BE%20%D0%B2%D1%8B%D1%81%D1%82%D1%83%D0%BF%D0%BB%D0%B5%D0%BD%D0%B8%D0%B9%20-%20web.mp4"
           response=$(curl -fsSI --connect-timeout 10 --max-time 25 "$url")
           echo "$response" | grep -qi 'content-type: video/mp4'
-          echo "$response" | grep -qi 'content-length: 62172472'
+          length=$(printf '%s\n' "$response" | sed -n 's/^[Cc]ontent-[Ll]ength: *\([0-9]*\).*/\1/p' | head -1 | tr -d '\r')
+          test "${length:-0}" -gt 1000000
+          test "$length" -lt 100000000
           curl -fsS -D /tmp/check-headers -o /tmp/check-range -H 'Range: bytes=0-1023' --connect-timeout 10 --max-time 25 "$url"
           grep -q '206' /tmp/check-headers
-          grep -qi 'content-range: bytes 0-1023/62172472' /tmp/check-headers
+          grep -qi "content-range: bytes 0-1023/$length" /tmp/check-headers
+          python3 -c "data=open('/tmp/check-range','rb').read();assert b'ftyp' in data[:40] and b'moov' in data[:1024], 'MP4 lacks faststart metadata'"
           test "$(wc -c < /tmp/check-range)" -eq 1024
           echo 'Optimized MP4 is reachable and supports 206 Partial Content.'
