@@ -98,9 +98,10 @@ Deno.serve(async req=>{
    const op=payload.operation;
    if(op==="status"){
     const {data,error}=await db.from("singer_vote_sessions").select("id,starts_at,ends_at,enabled,created_at")
-     .order("created_at",{ascending:false}).limit(1);
+     .order("created_at",{ascending:false}).limit(20);
     if(error)throw error;
-    const latest=data?.[0]||null;
+    const now=Date.now();
+    const latest=data?.find((session:any)=>session.enabled && Date.parse(session.starts_at)<=now && Date.parse(session.ends_at)>now) || data?.[0] || null;
     if(!latest)return json({session:null,results:[]},200,origin);
     const {data:ballots,error:ballotError}=await db.from("singer_vote_ballots").select("song_ids").eq("session_id",latest.id);
     if(ballotError)throw ballotError;
