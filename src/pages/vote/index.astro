@@ -285,7 +285,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
      if(bar)bar.hidden=!active;if(fill)fill.style.width=percent+'%';if(count)count.textContent=(Number(song.votes)||0)+' голосов · '+percent+'%';}
    }
    $('vote-voters').textContent=incoming.length<3?'Список финальных песен пока недоступен.':
-    active?'Проголосовали: '+(Number(result.voters)||0)+' · Песни с большинством голосов — сверху.':
+    active?(result.test_mode?'Пробных отправок: ':'Проголосовали: ')+(Number(result.voters)||0)+' · Песни с большинством голосов — сверху.':
      'Всего '+incoming.length+' финальных песен · Результаты появятся после начала голосования.';
    $('vote-deadline').textContent=active?'Приём голосов до '+new Date(result.session.ends_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (МСК)':'';
    updateButton();
