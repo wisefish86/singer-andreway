@@ -165,7 +165,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  }
  function updateButton(){
   const n=selected.size,active=Boolean(state?.active);
-  $('vote-actions').hidden=n===0;
+  $('vote-actions').hidden=n===0&&!pendingVote;
   const hint=n===1?'Можно выбрать ещё 2 песни':n===2?'Можно выбрать ещё 1 песню':n===3?'Вы выбрали все 3 песни':'';
   $('vote-choice-hint').textContent=active?hint:hint+(statusKnown?' · Голосование пока закрыто':' · Проверяем голосование…');
   $('vote-send').disabled=sending||(!pendingVote&&(n<1||n>3||songs.length<1||!active));
@@ -440,6 +440,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    setMessage('Есть голос без подтверждения. Нажмите «Проверить отправку», чтобы безопасно повторить попытку.');
   }
  }catch{}
+ updateButton();
  if(!restored)try{
   const cached=JSON.parse(localStorage.getItem(CATALOGUE_CACHE_KEY)||'null');
   if(cached&&Date.now()-cached.at<7*86400000)usePreview(cached.songs);
