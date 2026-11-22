@@ -95,7 +95,7 @@ const messageLinks = directChatLinks(contactMessages.feedback);
    const person=document.createElement('div');person.className='review-person';
    const avatar=document.createElement('img');avatar.className='review-avatar';avatar.width=66;avatar.height=66;
    avatar.loading='lazy';avatar.alt='Аватар автора отзыва';
-   const fallback=placeholder+(review.avatarType==='female'?'female.svg':'male.svg');
+   const fallback=review.avatarType==='female'?placeholder+'female.svg':review.avatarType==='male'?placeholder+'male.svg':'/reviews/placeholder-cat.svg';
    const safe=typeof review.avatar==='string'&&review.avatar.startsWith('https://singer.andreway.ru/reviews/uploads/')?review.avatar:'';
    avatar.src=safe||fallback;avatar.onerror=()=>{if(avatar.src!==new URL(fallback,location.origin).href)avatar.src=fallback;};
    const identity=document.createElement('div');
