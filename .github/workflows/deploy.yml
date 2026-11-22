@@ -45,6 +45,9 @@ jobs:
       - name: Verify booking and guest messenger message contexts
         run: node .github/scripts/verify-contact-intents.mjs
 
+      - name: Validate Apps Script syntax
+        run: node --check apps-script/Code.js
+
       - name: Verify finale voting and reviews
         run: node .github/scripts/verify-voting.mjs
 
