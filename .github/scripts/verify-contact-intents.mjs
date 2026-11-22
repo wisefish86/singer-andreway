@@ -20,6 +20,9 @@ for (const [kind, message] of Object.entries(expected)) {
 }
 const contact = home.match(/<div class="contact-socials"[^>]*>([\s\S]*?)<\/div>/)?.[1];
 assert.ok(contact, 'Booking contact area not found');
+assert.deepEqual([...contact.matchAll(/data-social-platform="([^"]+)"/g)].map(m=>m[1]), ['telegram','whatsapp','max'], 'Booking must offer only responsive messaging channels');
+assert.ok(!home.includes('data-social-platform="instagram"') && !home.includes('data-social-platform="vk"'), 'Do not promote unused social networks');
+assert.ok(!shared.includes('data-messenger="vk"') && !shared.includes('data-messenger="instagram"'), 'Popup must not include unused social networks');
 function fromTag(tag, attribute) {
   return tag.match(new RegExp('\\b' + attribute + '="([^"]*)"'))?.[1]
     ?.replace(/&amp;|&#38;/g, '&');
@@ -105,6 +108,8 @@ assert.ok(home.includes('id="guest-video-action"'), 'Missing video shortcut targ
 assert.ok(shared.includes("get('guest')==='video'"), 'Missing video QR shortcut');
 assert.ok(astro.includes('<ContactSheet />') && reviews.includes('<ContactSheet />'), 'Both pages must reuse the same popup');
 assert.ok(shared.includes('data-messenger="max"'), 'MAX must be present in shared popup');
+assert.ok(home.includes('Telegram-канал с афишей'), 'Keep the real Telegram channel subscription option');
+assert.ok(reviews.includes('data-template={contactMessages.feedback}'), 'Reviews CTA must pass feedback template');
 for (const message of [expected.video, expected.feedback, expected.song]) {
   assert.ok(home.includes('data-template="' + message + '"'), 'Guest template missing: ' + message);
 }
