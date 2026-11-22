@@ -1,11 +1,14 @@
-name: Prepare adaptive HLS video on existing hosting
+name: Automatically prepare adaptive HLS videos
 
 on:
+  schedule:
+    - cron: '17,47 * * * *'
   workflow_dispatch:
   push:
     branches: [main]
     paths:
       - '.github/workflows/prepare-hls.yml'
+      - '.github/scripts/auto-hls.py'
 
 concurrency:
   group: singer-video-hls
@@ -16,101 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install FFmpeg for encoding
+      - uses: actions/checkout@v4
+      - name: Install FFmpeg
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg
-      - name: Download currently published video from Google-managed snapshot
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p /tmp/hls-video
-          python3 - <<'PY'
-          import json,urllib.parse,urllib.request
-          data=json.load(urllib.request.urlopen('https://singer.andreway.ru/data/media.json',timeout=45))
-          videos=data.get('videos',[])
-          assert videos,'No published videos in Google-managed snapshot'
-          name=videos[0]['file']
-          assert name.lower().endswith('.mp4') and not any(x in name for x in ('/','\\','..')),'Invalid MP4 filename'
-          url='https://singer.andreway.ru/videos/'+urllib.parse.quote(name)
-          with urllib.request.urlopen(url,timeout=90) as response,open('/tmp/hls-video/source.mp4','wb') as output:
-            while True:
-              block=response.read(1024*1024)
-              if not block:break
-              output.write(block)
-          open('/tmp/hls-video/source-name.txt','w').write(name)
-          print('Downloaded published file:',repr(name))
-          PY
-          ffprobe -v error -show_entries format=duration,size:stream=codec_name,width,height,avg_frame_rate -of json /tmp/hls-video/source.mp4
-      - name: Create seekable 6-second HLS 720p and 480p variants
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p /tmp/hls-video/output/{720p,480p}
-          for variant in 720p 480p; do
-            if [ "$variant" = 720p ]; then height=1280; bitrate=1900k; maxrate=2300k; bufsize=4600k; audio=160k; else height=854; bitrate=750k; maxrate=950k; bufsize=1900k; audio=128k; fi
-            ffmpeg -nostdin -hide_banner -loglevel warning -stats -y \
-              -i /tmp/hls-video/source.mp4 -map 0:v:0 -map 0:a:0? \
-              -vf "scale=-2:$height:flags=bicubic,fps=30" \
-              -c:v libx264 -preset veryfast -b:v "$bitrate" -maxrate "$maxrate" -bufsize "$bufsize" \
-              -pix_fmt yuv420p -profile:v main -g 180 -keyint_min 180 -sc_threshold 0 \
-              -c:a aac -b:a "$audio" -ac 2 -ar 48000 \
-              -f hls -hls_time 6 -hls_list_size 0 -hls_playlist_type vod \
-              -hls_flags independent_segments -hls_segment_filename "/tmp/hls-video/output/$variant/segment_%04d.ts" \
-              "/tmp/hls-video/output/$variant/index.m3u8"
-          done
-          cat > /tmp/hls-video/output/master.m3u8 <<'M3U'
-          #EXTM3U
-          #EXT-X-VERSION:3
-          #EXT-X-STREAM-INF:BANDWIDTH=2450000,AVERAGE-BANDWIDTH=2100000,RESOLUTION=720x1280,FRAME-RATE=30.000,CODECS="avc1.4d401f,mp4a.40.2"
-          720p/index.m3u8
-          #EXT-X-STREAM-INF:BANDWIDTH=1100000,AVERAGE-BANDWIDTH=900000,RESOLUTION=480x854,FRAME-RATE=30.000,CODECS="avc1.4d401e,mp4a.40.2"
-          480p/index.m3u8
-          M3U
-          grep -q '#EXT-X-ENDLIST' /tmp/hls-video/output/720p/index.m3u8
-          grep -q '#EXT-X-ENDLIST' /tmp/hls-video/output/480p/index.m3u8
-      - name: Upload all segments and variant playlists to separate directory
-        shell: bash
+      - name: Refresh HLS for all new or changed published videos
         env:
+          FTP_HOST: andreway.ru
+          FTP_USER: andreway
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-        run: |
-          set -euo pipefail
-          cd /tmp/hls-video/output
-          find 720p 480p -type f -print0 | xargs -0 -P 6 -I '{}' sh -c '
-            curl --fail --silent --show-error --retry 3 --retry-delay 2 \
-              --user "andreway:$1" --ftp-create-dirs \
-              --upload-file "$2" "ftp://andreway.ru//www/singer.andreway.ru/videos/hls/performance/$2"
-          ' _ "$FTP_PASSWORD" '{}'
-          # Publish master only after all variants are fully uploaded.
-          curl --fail --silent --show-error --retry 3 --user "andreway:$FTP_PASSWORD" \
-            --upload-file master.m3u8 \
-            "ftp://andreway.ru//www/singer.andreway.ru/videos/hls/performance/master.m3u8"
-      - name: Verify HLS delivery and advertise only successfully uploaded stream
-        shell: bash
-        env:
-          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-        run: |
-          set -euo pipefail
-          root="https://singer.andreway.ru/videos/hls/performance"
-          for file in master.m3u8 720p/index.m3u8 480p/index.m3u8 720p/segment_0000.ts 480p/segment_0000.ts; do
-            curl --fail --retry 4 --retry-delay 3 --connect-timeout 10 --max-time 35 -o /tmp/verify-hls -sS "$root/$file"
-            test -s /tmp/verify-hls
-            echo "OK $file"
-          done
-          python3 - <<'PY'
-          import json
-          name=open('/tmp/hls-video/source-name.txt').read()
-          with open('/tmp/hls-video/hls.json','w') as f:
-            json.dump({'file':name,'url':'/videos/hls/performance/master.m3u8'},f,ensure_ascii=False)
-          PY
-          curl --fail --silent --show-error --retry 3 --user "andreway:$FTP_PASSWORD" \
-            --upload-file /tmp/hls-video/hls.json \
-            "ftp://andreway.ru//www/singer.andreway.ru/data/video-hls.json.tmp"
-          # Keep previous mapping until the replacement is fully prepared.
-          curl --fail --silent --show-error --user "andreway:$FTP_PASSWORD" \
-            --quote "RNFR /www/singer.andreway.ru/data/video-hls.json.tmp" \
-            --quote "RNTO /www/singer.andreway.ru/data/video-hls.json" \
-            "ftp://andreway.ru/" >/dev/null
-          echo "HLS stream advertised; original MP4 remains untouched."
+        run: python3 .github/scripts/auto-hls.py
