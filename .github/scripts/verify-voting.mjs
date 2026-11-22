@@ -5,6 +5,7 @@ const vote=readFileSync('src/pages/vote/index.astro','utf8');
 const admin=readFileSync('src/pages/vote/manage/index.astro','utf8');
 const reviews=readFileSync('src/pages/reviews/index.astro','utf8');
 const reviewApp=readFileSync('apps-script/Code.js','utf8');
+const contact=readFileSync('src/components/ContactSheet.astro','utf8');
 const scriptWorkflow=readFileSync('.github/workflows/deploy-apps-script.yml','utf8');
 const siteWorkflow=readFileSync('.github/workflows/deploy.yml','utf8');
 
@@ -41,8 +42,10 @@ assert.ok(backend.includes('getTally(db,data.id)'), 'Public API must return aggr
 assert.ok(grants.includes('grant select, insert, update, delete on public.singer_vote_sessions to service_role'), 'Missing required voting table permission fix');
 assert.ok(!grants.includes('to anon'), 'Vote tables must not be granted to anonymous clients');
 assert.ok(home.includes('href="/reviews/"'), 'Reviews page must be linked from home');
-assert.ok(reviews.includes('id="review-open-dialog"'), 'Reviews should have one CTA');
-assert.ok(reviews.includes('id="review-dialog"'), 'Review CTA must open messenger picker');
+assert.ok(reviews.includes('class="btn primary js-contact-sheet"'), 'Review button must use shared popup');
+assert.ok(reviews.includes('<ContactSheet />'), 'Reviews must use canonical popup component');
+assert.ok(home.includes('<ContactSheet />'), 'Homepage must use same popup component');
+assert.ok(contact.includes('data-messenger="max"') && contact.includes('data-messenger="telegram"') && contact.includes('data-messenger="whatsapp"'), 'Popup must have MAX Telegram WhatsApp');
 assert.ok(!reviews.includes('review-actions">\n   <a'), 'No duplicated messenger buttons in review CTA');
 assert.ok(reviews.includes('НЕ НАСТОЯЩИЙ ОТЗЫВ'), 'Demo card must be clearly marked');
 assert.ok(reviewData.includes('demo: true'), 'Demo review must never masquerade as a customer testimonial');
@@ -53,8 +56,16 @@ assert.ok(sql.includes('enable row level security'), 'RLS missing');
 
 assert.ok(vote.includes('<style is:global>'), 'Dynamically generated voting rows must receive CSS styles');
 assert.ok(vote.includes('vote-preview') && vote.includes('vote-player'), 'Voting should use inline song previews');
+assert.ok(vote.includes("const name=document.createElement('strong');"), 'Track title must be a local DOM node, not window.name');
+assert.ok(!vote.includes("info.className='vote-songtext',name="), 'Malformed comma declaration must never reappear');
+assert.ok(vote.includes('PAUSE_ICON') && vote.includes('PLAY_ICON'), 'Use vector playback icons');
+assert.ok(vote.includes('votes.hidden=!state?.active'), 'Hide vote-count placeholders outside event');
 assert.ok(backend.includes('preview_url'), 'Voting API should return public safe audio previews');
 assert.ok(reviewApp.includes('function publicReviews_()'), 'Reviews must come from the existing photo/video Sheet');
+assert.ok(reviewApp.includes("e.parameter.kind === 'vote-config'"), 'Sheet must expose safe manual voting schedule');
+assert.ok(reviewApp.includes('function publicVotingSchedule_()'), 'Sheet voting config must be validated');
+assert.ok(backend.includes('ensureManualSheetSession(db)'), 'Polls must open from Google Sheet controls');
+assert.ok(backend.includes('source_key:source'), 'Each sheet event must get a distinct voting session');
 assert.ok(reviewApp.includes('row[6]===true&&row[9]===true'), 'Only approved and consented testimonials may be published');
 assert.ok(reviewApp.includes("e.parameter.kind === 'reviews'"), 'Approved reviews endpoint must exist');
 assert.ok(reviews.includes('singerReviewsLoaded'), 'Review page must consume Sheet data');
