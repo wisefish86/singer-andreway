@@ -81,7 +81,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   <input id="vote-search" class="vote-search" type="search" placeholder="Название или исполнитель" autocomplete="off"/>
   <p id="vote-voters" class="vote-leaders" aria-live="polite">Результаты голосования обновляются автоматически.</p>
   <div id="vote-songs" class="vote-track-list" aria-label="Песни для голосования"></div>
-  <div class="vote-actions" id="vote-actions" hidden><p id="vote-choice-hint" class="vote-choice-hint" aria-live="polite"></p><button id="vote-send" class="btn primary" disabled type="button">Отправить голос</button></div>
+
   <div id="vote-message" class="vote-alert vote-hidden" role="status" aria-live="polite"></div>
   <p id="vote-deadline" class="vote-meta"></p>
  </section>
@@ -93,6 +93,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  </section>
 
 </main>
+<div class="vote-actions" id="vote-actions" hidden role="region" aria-label="Отправка выбранных песен"><p id="vote-choice-hint" class="vote-choice-hint" aria-live="polite"></p><button id="vote-send" class="btn primary" disabled type="button">Отправить голос</button></div>
 <div class="vote-player" id="vote-player" hidden role="region" aria-label="Прослушивание песни">
  <button id="vote-player-play" type="button" aria-label="Пауза"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></button>
  <div class="vote-player-name" id="vote-player-name">Прослушивание</div>
@@ -157,10 +158,11 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  }
  function updateButton(){
   const n=selected.size,active=Boolean(state?.active);
-  $('vote-actions').hidden=!active||n===0;
-  $('vote-choice-hint').textContent=n===1?'Можно выбрать ещё 2 песни':n===2?'Можно выбрать ещё 1 песню':n===3?'Вы выбрали все 3 песни':'';
+  $('vote-actions').hidden=n===0;
+  const hint=n===1?'Можно выбрать ещё 2 песни':n===2?'Можно выбрать ещё 1 песню':n===3?'Вы выбрали все 3 песни':'';
+  $('vote-choice-hint').textContent=active?hint:hint+' · Голосование пока закрыто';
   $('vote-send').disabled=n<1||n>3||songs.length<1||!active;
-  $('vote-send').textContent=state?.test_mode?'Отправить пробный голос':saved?'Обновить мой голос':'Отправить голос';
+  $('vote-send').textContent=!active?'Голосование пока закрыто':state?.test_mode?'Отправить пробный голос':saved?'Обновить мой голос':'Отправить голос';
  }
  const voteLabel=(song,total)=>{
   const votes=Math.max(0,Number(song.votes)||0);
