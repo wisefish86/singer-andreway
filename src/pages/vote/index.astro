@@ -45,7 +45,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
 .vote-tally{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--muted);font-size:.86rem;margin:20px 0 10px;flex-wrap:wrap}
 .vote-tally strong{color:var(--accent2);font-variant-numeric:tabular-nums}
 .vote-leaders{color:var(--muted);font-size:.84rem;margin-bottom:14px}
-.vote-actions{position:sticky;bottom:0;padding:18px 0 8px;background:linear-gradient(transparent,#081522 19%);z-index:2}
+.vote-actions{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 24px),760px);box-sizing:border-box;padding:12px 14px;border:1px solid rgba(232,193,113,.42);border-radius:17px;background:rgba(12,27,40,.97);box-shadow:0 12px 35px #0009;backdrop-filter:blur(16px);z-index:20}.vote-actions[hidden]{display:none!important}.vote-choice-hint{font-size:.82rem;text-align:center;color:var(--muted);margin:0 0 9px}.vote-choice-hint strong{color:var(--accent2)}body:has(.vote-player:not([hidden])) .vote-actions{bottom:82px}
 .vote-actions .btn{width:100%;justify-content:center;min-height:54px;border-radius:13px;font-weight:800}
 .vote-actions .btn:disabled{opacity:.56;cursor:not-allowed}
 .vote-meta{color:var(--muted);font-size:.84rem;line-height:1.55;margin:9px 0}
@@ -81,7 +81,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   <input id="vote-search" class="vote-search" type="search" placeholder="Название или исполнитель" autocomplete="off"/>
   <p id="vote-voters" class="vote-leaders" aria-live="polite">Результаты голосования обновляются автоматически.</p>
   <div id="vote-songs" class="vote-track-list" aria-label="Песни для голосования"></div>
-  <div class="vote-actions"><button id="vote-send" class="btn primary" disabled type="button">Выберите 3 песни</button></div>
+  <div class="vote-actions" id="vote-actions" hidden><p id="vote-choice-hint" class="vote-choice-hint" aria-live="polite"></p><button id="vote-send" class="btn primary" disabled type="button">Отправить голос</button></div>
   <div id="vote-message" class="vote-alert vote-hidden" role="status" aria-live="polite"></div>
   <p id="vote-deadline" class="vote-meta"></p>
  </section>
@@ -156,9 +156,18 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   return result;
  }
  function updateButton(){
-  $('vote-send').disabled=selected.size<1||selected.size>3||songs.length<1||!state?.active;
-  $('vote-send').textContent=songs.length<1?'Список песен пока недоступен':!state?.active?'Голосование пока закрыто':selected.size<1?'Выберите от 1 до 3 песен':state.test_mode?'Тестовый голос ('+selected.size+' из 3) · отправить':saved?'Обновить мой выбор':'Проголосовать ('+selected.size+' из 3)';
+  const n=selected.size,active=Boolean(state?.active);
+  $('vote-actions').hidden=!active||n===0;
+  $('vote-choice-hint').textContent=n===1?'Можно выбрать ещё 2 песни':n===2?'Можно выбрать ещё 1 песню':n===3?'Вы выбрали все 3 песни':'';
+  $('vote-send').disabled=n<1||n>3||songs.length<1||!active;
+  $('vote-send').textContent=state?.test_mode?'Отправить пробный голос':saved?'Обновить мой голос':'Отправить голос';
  }
+ const voteLabel=(song,total)=>{
+  const votes=Math.max(0,Number(song.votes)||0);
+  if(!votes)return '';
+  if(total<5)return votes+' '+(votes===1?'голос':votes<5?'голоса':'голосов');
+  return Math.min(100,Math.round(votes/total*100))+'% ('+votes+')';
+ };
  const audio=$('vote-audio');
  let playingId=null;
  const previewUrl=song=>{
@@ -223,17 +232,17 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    });
    row.append(selector);
    const votes=document.createElement('span');votes.className='vote-count';
-   votes.hidden=!state?.active;
+   votes.hidden=!state?.active||!(Number(song.votes)>0);
    const total=Math.max(0,Number(state?.voters)||0);
    const percent=total>0?Math.min(100,Math.round((Number(song.votes)||0)/total*100)):0;
-   votes.textContent=(Number(song.votes)||0)+' голосов · '+percent+'%';row.append(votes);
+   votes.textContent=voteLabel(song,total);row.append(votes);
    const listen=document.createElement('button');listen.type='button';listen.className='vote-preview';
    listen.dataset.songId=song.id;listen.dataset.songName=song.name;listen.innerHTML=PLAY_ICON;
    const hasPreview=Boolean(previewUrl(song));listen.disabled=!hasPreview;
    listen.setAttribute('aria-label',hasPreview?'Прослушать: '+song.name:'Аудиофрагмент недоступен: '+song.name);
    listen.setAttribute('aria-pressed','false');
    listen.addEventListener('click',()=>playPreview(song));row.append(listen);
-   const bar=document.createElement('div');bar.className='vote-progress';bar.hidden=!state?.active;
+   const bar=document.createElement('div');bar.className='vote-progress';bar.hidden=!state?.active||!(Number(song.votes)>0);
    const fill=document.createElement('div');fill.className='vote-progress-fill';
    fill.style.width=percent+'%';bar.append(fill);
    row.append(bar);
@@ -278,14 +287,14 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    if(changedSession||orderedIds.join('|')!==DOMids.join('|'))render();
    else for(const song of songs){
     const item=[...$('vote-songs').children].find(node=>node.dataset.voteId===song.id);
-    if(item){const count=item.querySelector('.vote-count');if(count){count.hidden=!active;}
+    if(item){const count=item.querySelector('.vote-count');if(count){count.hidden=!active||!(Number(song.votes)>0);}
      const bar=item.querySelector('.vote-progress'),fill=item.querySelector('.vote-progress-fill');
      const total=Number(result.voters)||0;
      const percent=total>0?Math.min(100,Math.round((Number(song.votes)||0)/total*100)):0;
-     if(bar)bar.hidden=!active;if(fill)fill.style.width=percent+'%';if(count)count.textContent=(Number(song.votes)||0)+' голосов · '+percent+'%';}
+     if(bar)bar.hidden=!active||!(Number(song.votes)>0);if(fill)fill.style.width=percent+'%';if(count)count.textContent=voteLabel(song,total);}
    }
    $('vote-voters').textContent=incoming.length<3?'Список финальных песен пока недоступен.':
-    active?(result.test_mode?'Пробных отправок: ':'Проголосовали: ')+(Number(result.voters)||0)+' · Песни с большинством голосов — сверху.':
+    active?(Number(result.voters)>0?'Песни с большинством голосов — сверху.':'Пока нет голосов — станьте первым!'):
      'Всего '+incoming.length+' финальных песен · Результаты появятся после начала голосования.';
    $('vote-deadline').textContent=active?'Приём голосов до '+new Date(result.session.ends_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (МСК)':'';
    updateButton();
