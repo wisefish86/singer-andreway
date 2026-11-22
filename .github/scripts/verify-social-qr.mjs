@@ -31,3 +31,10 @@ assert.ok(source.includes('drawRoundedQr(socialQr, webUrl'),
 assert.ok(source.includes("if (isMobileDevice()"),
   'Mobile should follow the normal link without forcing a desktop QR');
 console.log('Shared desktop QR checked for Telegram, WhatsApp, MAX, VK and Instagram');
+
+// Mobile media reliability and sticky-header anchor regressions.
+const media = readFileSync(new URL('../../public/js/media-gallery.js', import.meta.url), 'utf8');
+const styles = readFileSync(new URL('../../src/styles/global.css', import.meta.url), 'utf8');
+assert.ok(media.includes("player.preload='metadata'"), 'Video must not eagerly download an entire clip before playback');
+assert.ok(media.includes("player.addEventListener('waiting',showBuffering)") && media.includes("player.addEventListener('error',"), 'Video must explain buffering and network errors');
+assert.ok(styles.includes('section[id]{scroll-margin-top:82px}') && styles.includes('scroll-padding-top:82px'), 'Section anchors must clear the sticky header');
