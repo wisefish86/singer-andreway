@@ -107,7 +107,12 @@ Deno.serve(async req=>{
     .eq("enabled",true).lte("starts_at",new Date().toISOString()).gt("ends_at",new Date().toISOString())
     .order("starts_at",{ascending:false}).limit(1).maybeSingle();
    if(error)throw error;
-   if(!data)return json({active:false},200,origin);
+   // The public catalogue is always available for preview even outside an event.
+   // Only active sessions expose vote counts or accept ballots.
+   if(!data){
+    const songs=await finalists();
+    return json({active:false,songs:songs.map(song=>({...song,votes:0})),voters:0,catalogue_ready:songs.length>=3},200,origin);
+   }
    const songs=await finalists();
    const tally=await getTally(db,data.id);
    return json({active:true,session:{id:data.id,ends_at:data.ends_at},songs:songs.map(song=>({...song,votes:tally.counts[song.id]||0}))
