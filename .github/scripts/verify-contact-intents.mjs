@@ -5,6 +5,8 @@ import { runInNewContext } from 'node:vm';
 const home = readFileSync(new URL('../../dist/index.html', import.meta.url), 'utf8');
 const astro = readFileSync(new URL('../../src/pages/index.astro', import.meta.url), 'utf8');
 const config = readFileSync(new URL('../../src/config/contact-links.ts', import.meta.url), 'utf8');
+const shared = readFileSync(new URL('../../src/components/ContactSheet.astro', import.meta.url), 'utf8');
+const reviews = readFileSync(new URL('../../src/pages/reviews/index.astro', import.meta.url), 'utf8');
 
 const expected = {
   event: 'Здравствуйте, Андрей! Хочу обсудить выступление на моём мероприятии.',
@@ -43,7 +45,7 @@ for (const platform of ['telegram', 'whatsapp']) {
 }
 
 // Exercise the exact guest sheet script, not just string-search the markup.
-const inline = astro.match(/<script is:inline data-contact-sheet-script>([\s\S]*?)<\/script>/)?.[1];
+const inline = shared.match(/<script is:inline>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(inline, 'Guest contact handler missing');
 const telegram = {
   dataset: {
@@ -61,6 +63,10 @@ const sheet = {
   querySelector(selector) {
     if (selector === '[data-messenger="telegram"]') return telegram;
     if (selector === '[data-messenger="whatsapp"]') return whatsapp;
+    if (selector === '#sheet-title') return byId['sheet-title'];
+    if (selector === '#sheet-copy') return byId['sheet-copy'];
+    if (selector === '#sheet-repertoire') return byId['sheet-repertoire'];
+    if (selector === '.sheet-close') return {addEventListener() {}};
     return null;
   },
   showModal() { this.opened = true; },
@@ -76,7 +82,7 @@ const document = {
   getElementById: id => byId[id],
   querySelectorAll: () => triggers
 };
-runInNewContext(inline, { document, encodeURIComponent, decodeURIComponent });
+runInNewContext(inline, { document, encodeURIComponent, decodeURIComponent, URLSearchParams, location:{search:'',hash:''} });
 for (const trigger of triggers) {
   trigger.click();
   const message = trigger.dataset.template;
@@ -89,8 +95,10 @@ const selected = [...home.matchAll(/data-title="(Отправить видео|�
 assert.equal(selected.length, 3, 'Guest action buttons missing');
 assert.deepEqual(selected.map(match => match[1]), ['Заказать песню', 'Отправить видео', 'Сказать пару слов'], 'Guest button order');
 assert.ok(home.includes('id="guest-video-action"'), 'Missing video shortcut target');
-assert.ok(astro.includes("get('guest') === 'video'"), 'Missing video QR shortcut');
+assert.ok(shared.includes("get('guest')==='video'"), 'Missing video QR shortcut');
+assert.ok(astro.includes('<ContactSheet />') && reviews.includes('<ContactSheet />'), 'Both pages must reuse the same popup');
+assert.ok(shared.includes('data-messenger="max"'), 'MAX must be present in shared popup');
 for (const message of [expected.video, expected.feedback, expected.song]) {
   assert.ok(home.includes('data-template="' + message + '"'), 'Guest template missing: ' + message);
 }
-console.log('Contact intent links passed: event booking and all guest messages in both messengers.');
+console.log('Shared popup and contact intent links passed: Telegram, WhatsApp and MAX available on both pages.');
