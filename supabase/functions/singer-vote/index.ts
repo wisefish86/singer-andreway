@@ -92,6 +92,53 @@ async function ensureCalendarSessions(db:any){
   console.warn("Public calendar unavailable",e instanceof Error?e.message:"unknown");
  }
 }
+// Explicitly private Google Sheet controls manual sessions. The web app exposes
+// only dates and a boolean, never the spreadsheet itself or the admin secret.
+const VOTE_CONFIG_URL="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec?kind=vote-config";
+let scheduleCache:{until:number;config:{enabled:boolean;start?:string;end?:string}}|null=null;
+async function manualSchedule(){
+ if(scheduleCache&&scheduleCache.until>Date.now())return scheduleCache.config;
+ const response=await fetch(VOTE_CONFIG_URL,{redirect:"follow",cache:"no-store",signal:AbortSignal.timeout(9500)});
+ if(!response.ok)throw new Error("vote_sheet_unavailable");
+ const data=await response.json();
+ const config:{enabled:boolean;start?:string;end?:string}={enabled:false};
+ if(data?.enabled===true){
+  const start=Date.parse(data.start),end=Date.parse(data.end);
+  if(Number.isFinite(start)&&Number.isFinite(end)&&end>start&&end-start<=12*3600000&&
+   end>Date.now()&&start<Date.now()+60*86400000){
+    config.enabled=true;config.start=new Date(start).toISOString();config.end=new Date(end).toISOString();
+  }
+ }
+ scheduleCache={until:Date.now()+20000,config};
+ return config;
+}
+async function ensureManualSheetSession(db:any){
+ let config:{enabled:boolean;start?:string;end?:string};
+ try{config=await manualSchedule();}
+ catch(e){
+  // Outages fail closed for manual sessions, without affecting public calendar events.
+  console.warn("Voting Sheet settings unavailable",e instanceof Error?e.message:"unknown");
+  config={enabled:false};
+ }
+ const source=config.enabled?"sheet:"+config.start:null;
+ const {data,error}=await db.from("singer_vote_sessions")
+  .select("id,source_key,enabled,starts_at,ends_at").like("source_key","sheet:%").eq("enabled",true).limit(100);
+ if(error)throw error;
+ for(const old of data||[]){
+  if(old.source_key!==source){
+   const {error:closeError}=await db.from("singer_vote_sessions").update({enabled:false}).eq("id",old.id);
+   if(closeError)throw closeError;
+  }
+ }
+ if(!config.enabled||!source)return;
+ const current=(data||[]).find((x:any)=>x.source_key===source);
+ if(current&&current.starts_at===config.start&&current.ends_at===config.end)return;
+ const {error:upsertError}=await db.from("singer_vote_sessions").upsert({
+  title:"Голосование вечера",source_key:source,starts_at:config.start,
+  ends_at:config.end,enabled:true
+ },{onConflict:"source_key"});
+ if(upsertError)throw upsertError;
+}
 async function authorized(req:Request,db:any):Promise<boolean>{
  const supplied=(req.headers.get("authorization")||"").replace(/^Bearer\s+/i,"");
  if(supplied.length<32||supplied.length>256)return false;
@@ -110,6 +157,7 @@ Deno.serve(async req=>{
   const db=dbClient();
   if(req.method==="GET"){
    await ensureCalendarSessions(db);
+   await ensureManualSheetSession(db);
    const {data,error}=await db.from("singer_vote_sessions").select("id,starts_at,ends_at")
     .eq("enabled",true).lte("starts_at",new Date().toISOString()).gt("ends_at",new Date().toISOString())
     .order("starts_at",{ascending:false}).limit(1).maybeSingle();
