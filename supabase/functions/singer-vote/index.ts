@@ -135,7 +135,8 @@ Deno.serve(async req=>{
     if(ballotError)throw ballotError;
     const counts=new Map<string,number>();
     for(const b of ballots||[])for(const id of b.song_ids)counts.set(id,(counts.get(id)||0)+1);
-    return json({session:latest,ballots:ballots?.length||0,results:[...counts].map(([id,votes])=>({id,votes})).sort((a,b)=>b.votes-a.votes)},200,origin);
+    const songNames=await finalists().catch(()=>[]);
+    return json({session:latest,ballots:ballots?.length||0,songs:songNames,results:[...counts].map(([id,votes])=>({id,votes})).sort((a,b)=>b.votes-a.votes)},200,origin);
    }
    if(op==="close"){
     if(typeof payload.id!=="string")return json({error:"invalid_id"},400,origin);
