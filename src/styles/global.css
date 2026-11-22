@@ -34,7 +34,6 @@ img{display:block;max-width:100%}
 .icon-btn .brand-svg{display:block;flex:none;position:relative;top:0;left:0}
 /* Optical alignment of the actual glyphs, not just their SVG boxes. */
 .social-mini .icon-btn[aria-label="Telegram-канал"] .brand-svg{transform:translate(1px,-1px)}
-.social-mini .icon-btn[aria-label="Instagram"] .brand-svg{transform:translate(0,-1px)}
 .brand-icon{width:19px;height:19px;display:block;object-fit:contain}
 .contact-brand{width:22px;height:22px}
 .ui-icon{display:block;flex:0 0 auto}
@@ -138,7 +137,7 @@ linear-gradient(145deg,#17334a,#08121b 72%)}
 .stay-connected{margin-top:22px;padding-top:20px;border-top:1px solid rgba(255,255,255,.10)}
 .stay-title{font-size:1.05rem;font-weight:800}
 .stay-copy{margin-top:5px;color:var(--muted);font-size:.82rem}
-.stay-links{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.stay-links{display:grid;grid-template-columns:1fr;gap:9px;margin-top:12px}
 .stay-links a{min-height:64px;border:1px solid var(--line);border-radius:14px;padding:11px 12px;display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(255,255,255,.025)}
 .stay-links span{display:grid;gap:2px;text-align:left}
 .stay-links strong{font-size:.82rem}
