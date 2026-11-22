@@ -12,7 +12,7 @@ type Song={id:string;name:string;artist:string;preview_url:string};
 let songCache: {until:number;songs:Song[]} | null = null;
 async function finalists():Promise<Song[]>{
  if(songCache && songCache.until > Date.now())return songCache.songs;
- const response = await fetch(SITE + "/data/repertoire.public.json", {signal:AbortSignal.timeout(8000),cache:"no-store"});
+ const response = await fetch(SITE + "/data/repertoire.public.json", {signal:AbortSignal.timeout(3800),cache:"no-store"});
  if(!response.ok) throw new Error("catalogue_unavailable");
  const data=await response.json();
  if(!Array.isArray(data.songs))throw new Error("catalogue_invalid");
@@ -65,7 +65,7 @@ const CALENDAR = "https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58
 let calendarCache: {until:number;windows:{start:string;end:string}[]} | null = null;
 async function currentPublicWindows(){
  if(calendarCache && calendarCache.until>Date.now())return calendarCache.windows;
- const response=await fetch(CALENDAR,{signal:AbortSignal.timeout(8000),cache:"no-store"});
+ const response=await fetch(CALENDAR,{signal:AbortSignal.timeout(1600),cache:"no-store"});
  if(!response.ok)throw new Error("calendar_unavailable");
  const data=await response.json();
  const windows=Array.isArray(data.windows)?data.windows.flatMap((w:{start:string;end:string})=>{
@@ -74,7 +74,7 @@ async function currentPublicWindows(){
   if(!Number.isFinite(start)||!Number.isFinite(end)||end<=start||end-start>12*3600000)return [];
   return [{start:new Date(start).toISOString(),end:new Date(end).toISOString()}];
  }):[];
- calendarCache={until:Date.now()+60000,windows};
+ calendarCache={until:Date.now()+120000,windows};
  return windows;
 }
 async function ensureCalendarSessions(db:any){
@@ -98,7 +98,7 @@ const VOTE_CONFIG_URL="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx
 let scheduleCache:{until:number;config:{enabled:boolean;start?:string;end?:string}}|null=null;
 async function manualSchedule(){
  if(scheduleCache&&scheduleCache.until>Date.now())return scheduleCache.config;
- const response=await fetch(VOTE_CONFIG_URL,{redirect:"follow",cache:"no-store",signal:AbortSignal.timeout(9500)});
+ const response=await fetch(VOTE_CONFIG_URL,{redirect:"follow",cache:"no-store",signal:AbortSignal.timeout(1600)});
  if(!response.ok)throw new Error("vote_sheet_unavailable");
  const data=await response.json();
  const config:{enabled:boolean;start?:string;end?:string}={enabled:false};
@@ -109,16 +109,16 @@ async function manualSchedule(){
     config.enabled=true;config.start=new Date(start).toISOString();config.end=new Date(end).toISOString();
   }
  }
- scheduleCache={until:Date.now()+20000,config};
+ scheduleCache={until:Date.now()+30000,config};
  return config;
 }
 async function ensureManualSheetSession(db:any){
  let config:{enabled:boolean;start?:string;end?:string};
  try{config=await manualSchedule();}
  catch(e){
-  // Outages fail closed for manual sessions, without affecting public calendar events.
+  // A temporary Sheet outage must not cancel an explicitly enabled live event.
   console.warn("Voting Sheet settings unavailable",e instanceof Error?e.message:"unknown");
-  config={enabled:false};
+  return;
  }
  const source=config.enabled?"sheet:"+config.start:null;
  const {data,error}=await db.from("singer_vote_sessions")
@@ -156,8 +156,8 @@ Deno.serve(async req=>{
  try{
   const db=dbClient();
   if(req.method==="GET"){
-   await ensureCalendarSessions(db);
-   await ensureManualSheetSession(db);
+   // Check both schedule sources concurrently; never serially wait for Google twice.
+   await Promise.allSettled([ensureCalendarSessions(db),ensureManualSheetSession(db)]);
    const {data,error}=await db.from("singer_vote_sessions").select("id,starts_at,ends_at")
     .eq("enabled",true).lte("starts_at",new Date().toISOString()).gt("ends_at",new Date().toISOString())
     .order("starts_at",{ascending:false}).limit(1).maybeSingle();
