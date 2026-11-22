@@ -38,3 +38,7 @@ jobs:
       - name: Push to existing Apps Script
         working-directory: apps-script
         run: clasp push --force
+      - name: Update existing public web app deployment (preserves URL)
+        working-directory: apps-script
+        run: clasp deploy --deploymentId AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg --description "Approved reviews API, same existing deployment"
+
