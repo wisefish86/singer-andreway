@@ -22,10 +22,10 @@ assert.ok(home.includes('data-voting-visibility'), 'Homepage must check server p
 assert.ok(vote.includes('Голосование пока закрыто'), 'Closed state missing');
 assert.ok(vote.includes('1 000 ₽'), 'Paid ordering information missing');
 assert.ok(vote.includes('song_ids:[...selected]'), 'Three-song ballot missing');
-assert.ok(vote.includes('selected.size!==3'), 'Exactly three songs required');
+assert.ok(vote.includes('selected.size<1||selected.size>3'), 'Allow 1–3 songs and reject empty selection');
 assert.ok(backend.includes('return json({active:false,songs:'), 'Inactive polls must return preview catalogue');
 assert.ok(vote.includes("const incoming=Array.isArray(result.songs)?result.songs:[]"), 'Closed catalogue must still populate song list');
-assert.ok(vote.includes("selected.size!==3||songs.length<3||!state?.active"), 'Ballot submission must stay disabled outside active sessions');
+assert.ok(vote.includes("selected.size<1||selected.size>3||songs.length<1||!state?.active"), 'Ballot requires at least one song and an active session');
 assert.ok(backend.includes('enabled:true'), 'Explicit admin activation missing');
 assert.ok(backend.includes('singer_vote_admin'), 'Admin authentication missing');
 assert.ok(backend.includes('playlist_variants'), 'Eligible songs must come from existing catalogue');
@@ -50,6 +50,10 @@ assert.ok(!reviews.includes('review-actions">\n   <a'), 'No duplicated messenger
 assert.ok(reviews.includes('НЕ НАСТОЯЩИЙ ОТЗЫВ'), 'Demo card must be clearly marked');
 assert.ok(reviewData.includes('demo: true'), 'Demo review must never masquerade as a customer testimonial');
 assert.ok(backend.includes('singer_cast_vote'), 'Atomic ballot submission missing');
+assert.ok(backend.includes('ids.length<1||ids.length>3||new Set(ids).size!==ids.length'), 'Server must accept 1–3 distinct songs');
+const oneToThree=readFileSync('supabase/migrations/20261122180000_singer_vote_one_to_three.sql','utf8');
+assert.ok(oneToThree.includes('cardinality(p_song_ids) not between 1 and 3'), 'Database must accept 1–3 songs');
+assert.ok(oneToThree.includes('do update set song_ids = excluded.song_ids'), 'Re-voting must replace rather than accumulate the ballot');
 assert.ok(sql.includes('enabled boolean not null default false'), 'Database default must remain closed');
 assert.ok(sql.includes('primary key (session_id, voter_hash)'), 'One ballot per guest must be enforced');
 assert.ok(sql.includes('enable row level security'), 'RLS missing');
