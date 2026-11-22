@@ -97,6 +97,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  $('vm-start').value=moscow(Date.now());
  $('vm-end').value=moscow(Date.now()+3*3600000);
  function showTally(data){
+  if(Array.isArray(data.songs))names=new Map(data.songs.map(song=>[song.id,song.artist+' — '+song.name]));
   const session=data.session;
   sessionId=session?.id||null;
   const currentlyOpen=session?.enabled&&Date.parse(session.starts_at)<=Date.now()&&Date.parse(session.ends_at)>Date.now();
