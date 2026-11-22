@@ -540,7 +540,7 @@ const repertoireUrl = '/podborka/';
  const append=(p,tag,cls,value)=>{const n=document.createElement(tag);n.className=cls||'';n.textContent=String(value||'');p.append(n);return n};
  const controls=()=>{const overflow=track.scrollWidth>track.clientWidth+2;document.getElementById('reviews-controls').hidden=!overflow;back.disabled=track.scrollLeft<2;forward.disabled=track.scrollLeft>=track.scrollWidth-track.clientWidth-2};
  window.singerReviewsLoaded=payload=>{
-  const reviews=Array.isArray(payload?.reviews)?payload.reviews:[];if(!reviews.length)return;
+  const reviews=Array.isArray(payload?.reviews)?payload.reviews:[];if(!reviews.length){track.replaceChildren();section.hidden=true;return;}
   track.replaceChildren();
   for(const r of reviews.slice(0,10)){
    const card=document.createElement('article');card.className='home-review';
@@ -556,7 +556,20 @@ const repertoireUrl = '/podborka/';
  back.addEventListener('click',()=>track.scrollBy({left:-Math.max(260,track.clientWidth*.8),behavior:'smooth'}));
  forward.addEventListener('click',()=>track.scrollBy({left:Math.max(260,track.clientWidth*.8),behavior:'smooth'}));
  track.addEventListener('scroll',controls,{passive:true});window.addEventListener('resize',controls);
- const src=document.createElement('script');src.async=true;src.src='https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec?kind=reviews&callback=singerReviewsLoaded';document.head.append(src);
+ // Show the last approved public snapshot immediately, then refresh from our own domain.
+ const cacheKey='singer-public-reviews-v1';
+ try{
+  const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+  if(cached&&Date.now()-cached.savedAt<86400000&&Array.isArray(cached.data?.reviews))window.singerReviewsLoaded(cached.data);
+ }catch{}
+ fetch('/data/reviews.json',{cache:'no-cache'})
+  .then(response=>{if(!response.ok)throw Error('reviews_unavailable');return response.json()})
+  .then(data=>{
+   if(!Array.isArray(data?.reviews))throw Error('invalid_reviews');
+   window.singerReviewsLoaded(data);
+   try{localStorage.setItem(cacheKey,JSON.stringify({savedAt:Date.now(),data}))}catch{}
+  })
+  .catch(()=>{});
 })();
 </script>
 </body>
