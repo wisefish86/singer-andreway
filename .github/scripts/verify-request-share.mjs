@@ -50,6 +50,8 @@ for(const purpose of ['wishes','order']){
  assert.equal(nativeTg.searchParams.get('url'),link);
  assert.equal(nativeTg.searchParams.get('text'),tg.searchParams.get('text'));
  assert.ok(!nativeTg.searchParams.get('text').includes('поделиться впечатлениями'));
+ assert.ok(!nativeTg.searchParams.get('text').includes(link), 'Playlist URL belongs to Telegram share URL, not duplicated in its message');
+ assert.ok(nativeTg.searchParams.get('text').includes('Мероприятие: Юбилей'), 'Telegram must preserve correct event context');
  const nativeWa=new URL(result.whatsappApp);
  assert.equal(nativeWa.protocol,'whatsapp:');
  assert.equal(nativeWa.searchParams.get('phone'),'79181142693');
