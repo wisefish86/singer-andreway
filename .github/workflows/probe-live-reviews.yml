@@ -1,0 +1,19 @@
+name: Check public reviews API
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/probe-live-reviews.mjs'
+      - '.github/workflows/probe-live-reviews.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node .github/scripts/probe-live-reviews.mjs
