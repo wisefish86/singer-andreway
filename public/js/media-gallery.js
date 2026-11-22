@@ -8,7 +8,28 @@
   let photos=[],videos=[];
   let activeHls=null, playerGeneration=0, hlsScriptPromise=null;
   const videoDebug=new URLSearchParams(location.search).has('video-debug');
-  const reportVideoSource=(player,message)=>{if(player._videoDebugOutput)player._videoDebugOutput.textContent='Видео: '+message;};
+  const VIDEO_LOG_KEY='andrey-video-debug-v1';
+  let videoLog=[];
+  if(videoDebug)try{
+    const old=JSON.parse(localStorage.getItem(VIDEO_LOG_KEY)||'[]');
+    if(Array.isArray(old))videoLog=old.filter(entry=>entry&&Date.now()-Date.parse(entry.at)<7*86400000).slice(-120);
+  }catch{}
+  function recordVideoEvent(player,kind,detail=''){
+    if(!videoDebug)return;
+    const entry={
+      at:new Date().toISOString(),
+      event:String(kind).slice(0,32),
+      detail:String(detail).slice(0,160),
+      second:Number.isFinite(player?.currentTime)?Math.round(player.currentTime):null
+    };
+    videoLog.push(entry);
+    videoLog=videoLog.slice(-120);
+    try{localStorage.setItem(VIDEO_LOG_KEY,JSON.stringify(videoLog));}catch{}
+  }
+  const reportVideoSource=(player,message)=>{
+    if(player._videoDebugOutput)player._videoDebugOutput.textContent='Видео: '+message;
+    recordVideoEvent(player,'source',message);
+  };
   function clearStream(){
     playerGeneration++;
     if(activeHls){activeHls.destroy();activeHls=null;}
@@ -44,8 +65,11 @@
         const response=await fetch('/data/video-hls.json',{cache:'no-cache',signal:controller.signal});
         if(!response.ok)throw Error('HLS mapping missing');
         const mapping=await response.json();
-        if(mapping?.file===item.file&&/^\/videos\/hls\/[a-z0-9/_-]+\.m3u8$/i.test(mapping.url)){
-          manifest=mapping.url;
+        const configured=Array.isArray(mapping?.videos)
+          ? mapping.videos.find(entry=>entry?.file===item.file)
+          : mapping?.file===item.file?mapping:null;
+        if(configured&&/^\/videos\/hls\/[a-z0-9/_-]+\.m3u8$/i.test(configured.url)){
+          manifest=configured.url;
         }
       }finally{clearTimeout(limit);}
     }catch(e){}
@@ -72,7 +96,9 @@
       reportVideoSource(player,'HLS · hls.js · подключение');
       let recoveryAttempted=false;
       hls.on(Hls.Events.ERROR,(_event,data)=>{
-        if(!data.fatal||generation!==playerGeneration)return;
+        if(generation!==playerGeneration)return;
+        recordVideoEvent(player,data.fatal?'hls-fatal':'hls-error',String(data.details||data.type||'unknown'));
+        if(!data.fatal)return;
         if(!recoveryAttempted){
           recoveryAttempted=true;
           reportVideoSource(player,'HLS · восстановление · '+String(data.details||data.type));
@@ -328,12 +354,19 @@
         }
       },500);
     };
-    player.addEventListener('waiting',showBuffering);
-    player.addEventListener('stalled',showBuffering);
+    let lastBufferReport=0;
+    const reportBuffer=(kind)=>{
+      if(Date.now()-lastBufferReport<1500)return;
+      lastBufferReport=Date.now();
+      recordVideoEvent(player,kind,'readyState='+player.readyState);
+    };
+    player.addEventListener('waiting',()=>{showBuffering();reportBuffer('waiting');});
+    player.addEventListener('stalled',()=>{showBuffering();reportBuffer('stalled');});
     player.addEventListener('playing',hideFeedback);
     player.addEventListener('canplay',hideFeedback);
     player.addEventListener('pause',hideFeedback);
     player.addEventListener('error',()=>{
+      recordVideoEvent(player,'media-error','code='+String(player.error?.code||'unknown'));
       clearTimeout(feedbackDelay);
       feedback.textContent='Видео не загрузилось. Попробуйте открыть его повторно.';
       feedback.hidden=false;
@@ -349,7 +382,29 @@
         const end=buffered.length?buffered.end(buffered.length-1).toFixed(0):'0';
         diagnostics.title='Время: '+player.currentTime.toFixed(1)+' с, загружено до: '+end+' с, readyState: '+player.readyState;
       };
-      for(const eventName of ['progress','waiting','seeked','playing','stalled'])player.addEventListener(eventName,updateDiagnostics);
+      for(const eventName of ['progress','waiting','playing','stalled'])player.addEventListener(eventName,updateDiagnostics);
+      player.addEventListener('seeked',()=>{
+        updateDiagnostics();
+        recordVideoEvent(player,'seeked','readyState='+player.readyState);
+      });
+      const report=elt('button','showcase-video-report','Скопировать журнал тестов');
+      report.type='button';
+      report.addEventListener('click',async()=>{
+        const data=JSON.stringify({format:'singer-video-debug-v1',events:videoLog},null,2);
+        try{
+          await navigator.clipboard.writeText(data);
+          report.textContent='Журнал скопирован';
+        }catch{
+          const file=new Blob([data],{type:'application/json'});
+          const url=URL.createObjectURL(file);
+          const link=elt('a');link.href=url;link.download='video-diagnostics.json';
+          document.body.append(link);link.click();link.remove();
+          setTimeout(()=>URL.revokeObjectURL(url),1000);
+          report.textContent='Журнал сохранён в файл';
+        }
+      });
+      stage.append(report);
+      recordVideoEvent(player,'open',item.file);
     }
     addMobileSeekControls(stage,player);
     resolveCover(item,url=>{if(url&&player.isConnected)player.poster=url;});
