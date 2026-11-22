@@ -1,0 +1,24 @@
+name: Verify finale voting proposal
+on:
+  pull_request:
+    paths:
+      - 'src/pages/vote/**'
+      - 'src/pages/index.astro'
+      - 'supabase/functions/singer-vote/**'
+      - 'supabase/migrations/*singer_finale_voting.sql'
+      - '.github/scripts/verify-voting.mjs'
+      - '.github/workflows/verify-voting.yml'
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm run build
+      - run: node .github/scripts/verify-voting.mjs
+      - run: node .github/scripts/verify-contact-intents.mjs
