@@ -192,17 +192,17 @@ const repertoireUrl = '/podborka/';
             data-template={contactMessages.song}>
             <div class="action-icon"><Icon name="music" size={24} /></div><div class="action-copy"><strong>Заказать песню</strong><small>выбрать и отправить</small></div><Icon name="arrow" size={20} />
           </button>
+          <button class="action-wide js-contact-sheet" id="guest-video-action" type="button"
+            data-title="Отправить видео"
+            data-copy="Выберите удобный мессенджер и прикрепите снятое видео в чате."
+            data-template={contactMessages.video}>
+            <div class="action-icon"><Icon name="share" size={24} /></div><div class="action-copy"><strong>Отправить видео</strong><small>поделиться моментом выступления</small></div><Icon name="arrow" size={20} />
+          </button>
           <button class="action-wide js-contact-sheet" type="button"
             data-title="Сказать пару слов"
             data-copy="Выберите удобный мессенджер и отправьте текст, голосовое или видео."
             data-template={contactMessages.feedback}>
             <div class="action-icon"><Icon name="message" size={24} /></div><div class="action-copy"><strong>Сказать пару слов</strong><small>текстом, голосом или видео</small></div><Icon name="arrow" size={20} />
-          </button>
-          <button class="action-wide js-contact-sheet" type="button"
-            data-title="Отправить видео"
-            data-copy="Выберите удобный мессенджер и прикрепите снятое видео в чате."
-            data-template={contactMessages.video}>
-            <div class="action-icon"><Icon name="share" size={24} /></div><div class="action-copy"><strong>Отправить видео</strong><small>поделиться моментом выступления</small></div><Icon name="arrow" size={20} />
           </button>
           <a class="action-wide tip-action" href="#"><div class="action-icon"><Icon name="heart" size={24} /></div><div class="action-copy"><strong>Поблагодарить</strong><small>чаевыми / переводом</small></div><Icon name="arrow" size={20} /></a>
         </div>
@@ -461,6 +461,17 @@ const repertoireUrl = '/podborka/';
         sheet.showModal();
       });
     });
+
+    // QR shortcut: open the guest section and the video-sharing dialog.
+    // The plain #live link continues to show the section without a dialog.
+    if (typeof window !== 'undefined'
+        && new URLSearchParams(window.location.search).get('guest') === 'video'
+        && window.location.hash === '#live') {
+      window.addEventListener('load', () => {
+        document.getElementById('live')?.scrollIntoView({ block: 'start' });
+        document.getElementById('guest-video-action')?.click();
+      }, { once: true });
+    }
 
     sheet?.querySelector('.sheet-close')?.addEventListener('click', () => sheet.close());
     sheet?.addEventListener('click', (event) => {
