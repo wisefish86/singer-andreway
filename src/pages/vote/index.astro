@@ -153,7 +153,9 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  }
  async function api(body,key){
   const response=await fetch(endpoint,{method:body?'POST':'GET',cache:'no-store',signal:AbortSignal.timeout(body?12000:8000),
-   headers:body?{'content-type':'application/json',...(key?{authorization:'Bearer '+key}:{})}:{},
+   // Vote POST uses a CORS-simple content type to avoid an extra preflight round trip.
+   // Authenticated admin requests still use JSON and the Authorization header.
+   headers:body?{'content-type':key?'application/json':'text/plain;charset=UTF-8',...(key?{authorization:'Bearer '+key}:{})}:{},
    ...(body?{body:JSON.stringify(body)}:{})});
   const result=await response.json();
   if(!response.ok)throw new Error(result.error||'Сервис временно недоступен');
