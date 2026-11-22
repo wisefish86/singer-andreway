@@ -11,30 +11,48 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
 <title>Голосование за хиты вечера — Андрей Шевцов</title>
 <meta name="description" content="Выберите три любимые песни для финалов выступления Андрея Шевцова."/>
 <meta name="robots" content="noindex,follow"/>
-<style>
-.vote-main{max-width:780px;margin:0 auto;padding:30px 20px 100px;min-height:80vh}
-.vote-hero{padding:26px 0 18px}.vote-hero h1{font-size:clamp(32px,7vw,53px);line-height:1.08;margin:8px 0 16px}
-.vote-hero p{color:var(--muted);line-height:1.65}
-.vote-status{font-size:14px;color:var(--accent2);font-weight:700}
-.vote-card{border:1px solid var(--line);border-radius:22px;background:var(--surface);padding:clamp(16px,4vw,28px);margin:18px 0}
-.vote-card h2{font-size:22px;margin:0 0 12px}
-.vote-search{width:100%;box-sizing:border-box;font:inherit;color:var(--text);border-radius:12px;padding:15px;background:#081725;border:1px solid var(--line);margin:10px 0 14px}
-.vote-option{display:flex;gap:13px;align-items:center;width:100%;box-sizing:border-box;padding:13px 10px;margin:4px 0;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--text);text-align:left;font:inherit;cursor:pointer}
-.vote-option:hover,.vote-option:focus-visible{border-color:var(--accent2)}
-.vote-option[aria-pressed="true"]{border-color:var(--accent2);background:rgba(220,176,94,.12)}
-.vote-option .check{flex:0 0 26px;width:26px;height:26px;border:2px solid var(--accent2);border-radius:7px;display:grid;place-items:center;color:var(--accent2)}
-.vote-option strong{display:block}.vote-option small{display:block;color:var(--muted);margin-top:3px}
-.vote-option .vote-songtext{flex:1;min-width:0}.vote-option .vote-count{font-size:.77rem;white-space:nowrap;color:var(--accent2);font-variant-numeric:tabular-nums;font-weight:650}
-.vote-leaders{color:var(--muted);font-size:.84rem;margin-bottom:12px}
-.vote-actions{position:sticky;bottom:0;padding:14px 0 8px;background:linear-gradient(transparent,#07131e 16%);z-index:2}
-.vote-actions .btn{width:100%;justify-content:center;min-height:52px}.vote-actions .btn:disabled{opacity:.48;cursor:not-allowed}
-.vote-meta{color:var(--muted);font-size:13px;margin-top:8px}
-.vote-alert{padding:16px 18px;border-radius:12px;background:rgba(220,176,94,.1);border:1px solid var(--line);line-height:1.55}
+<style is:global>
+.vote-main{width:min(100% - 32px,800px);margin:0 auto;padding:40px 0 125px;min-height:80vh}
+.vote-hero{padding:12px 0 20px}
+.vote-hero h1{font-size:clamp(34px,6vw,52px);line-height:1.12;letter-spacing:-.045em;margin:10px 0 16px}
+.vote-hero p{color:var(--muted);line-height:1.65;max-width:670px}
+.vote-status{font-size:.84rem;color:var(--accent2);font-weight:700}
+.vote-card{border:1px solid var(--line);border-radius:22px;background:linear-gradient(145deg,#122232,#0b1825);padding:clamp(18px,4vw,30px);margin:16px 0;overflow:hidden}
+.vote-card h2{font-size:clamp(21px,4vw,25px);margin:0 0 12px}
+.vote-search{display:block;width:100%;box-sizing:border-box;font:inherit;color:var(--text);border-radius:12px;padding:14px 16px;background:#081725;border:1px solid rgba(210,225,237,.23);margin:9px 0 16px;min-height:52px}
+.vote-search:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+.vote-option{display:flex;gap:13px;align-items:center;box-sizing:border-box;width:100%;padding:14px 12px;border-radius:13px;border:1px solid rgba(198,215,230,.11);background:rgba(255,255,255,.025);color:var(--text);min-width:0;transition:border-color .15s,background .15s}
+.vote-option:hover{border-color:rgba(232,196,120,.55);background:rgba(255,255,255,.045)}
+.vote-option.is-selected{border-color:var(--accent2);background:rgba(224,182,99,.11)}
+.vote-option .check{flex:0 0 24px;width:24px;height:24px;border:2px solid rgba(211,222,234,.63);border-radius:7px;display:grid;place-items:center;color:var(--accent2);font-weight:900}
+.vote-option.is-selected .check{border-color:var(--accent2)}
+.vote-option .vote-songtext{flex:1;min-width:0;display:block}
+.vote-option strong{display:block;color:var(--text);font-size:1rem;line-height:1.35;font-weight:720;overflow-wrap:anywhere}
+.vote-option small{display:block;color:var(--muted);margin-top:4px;font-size:.84rem;line-height:1.35}
+.vote-option .vote-count{font-size:.76rem;color:var(--accent2);white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700}
+.vote-track-list{display:grid;gap:8px}
+.vote-select{appearance:none;background:none;border:0;color:inherit;text-align:left;display:flex;gap:12px;align-items:center;flex:1;min-width:0;cursor:pointer;font:inherit;padding:0;min-height:42px}
+.vote-select:focus-visible,.vote-preview:focus-visible{outline:2px solid var(--accent2);outline-offset:3px;border-radius:6px}
+.vote-preview{flex:0 0 40px;width:40px;height:40px;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(230,185,105,.55);background:rgba(230,185,105,.08);color:var(--accent2);font-size:20px;cursor:pointer}
+.vote-preview[aria-pressed="true"]{background:var(--accent2);color:#081522}
+.vote-preview[disabled]{opacity:.22;cursor:not-allowed}
+.vote-tally{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--muted);font-size:.86rem;margin:20px 0 10px;flex-wrap:wrap}
+.vote-tally strong{color:var(--accent2);font-variant-numeric:tabular-nums}
+.vote-leaders{color:var(--muted);font-size:.84rem;margin-bottom:14px}
+.vote-actions{position:sticky;bottom:0;padding:18px 0 8px;background:linear-gradient(transparent,#081522 19%);z-index:2}
+.vote-actions .btn{width:100%;justify-content:center;min-height:54px;border-radius:13px;font-weight:800}
+.vote-actions .btn:disabled{opacity:.56;cursor:not-allowed}
+.vote-meta{color:var(--muted);font-size:.84rem;line-height:1.55;margin:9px 0}
+.vote-alert{padding:16px 18px;border-radius:12px;background:rgba(220,176,94,.1);border:1px solid rgba(220,176,94,.24);line-height:1.55;margin:12px 0}
 .vote-price{font-size:24px;font-weight:800;color:var(--accent2)}
 .vote-hidden{display:none!important}
-.vote-admin input{width:100%;box-sizing:border-box;min-height:44px;padding:10px;color:var(--text);background:#081725;border:1px solid var(--line);border-radius:10px;margin:6px 0 13px}
-.vote-admin label{display:block;margin:12px 0}
-.vote-admin .btn{margin:6px 8px 8px 0}.vote-admin pre{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text)}
+.vote-player{position:fixed;z-index:30;bottom:0;left:0;right:0;display:flex;align-items:center;gap:12px;padding:11px max(16px,calc((100vw - 760px)/2));background:rgba(8,20,31,.97);backdrop-filter:blur(15px);border-top:1px solid rgba(232,193,113,.42);box-shadow:0 -12px 30px #0005}
+.vote-player[hidden]{display:none!important}
+.vote-player button{background:var(--accent2);color:#071521;border:0;border-radius:50%;width:42px;height:42px;flex:0 0 42px;font-size:18px;cursor:pointer}
+.vote-player-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem;font-weight:700}
+.vote-player input{width:min(26vw,210px);accent-color:var(--accent2)}
+.vote-player .vote-player-close{background:transparent;color:var(--text);border:1px solid var(--line)}
+@media(max-width:550px){.vote-option{gap:9px;padding:12px 10px}.vote-preview{width:36px;height:36px;flex-basis:36px}.vote-option strong{font-size:.93rem}.vote-option .vote-count{font-size:.7rem}.vote-player input{width:75px}}
 </style>
 </head>
 <body>
@@ -54,7 +72,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   <label for="vote-search" class="vote-meta">Найти песню или исполнителя</label>
   <input id="vote-search" class="vote-search" type="search" placeholder="Название или исполнитель" autocomplete="off"/>
   <p id="vote-voters" class="vote-leaders" aria-live="polite">Результаты голосования обновляются автоматически.</p>
-  <div id="vote-songs" aria-label="Песни для голосования"></div>
+  <div id="vote-songs" class="vote-track-list" aria-label="Песни для голосования"></div>
   <div class="vote-actions"><button id="vote-send" class="btn primary" disabled type="button">Выберите 3 песни</button></div>
   <div id="vote-message" class="vote-alert vote-hidden" role="status" aria-live="polite"></div>
   <p id="vote-deadline" class="vote-meta"></p>
@@ -67,6 +85,13 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  </section>
 
 </main>
+<div class="vote-player" id="vote-player" hidden role="region" aria-label="Прослушивание песни">
+ <button id="vote-player-play" type="button" aria-label="Пауза">Ⅱ</button>
+ <div class="vote-player-name" id="vote-player-name">Прослушивание</div>
+ <input id="vote-player-seek" type="range" min="0" max="100" value="0" aria-label="Перемотать песню"/>
+ <button class="vote-player-close" id="vote-player-close" type="button" aria-label="Закрыть проигрыватель">×</button>
+ <audio id="vote-audio" preload="none"></audio>
+</div>
 <footer class="footer"><div class="container">© {new Date().getFullYear()} Андрей Шевцов · <a href="/">На главную</a></div></footer>
 <script define:vars={{endpoint}}>
 (()=>{
@@ -97,27 +122,73 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   $('vote-send').disabled=selected.size!==3||songs.length<3||!state?.active;
   $('vote-send').textContent=songs.length<3?'Список песен пока недоступен':!state?.active?'Голосование пока закрыто':saved?'Обновить мои голоса':selected.size===3?'Проголосовать за 3 песни':'Выбрано '+selected.size+' из 3';
  }
+ const audio=$('vote-audio');
+ let playingId=null;
+ const previewUrl=song=>{
+  try{
+   const u=new URL(song.preview_url);
+   return u.protocol==='https:'&&u.hostname==='singer.andreway.ru'&&u.pathname.startsWith('/audio/plus/')&&!u.search&&!u.hash?u.href:'';
+  }catch{return ''}
+ };
+ const synchronizeAudio=()=>{
+  const playing=!audio.paused&&!audio.ended;
+  $('vote-player-play').textContent=playing?'Ⅱ':'▶';
+  $('vote-player-play').setAttribute('aria-label',playing?'Пауза':'Воспроизвести');
+  for(const btn of document.querySelectorAll('.vote-preview')){
+   const isCurrent=btn.dataset.songId===playingId&&playing;
+   btn.textContent=isCurrent?'Ⅱ':'▶';
+   btn.setAttribute('aria-pressed',String(isCurrent));
+   btn.setAttribute('aria-label',(isCurrent?'Пауза: ':'Прослушать: ')+btn.dataset.songName);
+  }
+ };
+ const stopAudio=()=>{
+  audio.pause();audio.removeAttribute('src');audio.load();playingId=null;
+  $('vote-player').hidden=true;synchronizeAudio();
+ };
+ const playPreview=async song=>{
+  const url=previewUrl(song);if(!url)return;
+  if(playingId===song.id){if(audio.paused)await audio.play().catch(()=>{});else audio.pause();synchronizeAudio();return;}
+  audio.pause();audio.src=url;playingId=song.id;
+  $('vote-player-name').textContent=song.artist+' — '+song.name;
+  $('vote-player').hidden=false;
+  $('vote-player-seek').value=0;
+  await audio.play().catch(()=>{});
+  synchronizeAudio();
+ };
+ $('vote-player-close').addEventListener('click',stopAudio);
+ $('vote-player-play').addEventListener('click',()=>{if(audio.paused)audio.play().catch(()=>{});else audio.pause();synchronizeAudio()});
+ $('vote-player-seek').addEventListener('input',event=>{if(Number.isFinite(audio.duration)&&audio.duration>0)audio.currentTime=Number(event.target.value)/100*audio.duration});
+ audio.addEventListener('timeupdate',()=>{if(Number.isFinite(audio.duration)&&audio.duration>0)$('vote-player-seek').value=audio.currentTime/audio.duration*100});
+ audio.addEventListener('play',synchronizeAudio);audio.addEventListener('pause',synchronizeAudio);audio.addEventListener('ended',synchronizeAudio);
  function render(){
   const query=$('vote-search').value.trim().toLocaleLowerCase('ru');
   $('vote-songs').replaceChildren();
   for(const song of songs){
    if(!(song.name+' '+song.artist).toLocaleLowerCase('ru').includes(query))continue;
-   const row=document.createElement('button');row.type='button';row.className='vote-option';
-   row.setAttribute('aria-pressed',String(selected.has(song.id)));
+   const row=document.createElement('div');row.className='vote-option'+(selected.has(song.id)?' is-selected':'');row.dataset.voteId=song.id;
+   const selector=document.createElement('button');selector.type='button';selector.className='vote-select';
+   selector.setAttribute('aria-pressed',String(selected.has(song.id)));
+   selector.setAttribute('aria-label',(selected.has(song.id)?'Убрать: ':'Выбрать: ')+song.artist+' — '+song.name);
    const mark=document.createElement('span');mark.className='check';mark.setAttribute('aria-hidden','true');mark.textContent=selected.has(song.id)?'✓':'';
-   const text=document.createElement('span'),name=document.createElement('strong'),artist=document.createElement('small'),total=document.createElement('span');
-   text.className='vote-songtext';total.className='vote-count';total.textContent=state?.active?(Number(song.votes)||0)+' голосов':'—';
-   name.textContent=song.name;artist.textContent=song.artist;text.append(name,artist);row.append(mark,text,total);
-   row.dataset.voteId=song.id;
-   row.addEventListener('click',()=>{
+   const info=document.createElement('span');info.className='vote-songtext',name=document.createElement('strong'),artist=document.createElement('small');
+   name.textContent=song.name;artist.textContent=song.artist;info.append(name,artist);selector.append(mark,info);
+   selector.addEventListener('click',()=>{
     if(selected.has(song.id))selected.delete(song.id);
     else if(selected.size<3)selected.add(song.id);
     else{setMessage('Можно выбрать только три песни. Снимите один из предыдущих выборов.');return}
     saved=false;updateButton();render();
    });
+   row.append(selector);
+   const votes=document.createElement('span');votes.className='vote-count';votes.textContent=state?.active?(Number(song.votes)||0)+' голосов':'—';row.append(votes);
+   const listen=document.createElement('button');listen.type='button';listen.className='vote-preview';
+   listen.dataset.songId=song.id;listen.dataset.songName=song.name;listen.textContent='▶';
+   const hasPreview=Boolean(previewUrl(song));listen.disabled=!hasPreview;
+   listen.setAttribute('aria-label',hasPreview?'Прослушать: '+song.name:'Аудиофрагмент недоступен: '+song.name);
+   listen.setAttribute('aria-pressed','false');
+   listen.addEventListener('click',()=>playPreview(song));row.append(listen);
    $('vote-songs').append(row);
   }
-  updateButton();
+  synchronizeAudio();updateButton();
  }
  async function refresh(){
   try{
