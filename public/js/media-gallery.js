@@ -258,7 +258,7 @@
         if(!player.isConnected||position===null)return;
         // One actual seek for a burst of taps. Native slider remains untouched.
         player.currentTime=position;
-        if(player.paused)player.play().catch(()=>{});
+        // Respect a deliberately paused player; seeking must not start playback.
       },240);
     };
     for(const [direction,label,klass] of [
