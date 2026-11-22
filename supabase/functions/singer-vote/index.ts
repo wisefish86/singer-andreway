@@ -101,6 +101,8 @@ async function manualSchedule(){
  const response=await fetch(VOTE_CONFIG_URL,{redirect:"follow",cache:"no-store",signal:AbortSignal.timeout(3500)});
  if(!response.ok)throw new Error("vote_sheet_unavailable");
  const data=await response.json();
+ // Invalid enabled schedules must not cancel an existing active vote.
+ if(data?.invalid===true)throw new Error("invalid_vote_sheet_schedule");
  const config:{enabled:boolean;start?:string;end?:string;test_mode?:boolean;run_id?:string}={enabled:false};
  if(data?.enabled===true){
   const start=Date.parse(data.start),end=Date.parse(data.end);
@@ -111,7 +113,7 @@ async function manualSchedule(){
     config.run_id=typeof data.run_id==="string"?data.run_id:"";
   }
  }
- scheduleCache={until:Date.now()+30000,config};
+ scheduleCache={until:Date.now()+10000,config};
  return config;
 }
 async function ensureManualSheetSession(db:any){
@@ -212,7 +214,7 @@ Deno.serve(async req=>{
     if(typeof payload.id!=="string")return json({error:"invalid_id"},400,origin);
     const {error}=await db.from("singer_vote_sessions").update({enabled:false}).eq("id",payload.id);
     if(error)throw error;
-    return json({ok:true,test_mode:Boolean(voteSession.test_mode)},200,origin);
+    return json({ok:true},200,origin);
    }
    if(op==="open"){
     const start=Date.parse(payload.starts_at),end=Date.parse(payload.ends_at);
