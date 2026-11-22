@@ -1,0 +1,19 @@
+name: Verify live Sheet voting integration
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/probe-live-voting.mjs'
+      - '.github/workflows/probe-vote-sheet.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node .github/scripts/probe-live-voting.mjs
