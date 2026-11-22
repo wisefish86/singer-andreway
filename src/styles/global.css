@@ -279,7 +279,7 @@ dialog::backdrop{touch-action:none}
   .hero-content .hero-copy{max-width:500px}
   .hero-actions{width:min(100%,580px)}
   .hero-actions .btn{min-height:60px}
-  .quick-grid{grid-template-columns:repeat(4,1fr)}
+  .quick-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 
@@ -539,3 +539,6 @@ dialog::backdrop{touch-action:none}
  .showcase-justified-row{margin-bottom:3px}
  .showcase-download{gap:7px}
 }
+
+/* Five equal navigation cards on desktop; balance the odd final item on small screens. */
+@media(max-width:759px){.quick-grid>.quick-card:last-child:nth-child(odd){grid-column:1/-1;min-height:108px}}
