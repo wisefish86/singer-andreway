@@ -37,4 +37,6 @@ const media = readFileSync(new URL('../../public/js/media-gallery.js', import.me
 const styles = readFileSync(new URL('../../src/styles/global.css', import.meta.url), 'utf8');
 assert.ok(media.includes("player.preload='metadata'"), 'Video must not eagerly download an entire clip before playback');
 assert.ok(media.includes("player.addEventListener('waiting',showBuffering)") && media.includes("player.addEventListener('error',"), 'Video must explain buffering and network errors');
-assert.ok(styles.includes('section[id]{scroll-margin-top:82px}') && styles.includes('scroll-padding-top:82px'), 'Section anchors must clear the sticky header');
+assert.ok(styles.includes('.section[id]{scroll-margin-top:26px}'), 'Anchor offset must account for sticky header and section padding exactly once');
+assert.ok(!styles.includes('scroll-padding-top:82px') && !styles.includes('scroll-padding-top:80px'), 'Do not stack page scroll padding and section scroll margins');
+assert.ok(!source.includes('#live{scroll-margin-top:92px}'), 'Guest section must share the same anchor alignment');
