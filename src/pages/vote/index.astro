@@ -45,7 +45,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
 .vote-tally{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--muted);font-size:.86rem;margin:20px 0 10px;flex-wrap:wrap}
 .vote-tally strong{color:var(--accent2);font-variant-numeric:tabular-nums}
 .vote-leaders{color:var(--muted);font-size:.84rem;margin-bottom:14px}
-.vote-actions{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 24px),760px);box-sizing:border-box;padding:12px 14px;border:1px solid rgba(232,193,113,.42);border-radius:17px;background:rgba(12,27,40,.97);box-shadow:0 12px 35px #0009;backdrop-filter:blur(16px);z-index:20}.vote-actions[hidden]{display:none!important}.vote-choice-hint{font-size:.82rem;text-align:center;color:var(--muted);margin:0 0 9px}.vote-choice-hint strong{color:var(--accent2)}body:has(.vote-player:not([hidden])) .vote-actions{bottom:82px}
+.vote-actions{position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(calc(100% - 24px),760px);box-sizing:border-box;padding:12px 14px;border:1px solid rgba(232,193,113,.42);border-radius:17px;background:rgba(12,27,40,.97);box-shadow:0 12px 35px #0009;backdrop-filter:blur(16px);z-index:20}.vote-actions[hidden]{display:none!important}.vote-choice-hint{font-size:.82rem;text-align:center;color:var(--muted);margin:0 0 9px}.vote-choice-hint strong{color:var(--accent2)}.vote-actions .vote-alert{margin:0 0 10px;padding:9px 11px;font-size:.83rem}body:has(.vote-player:not([hidden])) .vote-actions{bottom:82px}
 .vote-actions .btn{width:100%;justify-content:center;min-height:54px;border-radius:13px;font-weight:800}
 .vote-actions .btn:disabled{opacity:.56;cursor:not-allowed}
 .vote-meta{color:var(--muted);font-size:.84rem;line-height:1.55;margin:9px 0}
@@ -82,7 +82,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   <p id="vote-voters" class="vote-leaders" aria-live="polite">Результаты голосования обновляются автоматически.</p>
   <div id="vote-songs" class="vote-track-list" aria-label="Песни для голосования"></div>
 
-  <div id="vote-message" class="vote-alert vote-hidden" role="status" aria-live="polite"></div>
+
   <p id="vote-deadline" class="vote-meta"></p>
  </section>
  <section class="vote-card">
@@ -93,7 +93,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  </section>
 
 </main>
-<div class="vote-actions" id="vote-actions" hidden role="region" aria-label="Отправка выбранных песен"><p id="vote-choice-hint" class="vote-choice-hint" aria-live="polite"></p><button id="vote-send" class="btn primary" disabled type="button">Отправить голос</button></div>
+<div class="vote-actions" id="vote-actions" hidden role="region" aria-label="Отправка выбранных песен"><p id="vote-choice-hint" class="vote-choice-hint" aria-live="polite"></p><div id="vote-message" class="vote-alert vote-hidden" role="status" aria-live="polite"></div><button id="vote-send" class="btn primary" disabled type="button">Отправить голос</button></div>
 <div class="vote-player" id="vote-player" hidden role="region" aria-label="Прослушивание песни">
  <button id="vote-player-play" type="button" aria-label="Пауза"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></button>
  <div class="vote-player-name" id="vote-player-name">Прослушивание</div>
@@ -230,10 +230,10 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    info.className='vote-songtext';
    name.textContent=song.name;artist.textContent=song.artist;info.append(name,artist);selector.append(mark,info);
    selector.addEventListener('click',()=>{
+    if(saved&&!editing&&!state?.test_mode){setMessage('Чтобы поменять песни, нажмите «Изменить голос» внизу страницы.');return}
     if(selected.has(song.id))selected.delete(song.id);
     else if(selected.size<3)selected.add(song.id);
     else{setMessage('Можно выбрать только три песни. Снимите один из предыдущих выборов.');return}
-    if(saved&&!editing&&!state?.test_mode){setMessage('Чтобы поменять песни, нажмите «Изменить голос» внизу страницы.');return}
     clearMessage();updateButton();render();
    });
    row.append(selector);
