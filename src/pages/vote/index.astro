@@ -31,7 +31,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
 .vote-option small{display:block;color:var(--muted);margin-top:4px;font-size:.84rem;line-height:1.35}
 .vote-option .vote-count[hidden]{display:none}
 .vote-option{position:relative;flex-wrap:wrap}
-.vote-progress{width:100%;height:5px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin:0 0 1px 35px}
+.vote-progress{flex-basis:calc(100% - 35px);width:auto;height:5px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin:0 0 1px 35px}
 .vote-progress[hidden]{display:none}
 .vote-progress-fill{height:100%;width:0;background:linear-gradient(90deg,#d7a955,#f0cc7f);border-radius:99px;transition:width .4s ease}
 .vote-progress-text{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -133,7 +133,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
      id:song.id,name:String(song.name||'').replace(/@/g,'').trim(),
      artist:String(song.artist||''),preview_url:String(song.preview_url||'')
     })).sort((a,b)=>(a.artist+' '+a.name).localeCompare(b.artist+' '+b.name,'ru'));
-   cacheSongs(candidates);usePreview(candidates);
+   cacheSongs(candidates);if(!state?.active)usePreview(candidates);
   }catch{}
  }
  
@@ -146,7 +146,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   }catch{return null}
  }
  async function api(body,key){
-  const response=await fetch(endpoint,{method:body?'POST':'GET',cache:'no-store',
+  const response=await fetch(endpoint,{method:body?'POST':'GET',cache:'no-store',signal:AbortSignal.timeout(body?12000:8000),
    headers:body?{'content-type':'application/json',...(key?{authorization:'Bearer '+key}:{})}:{},
    ...(body?{body:JSON.stringify(body)}:{})});
   const result=await response.json();
@@ -222,7 +222,9 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    row.append(selector);
    const votes=document.createElement('span');votes.className='vote-count';
    votes.hidden=!state?.active;
-   votes.textContent=(Number(song.votes)||0)+' голосов';row.append(votes);
+   const total=Math.max(0,Number(state?.voters)||0);
+   const percent=total>0?Math.min(100,Math.round((Number(song.votes)||0)/total*100)):0;
+   votes.textContent=(Number(song.votes)||0)+' голосов · '+percent+'%';row.append(votes);
    const listen=document.createElement('button');listen.type='button';listen.className='vote-preview';
    listen.dataset.songId=song.id;listen.dataset.songName=song.name;listen.innerHTML=PLAY_ICON;
    const hasPreview=Boolean(previewUrl(song));listen.disabled=!hasPreview;
@@ -231,11 +233,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    listen.addEventListener('click',()=>playPreview(song));row.append(listen);
    const bar=document.createElement('div');bar.className='vote-progress';bar.hidden=!state?.active;
    const fill=document.createElement('div');fill.className='vote-progress-fill';
-   const total=Math.max(0,Number(state?.voters)||0);
-   const percent=total>0?Math.min(100,Math.round((Number(song.votes)||0)/total*100)):0;
    fill.style.width=percent+'%';bar.append(fill);
-   const pct=document.createElement('span');pct.className='vote-progress-text';pct.textContent=percent+'%';
-   if(state?.active)row.append(pct);
    row.append(bar);
    $('vote-songs').append(row);
   }
@@ -266,11 +264,11 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    if(changedSession||orderedIds.join('|')!==DOMids.join('|'))render();
    else for(const song of songs){
     const item=[...$('vote-songs').children].find(node=>node.dataset.voteId===song.id);
-    if(item){const count=item.querySelector('.vote-count');if(count){count.hidden=!active;count.textContent=(Number(song.votes)||0)+' голосов';}
-     const bar=item.querySelector('.vote-progress'),fill=item.querySelector('.vote-progress-fill'),pct=item.querySelector('.vote-progress-text');
+    if(item){const count=item.querySelector('.vote-count');if(count){count.hidden=!active;}
+     const bar=item.querySelector('.vote-progress'),fill=item.querySelector('.vote-progress-fill');
      const total=Number(result.voters)||0;
      const percent=total>0?Math.min(100,Math.round((Number(song.votes)||0)/total*100)):0;
-     if(bar)bar.hidden=!active;if(fill)fill.style.width=percent+'%';if(pct)pct.textContent=percent+'%';}
+     if(bar)bar.hidden=!active;if(fill)fill.style.width=percent+'%';if(count)count.textContent=(Number(song.votes)||0)+' голосов · '+percent+'%';}
    }
    $('vote-voters').textContent=incoming.length<3?'Список финальных песен пока недоступен.':
     active?'Проголосовали: '+(Number(result.voters)||0)+' · Песни с большинством голосов — сверху.':
@@ -282,7 +280,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    $('vote-status').textContent='Связь с голосованием временно недоступна';
    $('vote-closed').hidden=false;
    $('vote-closed').textContent='Не удалось проверить приём голосов. Подборку песен можно посмотреть, но отправка временно недоступна.';
-   if(songs.length>=3){$('vote-open').hidden=false;updateButton();}
+   if(songs.length>=3){$('vote-open').hidden=false;render();$('vote-voters').textContent='Подборка доступна, состояние голосования временно не проверено.';}
    else await loadPublicCatalogue();
   }
  }
