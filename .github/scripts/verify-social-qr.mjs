@@ -31,6 +31,14 @@ assert.ok(source.includes("if (isMobileDevice()"),
   'Mobile should follow the normal link without forcing a desktop QR');
 assert.ok(!html.includes('data-social-platform="vk"'), 'VK must not be a visitor contact channel');
 assert.ok(html.includes('data-social-platform="instagram"'), 'Instagram must be available in the final subscription section');
+assert.ok(html.includes('href="#reviews"'), 'Homepage reviews controls should scroll to its reviews section');
+const homepage = readFileSync(new URL('../../src/pages/index.astro', import.meta.url), 'utf8');
+assert.ok(homepage.includes('<a href="#reviews">Отзывы</a>'), 'Navigation Reviews must not leave homepage');
+assert.ok(homepage.includes('class="quick-card" href="#reviews"'), 'Quick Reviews card must not leave homepage');
+assert.ok(homepage.includes('href="/reviews/"'), 'Separate full reviews page stays accessible');
+const fullReviews=readFileSync(new URL('../../src/pages/reviews/index.astro', import.meta.url), 'utf8');
+assert.ok(fullReviews.includes('Здесь — впечатления гостей о моих выступлениях.'), 'Reviews intro should be concise');
+
 console.log('Shared QR checked for contact messengers and Instagram subscription');
 
 // Mobile media reliability and sticky-header anchor regressions.
