@@ -551,7 +551,7 @@ const repertoireUrl = '/podborka/';
    const who=document.createElement('div');append(who,'strong','',r.author);append(who,'small','',[r.event,r.city,r.dateLabel].filter(Boolean).join(' · '));
    head.append(img,who);card.append(head);append(card,'p','',r.text);track.append(card);
   }
-  section.hidden=false;requestAnimationFrame(controls);
+  section.hidden=false;requestAnimationFrame(()=>{controls();if(location.hash==='#reviews')section.scrollIntoView({block:'start',behavior:'smooth'});});
  };
  back.addEventListener('click',()=>track.scrollBy({left:-Math.max(260,track.clientWidth*.8),behavior:'smooth'}));
  forward.addEventListener('click',()=>track.scrollBy({left:Math.max(260,track.clientWidth*.8),behavior:'smooth'}));
