@@ -33,10 +33,12 @@ for (const platform of ['telegram', 'whatsapp']) {
     'Booking ' + platform + ' must not contain guest/video message');
   if (platform === 'telegram') {
     assert.equal(href.protocol, 'tg:');
-    assert.equal(href.searchParams.get('domain'), 'shevtsov_andrey');
+    assert.equal(href.hostname, 'msg_url', 'Telegram event link must open a fresh share draft');
+    assert.equal(href.searchParams.get('url'), 'https://singer.andreway.ru/');
     const web = new URL(fromTag(tag, 'data-social-web'));
     assert.equal(web.hostname, 't.me');
-    assert.equal(web.pathname, '/shevtsov_andrey');
+    assert.equal(web.pathname, '/share/url');
+    assert.equal(web.searchParams.get('url'), 'https://singer.andreway.ru/');
     assert.equal(web.searchParams.get('text'), expected.event);
   } else {
     assert.equal(href.hostname, 'wa.me');
@@ -87,8 +89,12 @@ for (const trigger of triggers) {
   trigger.click();
   const message = trigger.dataset.template;
   assert.equal(new URL(whatsapp.href).searchParams.get('text'), message);
+  assert.equal(new URL(telegram.href).hostname, 'msg_url');
+  assert.equal(new URL(telegram.href).searchParams.get('url'),'https://singer.andreway.ru/');
   assert.equal(new URL(telegram.href).searchParams.get('text'), message);
+  assert.equal(new URL(telegram.dataset.socialWeb).pathname, '/share/url');
   assert.equal(new URL(telegram.dataset.socialWeb).searchParams.get('text'), message);
+  assert.ok(!new URL(telegram.href).searchParams.get('text').includes('поделиться впечатлениями') || trigger.dataset.title==='feedback', 'Old feedback message must not leak into another contact intent');
 }
 assert.ok(sheet.opened, 'Guest sheet never opened');
 assert.ok(shared.includes('whatsapp://send?phone=79181142693'), 'Mobile WhatsApp deep link is required');
