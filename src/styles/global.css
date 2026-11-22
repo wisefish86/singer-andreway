@@ -404,6 +404,14 @@ dialog::backdrop{touch-action:none}
 .showcase-video-dialog,.showcase-video-dialog:fullscreen{box-sizing:border-box;inset:0;position:fixed;margin:auto;width:100vw;max-width:none;height:100dvh;max-height:none;border:0;border-radius:0;padding:48px 12px 14px;background:#050a10;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .showcase-video-dialog:not([open]){display:none}
 .showcase-video-stage{position:relative;display:flex;flex:1 1 auto;min-height:0;min-width:0;width:100%;align-items:center;justify-content:center}
+.showcase-touch-seek{display:none}
+@media(pointer:coarse){
+  .showcase-touch-seek{position:absolute;z-index:2;top:29%;height:36%;width:29%;max-width:165px;display:flex;align-items:center;justify-content:center;border:0;border-radius:18px;background:transparent;color:rgba(255,255,255,.8);font-weight:800;font-size:.9rem;text-shadow:0 2px 6px #000;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  .showcase-touch-seek:active{background:rgba(255,255,255,.14)}
+  .showcase-touch-seek:focus-visible{outline:2px solid #fff;outline-offset:-3px}
+  .showcase-touch-seek-back{left:2%}
+  .showcase-touch-seek-forward{right:2%}
+}
 .showcase-video-feedback{position:absolute;z-index:3;bottom:20px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);padding:10px 16px;border-radius:12px;background:rgba(6,16,26,.9);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:.86rem;text-align:center;pointer-events:none}
 .showcase-video-feedback[hidden]{display:none!important}
 .showcase-video-dialog .showcase-player{display:block;flex:none;width:auto;max-width:100%;height:auto;max-height:calc(100dvh - 115px);aspect-ratio:auto;object-fit:contain;border-radius:8px;background:#000}
