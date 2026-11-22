@@ -1,1 +1,38 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><title>Стандартный женский аватар</title><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="#283b50"/><stop offset="1" stop-color="#101d2e"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(#g)"/><path d="M25 119q3-35 35-36 32 1 35 36Z" fill="#b38c86"/><path d="M31 49q0-36 29-36t29 36l4 49H27Z" fill="#5b454b"/><ellipse cx="60" cy="52" rx="24" ry="31" fill="#d0b4a1"/><path d="M34 47q0-32 24-32 30-1 29 31-9-8-13-22-18 18-40 23Z" fill="#5b454b"/><circle cx="50" cy="56" r="2" fill="#51474f"/><circle cx="70" cy="56" r="2" fill="#51474f"/><path d="M52 69q8 6 16 0" fill="none" stroke="#996e73" stroke-width="2" stroke-linecap="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="title">
+<title id="title">Иллюстрация женского аватара</title>
+<defs>
+<radialGradient id="bg" cx=".28" cy=".18" r=".95"><stop stop-color="#344b65"/><stop offset=".54" stop-color="#14263e"/><stop offset="1" stop-color="#091422"/></radialGradient>
+<radialGradient id="skin" cx=".35" cy=".25" r=".95"><stop stop-color="#ffddbf"/><stop offset=".56" stop-color="#dca27f"/><stop offset="1" stop-color="#9f6655"/></radialGradient>
+<linearGradient id="hair" x1=".2" y1=".1" x2=".9" y2=".95"><stop stop-color="#5b392c"/><stop offset=".45" stop-color="#271b1e"/><stop offset="1" stop-color="#100f19"/></linearGradient>
+<linearGradient id="coat" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#263952"/><stop offset="1" stop-color="#080f1f"/></linearGradient>
+<linearGradient id="shine" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e8b67b"/><stop offset="1" stop-color="#9b6938"/></linearGradient>
+<clipPath id="clip"><circle cx="120" cy="120" r="120"/></clipPath>
+</defs>
+<g clip-path="url(#clip)">
+<path fill="url(#bg)" d="M0 0h240v240H0z"/>
+<ellipse cx="183" cy="32" rx="95" ry="120" fill="#304962" opacity=".26"/>
+<circle cx="119" cy="124" r="105" fill="none" stroke="#d7a76d" stroke-width=".65" opacity=".24"/>
+<path d="M40 238q2-63 36-81 17-12 47-13 45 0 71 25 18 20 20 69Z" fill="url(#coat)"/>
+<path d="M73 163q32 4 49 38l24-50q27 10 39 27l10 60H50Z" fill="#172339"/>
+<path d="M101 137h40v31q-8 16-20 18-12-4-20-18Z" fill="#b77864"/>
+<path d="M60 95q-10-67 31-82 39-18 71 6 35 14 28 80l9 60q-10 26-37 22l-10-27-61-6-21 31q-26-11-27-37Z" fill="url(#hair)"/>
+<path d="M77 93q0-49 45-51 42 0 47 52l-2 36q-7 26-27 40-11 7-20 7-14-3-27-18-14-18-16-38Z" fill="url(#skin)"/>
+<path d="M77 109q-10-4-11 9 2 17 16 16M170 109q10-4 10 9-2 17-15 16" fill="#cb9073"/>
+<path d="M79 88Q67 45 101 30 148 11 169 58q-11-15-25-14-23 25-65 32Z" fill="url(#hair)"/>
+<path d="M75 99q-9-19-8-41Q72 23 105 14q-27 17-20 65l-4 42-4 33q-15-13-14-35Z" fill="#2e1e22"/>
+<path d="M166 76q16 22 7 73l16 17q5-32 2-68-2-40-31-64Z" fill="#231922"/>
+<path d="M91 99q12-7 25-1M129 98q14-7 26 1" stroke="#50302c" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+<path d="M91 109q11-7 22-1-11 9-22 1ZM132 108q10-7 22 0-10 9-22 0Z" fill="#fff5e9" opacity=".92"/>
+<ellipse cx="104" cy="108.5" rx="4" ry="5" fill="#5d4337"/><ellipse cx="142" cy="108.5" rx="4" ry="5" fill="#5d4337"/>
+<circle cx="105.2" cy="107" r="1.4" fill="#fff"/><circle cx="143.2" cy="107" r="1.4" fill="#fff"/>
+<path d="M121 111q-4 16-2 18 5 4 10 0" stroke="#ad745f" stroke-width="2" stroke-linecap="round" fill="none"/>
+<path d="M105 143q17-7 32-1-7 11-17 11-9-1-15-10Z" fill="#a8565b"/>
+<path d="M107 144q15 1 28-1" stroke="#e8a69a" stroke-width="1.4" fill="none"/>
+<path d="M75 116q0 12 3 16" stroke="#f2c9a8" stroke-width="2" stroke-linecap="round" opacity=".7"/>
+<ellipse cx="78" cy="132" rx="5" ry="8" fill="none" stroke="url(#shine)" stroke-width="3.7"/>
+<ellipse cx="169" cy="132" rx="5" ry="8" fill="none" stroke="url(#shine)" stroke-width="3.7"/>
+<path d="M94 174q9 20 28 30l-25 35-24-72ZM148 171q-4 24-26 33l28 35 23-63Z" fill="#29364b"/>
+<path d="M107 182q16 14 30-1" fill="none" stroke="#e4b58a" stroke-width="1.4" opacity=".65"/>
+<path d="M45 237q8-54 30-66" fill="none" stroke="#b9905d" opacity=".36" stroke-width="2"/>
+<path d="M174 171q20 11 27 66" fill="none" stroke="#b9905d" opacity=".36" stroke-width="2"/>
+</g></svg>
