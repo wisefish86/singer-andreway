@@ -40,7 +40,7 @@
     // Telegram's official share flow starts with a fresh draft instead of reusing
     // an old draft from the owner's existing chat (e.g. a previous feedback form).
     // Telegram displays its recipient chooser; the visitor selects @${recipient}.
-    const telegramMessage = message.replace('🎵 Подборка песен:\\n' + link, '').trim();
+    const telegramMessage = message.replace('🎵 Подборка песен:' + String.fromCharCode(10) + link, '').trim();
     return {
       smsMessage: 'Подборка песен: ' + link,
       sms: 'sms:+79181142693?body=' + encodeURIComponent('Подборка песен: ' + link),
