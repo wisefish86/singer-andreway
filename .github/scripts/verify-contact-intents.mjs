@@ -46,12 +46,11 @@ for (const platform of ['telegram', 'whatsapp']) {
     'Booking ' + platform + ' must not contain guest/video message');
   if (platform === 'telegram') {
     assert.equal(href.protocol, 'tg:');
-    assert.equal(href.hostname, 'msg_url', 'Telegram event link must open a fresh share draft');
-    assert.equal(href.searchParams.get('url'), 'https://singer.andreway.ru/');
+    assert.equal(href.hostname, 'resolve', 'Booking Telegram must open a direct chat');
+    assert.equal(href.searchParams.get('domain'), 'shevtsov_andrey');
     const web = new URL(fromTag(tag, 'data-social-web'));
     assert.equal(web.hostname, 't.me');
-    assert.equal(web.pathname, '/share/url');
-    assert.equal(web.searchParams.get('url'), 'https://singer.andreway.ru/');
+    assert.equal(web.pathname, '/shevtsov_andrey');
     assert.equal(web.searchParams.get('text'), expected.event);
   } else {
     assert.equal(href.hostname, 'wa.me');
@@ -70,6 +69,7 @@ const telegram = {
   href: ''
 };
 const whatsapp = { dataset: { chatBaseWeb: 'https://wa.me/79181142693' }, href: '' };
+const videoHint = { hidden: true };
 const triggers = Object.entries(expected).filter(([kind]) => kind !== 'event').map(([kind, message]) => ({
   dataset: { title: kind, copy: kind, template: message, repertoire: 'false' },
   addEventListener(event, callback) { assert.equal(event, 'click'); this.click = callback; }
@@ -81,6 +81,7 @@ const sheet = {
     if (selector === '#sheet-title') return byId['sheet-title'];
     if (selector === '#sheet-copy') return byId['sheet-copy'];
     if (selector === '#sheet-repertoire') return byId['sheet-repertoire'];
+    if (selector === '#sheet-video-hint') return videoHint;
     if (selector === '.sheet-close') return {addEventListener() {}};
     return null;
   },
@@ -102,15 +103,19 @@ for (const trigger of triggers) {
   trigger.click();
   const message = trigger.dataset.template;
   assert.equal(new URL(whatsapp.href).searchParams.get('text'), message);
-  assert.equal(new URL(telegram.href).hostname, 'msg_url');
-  assert.equal(new URL(telegram.href).searchParams.get('url'),'https://singer.andreway.ru/');
+  assert.equal(new URL(telegram.href).hostname, 'resolve');
+  assert.equal(new URL(telegram.href).searchParams.get('domain'),'shevtsov_andrey');
   assert.equal(new URL(telegram.href).searchParams.get('text'), message);
-  assert.equal(new URL(telegram.dataset.socialWeb).pathname, '/share/url');
+  assert.equal(new URL(telegram.dataset.socialWeb).pathname, '/shevtsov_andrey');
   assert.equal(new URL(telegram.dataset.socialWeb).searchParams.get('text'), message);
+  assert.equal(videoHint.hidden, trigger.dataset.title!=='video');
   assert.ok(!new URL(telegram.href).searchParams.get('text').includes('поделиться впечатлениями') || trigger.dataset.title==='feedback', 'Old feedback message must not leak into another contact intent');
 }
 assert.ok(sheet.opened, 'Guest sheet never opened');
 assert.ok(shared.includes('whatsapp://send?phone=79181142693'), 'Mobile WhatsApp deep link is required');
+assert.ok(shared.includes('отправьте видео как <strong>файл</strong> без сжатия'), 'Guests should be asked to send original quality video files');
+assert.ok(!shared.includes('tg://msg_url') && !shared.includes('/share/url'), 'Telegram guest dialog must never route to share picker');
+assert.ok(!config.includes('tg://msg_url') && !config.includes('/share/url'), 'Telegram event chat must never use share picker');
 const selected = [...home.matchAll(/data-title="(Отправить видео|Сказать пару слов|Заказать песню)"/g)];
 assert.equal(selected.length, 3, 'Guest action buttons missing');
 assert.deepEqual(selected.map(match => match[1]), ['Заказать песню', 'Отправить видео', 'Сказать пару слов'], 'Guest button order');
