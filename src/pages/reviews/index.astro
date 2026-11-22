@@ -65,7 +65,8 @@ import ContactSheet from '../../components/ContactSheet.astro';
   const el=document.createElement(tag);if(klass)el.className=klass;el.textContent=value;parent.append(el);return el;
  }
  window.singerReviewsLoaded=payload=>{
-  if(!Array.isArray(payload?.reviews)||!payload.reviews.length)return;
+  if(!Array.isArray(payload?.reviews))return;
+  if(!payload.reviews.length){live.replaceChildren();live.hidden=true;return;}
   live.replaceChildren();
   for(const review of payload.reviews){
    const card=document.createElement('article');card.className='review-card';
@@ -86,10 +87,20 @@ import ContactSheet from '../../components/ContactSheet.astro';
   }
   live.hidden=false;
  };
- const script=document.createElement('script');
- script.async=true;
- script.src='https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec?kind=reviews&callback=singerReviewsLoaded';
- document.head.append(script);
+ // Show the last approved public snapshot immediately, then refresh from our own domain.
+ const cacheKey='singer-public-reviews-v1';
+ try{
+  const cached=JSON.parse(localStorage.getItem(cacheKey)||'null');
+  if(cached&&Date.now()-cached.savedAt<86400000&&Array.isArray(cached.data?.reviews))window.singerReviewsLoaded(cached.data);
+ }catch{}
+ fetch('/data/reviews.json',{cache:'no-cache'})
+  .then(response=>{if(!response.ok)throw Error('reviews_unavailable');return response.json()})
+  .then(data=>{
+   if(!Array.isArray(data?.reviews))throw Error('invalid_reviews');
+   window.singerReviewsLoaded(data);
+   try{localStorage.setItem(cacheKey,JSON.stringify({savedAt:Date.now(),data}))}catch{}
+  })
+  .catch(()=>{});
 })();
 </script>
 
