@@ -6,6 +6,76 @@
   const EMPTY={videos:[],photos:[]};
   let collection=EMPTY, signature='', modal=null, mode='', photoIndex=0, videoIndex=0;
   let photos=[],videos=[];
+  let activeHls=null, playerGeneration=0, hlsScriptPromise=null;
+  function clearStream(){
+    playerGeneration++;
+    if(activeHls){activeHls.destroy();activeHls=null;}
+  }
+  function loadHlsClient(){
+    if(window.Hls)return Promise.resolve(window.Hls);
+    if(hlsScriptPromise)return hlsScriptPromise;
+    hlsScriptPromise=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src='/js/hls.min.js';
+      script.async=true;
+      script.onload=()=>window.Hls?resolve(window.Hls):reject(Error('HLS player missing'));
+      script.onerror=()=>reject(Error('HLS player failed to load'));
+      document.head.append(script);
+    }).catch(error=>{hlsScriptPromise=null;throw error;});
+    return hlsScriptPromise;
+  }
+  async function startVideoSource(player,item){
+    const generation=playerGeneration;
+    const fallback=()=>{
+      if(generation!==playerGeneration||!player.isConnected)return;
+      if(activeHls){activeHls.destroy();activeHls=null;}
+      player.src=fileURL('videos',item.file);
+      player.play().catch(()=>{});
+    };
+    // The stream is advertised only after all HLS segments are uploaded and verified.
+    let manifest;
+    try{
+      const controller=new AbortController();
+      const limit=setTimeout(()=>controller.abort(),2500);
+      try{
+        const response=await fetch('/data/video-hls.json',{cache:'no-cache',signal:controller.signal});
+        if(!response.ok)throw Error('HLS mapping missing');
+        const mapping=await response.json();
+        if(mapping?.file===item.file&&/^\/videos\/hls\/[a-z0-9/_-]+\.m3u8$/i.test(mapping.url)){
+          manifest=mapping.url;
+        }
+      }finally{clearTimeout(limit);}
+    }catch(e){}
+    if(generation!==playerGeneration||!player.isConnected)return;
+    if(!manifest){fallback();return;}
+    if(player.canPlayType('application/vnd.apple.mpegurl')){
+      player.src=manifest;
+      player.play().catch(()=>{});
+      return;
+    }
+    try{
+      const Hls=await loadHlsClient();
+      if(generation!==playerGeneration||!player.isConnected)return;
+      if(!Hls.isSupported()){fallback();return;}
+      const hls=new Hls({
+        startLevel:-1,
+        maxBufferLength:45,
+        maxMaxBufferLength:120,
+        backBufferLength:60,
+        enableWorker:true
+      });
+      activeHls=hls;
+      hls.on(Hls.Events.ERROR,(_event,data)=>{
+        if(data.fatal&&generation===playerGeneration)fallback();
+      });
+      hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+        if(generation===playerGeneration)player.play().catch(()=>{});
+      });
+      hls.attachMedia(player);
+      hls.loadSource(manifest);
+    }catch(e){fallback();}
+  }
+
   const elt=(tag,className,text)=>{
     const node=document.createElement(tag);
     if(className)node.className=className;
@@ -50,6 +120,7 @@
     modal.addEventListener('click',e=>{if(e.target===modal)modal.close();});
     modal.addEventListener('close',()=>{
       const video=modal.querySelector('video');
+      clearStream();
       if(video){video.pause();video.removeAttribute('src');video.load();}
       if(document.fullscreenElement===modal)document.exitFullscreen().catch(()=>{});
       mode='';
@@ -172,6 +243,7 @@
   function renderVideo(){
     const item=videos[videoIndex];if(!item)return;
     const dialog=getModal();
+    clearStream();
     const old=dialog.querySelector('video');
     if(old){old.pause();old.removeAttribute('src');old.load();}
     dialog.classList.remove('showcase-photo-dialog');
@@ -211,7 +283,6 @@
       feedback.textContent='Видео не загрузилось. Попробуйте открыть его повторно.';
       feedback.hidden=false;
     });
-    player.src=fileURL('videos',item.file);
     stage.append(player,feedback);
     resolveCover(item,url=>{if(url&&player.isConnected)player.poster=url;});
     if(videos.length>1)stage.append(navButton(-1,()=>changeVideo(-1),videoIndex===0),
@@ -222,7 +293,7 @@
     if(videos.length>1)footer.append(elt('span','showcase-video-count',(videoIndex+1)+' / '+videos.length));
     dialog.append(close,stage,footer);
     if(!dialog.open)dialog.showModal();
-    player.play().catch(()=>{});
+    startVideoSource(player,item);
   }
   document.addEventListener('keydown',e=>{
     if(!modal?.open)return;
