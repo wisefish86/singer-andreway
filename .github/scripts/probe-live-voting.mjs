@@ -10,14 +10,16 @@ try{
  const settings=await settingsResponse.json();
  if(typeof settings.enabled!=='boolean')throw Error('Sheet voting settings missing enabled flag');
  if(settings.enabled&&(!settings.start||!settings.end))throw Error('Invalid active Sheet schedule');
- console.log('Google Sheet vote settings: HTTP '+settingsResponse.status+'; enabled='+settings.enabled);
+ if(settings.enabled&&(typeof settings.test_mode!=='boolean'||typeof settings.run_id!=='string'))throw Error('Deployed Google Sheet lacks test mode and isolated run ID');
+ console.log('Google Sheet vote settings: HTTP '+settingsResponse.status+'; enabled='+settings.enabled+'; test_mode='+Boolean(settings.test_mode));
  const apiStart=Date.now();
  const response=await fetch(endpoint,{headers:{origin},signal:controller.signal});
  const apiDuration=Date.now()-apiStart;
  if(response.headers.get('access-control-allow-origin')!==origin)throw Error('Voting API CORS origin mismatch');
  console.log('Voting API request duration: '+apiDuration+' ms');
  const body=await response.json().catch(()=>({}));
- console.log('Voting API: HTTP '+response.status+'; active='+String(body.active)+'; song_count='+(body.songs?.length??'not open'));
+ console.log('Voting API: HTTP '+response.status+'; active='+String(body.active)+'; song_count='+(body.songs?.length??'not open')+'; test_mode='+Boolean(body.test_mode));
+ if(typeof body.test_mode!=='boolean')throw Error('Voting API missing test-mode status');
  if(!response.ok||typeof body.active!=='boolean')throw Error('Voting API unavailable or invalid payload');
  if(!Array.isArray(body.songs)||body.songs.length<3)throw Error('Finale catalogue missing from API: voting page would appear blank');
  if(!body.active && body.songs.some(song=>(song.votes||0)!==0))throw Error('Closed session should not expose stale vote counts');
