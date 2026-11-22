@@ -68,6 +68,7 @@ jobs:
             **/audio/plus/**
             **/reviews/uploads/**
             **/data/reviews.json
+            **/data/media.json
 
       # The main FTP sync excludes user-uploaded media directories.
       # Create the root media folders independently; never synchronize/delete their contents.
