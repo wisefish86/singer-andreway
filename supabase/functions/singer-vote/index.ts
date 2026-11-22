@@ -252,10 +252,15 @@ Deno.serve(async req=>{
      ids.length<1||ids.length>3||new Set(ids).size!==ids.length||ids.some((x:unknown)=>typeof x!=="string"||!/^[a-f0-9]{16}$/.test(x))){
     return json({error:"invalid_vote"},400,origin);
   }
-  const {data:voteSession,error:sessionError}=await db.from("singer_vote_sessions")
-   .select("test_mode").eq("id",id).maybeSingle();
+  // Fetch eligibility and session state concurrently to avoid two serial network waits.
+  // PostgreSQL RPC still performs the authoritative open-window check on write.
+  const [sessionResult,eligibleSongs]=await Promise.all([
+   db.from("singer_vote_sessions").select("test_mode").eq("id",id).maybeSingle(),
+   finalists()
+  ]);
+  const {data:voteSession,error:sessionError}=sessionResult;
   if(sessionError||!voteSession)return json({error:"closed"},409,origin);
-  const eligible=new Set((await finalists()).map(s=>s.id));
+  const eligible=new Set(eligibleSongs.map(s=>s.id));
   if(ids.some((x:string)=>!eligible.has(x)))return json({error:"ineligible_song"},400,origin);
   const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-real-ip")||"voter:"+voter;
   const pepper=Deno.env.get("SINGER_VOTE_IP_PEPPER")||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
