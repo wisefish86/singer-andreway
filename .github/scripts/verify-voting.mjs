@@ -38,7 +38,7 @@ assert.ok(admin.includes('noindex,nofollow'), 'Admin page should not be indexed'
 assert.ok(admin.includes('setInterval(()=>refreshStatus(true),5000)'), 'Owner results must refresh every 5s');
 assert.ok(vote.includes('vote-count'), 'Guest results must display votes per song');
 assert.ok(vote.includes('setInterval(refresh,18000)') && vote.includes('setInterval(checkStatus,6000)'), 'Separate fast status updates from full vote tallies');
-assert.ok(vote.includes('checkStatus();') && vote.includes("endpoint+'?status=1'"), 'Fast vote status endpoint must load immediately');
+assert.ok(vote.includes('checkStatus().finally(') && vote.includes("endpoint+'?status=1'"), 'Fast vote status endpoint must load immediately');
 assert.ok(vote.includes('statusKnown') && vote.includes('Проверяем голосование…'), 'Unknown vote status must not masquerade as closed');
 assert.ok(backend.includes('searchParams.get("status")==="1"') && backend.includes('scheduleSyncStartedAt'), 'Server must serve fast status without waiting for catalogue or repeated Google fetches');
 assert.ok(backend.includes('getTally(db,data.id)'), 'Public API must return aggregated vote tallies');
