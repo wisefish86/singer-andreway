@@ -2,8 +2,8 @@
 import '../../styles/global.css';
 import SiteFavicons from '../../components/SiteFavicons.astro';
 import { reviews } from '../../data/reviews';
-import { directChatLinks, contactMessages } from '../../config/contact-links';
-const messageLinks = directChatLinks(contactMessages.feedback);
+import { contactMessages } from '../../config/contact-links';
+import ContactSheet from '../../components/ContactSheet.astro';
 ---
 <!doctype html>
 <html lang="ru">
@@ -65,19 +65,11 @@ const messageLinks = directChatLinks(contactMessages.feedback);
   <h2>Хотите поделиться впечатлениями?</h2>
   <p>Если вы были на моём выступлении, буду благодарен даже за пару слов. Можно написать в удобном мессенджере — ничего заполнять и регистрировать не нужно.</p>
   <div class="review-actions">
-   <button id="review-open-dialog" class="btn primary" type="button">Оставить отзыв →</button>
+   <button class="btn primary js-contact-sheet" type="button" data-title="Сказать пару слов" data-copy="Выберите удобный мессенджер и отправьте текст, голосовое или видео." data-template={contactMessages.feedback}>Оставить отзыв →</button>
   </div>
  </section>
 </main>
-<dialog class="review-dialog" id="review-dialog" aria-labelledby="review-dialog-title">
- <h2 id="review-dialog-title">Сказать пару слов</h2>
- <p>Выберите удобный мессенджер и отправьте впечатления текстом, голосовым сообщением или видео.</p>
- <div class="review-dialog-links">
-  <a class="btn primary" href={messageLinks.whatsapp} target="_blank" rel="noopener noreferrer">Написать в WhatsApp ↗</a>
-  <a class="btn" href={messageLinks.telegramWeb} target="_blank" rel="noopener noreferrer">Написать в Telegram ↗</a>
- </div>
- <form method="dialog"><button class="review-dialog-close" type="submit">Закрыть</button></form>
-</dialog>
+<ContactSheet />
 <footer class="footer"><div class="container">© {new Date().getFullYear()} Андрей Шевцов · <a href="/">На главную</a></div></footer>
 <script is:inline>
 (()=>{
@@ -115,11 +107,5 @@ const messageLinks = directChatLinks(contactMessages.feedback);
  document.head.append(script);
 })();
 </script>
-<script is:inline>
-(()=>{
- const dialog=document.getElementById('review-dialog');
- document.getElementById('review-open-dialog')?.addEventListener('click',()=>dialog?.showModal());
- dialog?.addEventListener('click',event=>{if(event.target===dialog)dialog.close()});
-})();
-</script>
+
 </body></html>

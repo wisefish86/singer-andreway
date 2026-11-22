@@ -1,0 +1,58 @@
+---
+import Icon from './Icon.astro';
+import BrandIcon from './BrandIcon.astro';
+import { telegramApp, telegramWeb, whatsapp } from '../config/contact-links';
+const max='https://max.ru/u/f9LHodD0cOJuO0xwTsWmcH790HmZrPc21wP-BOoIgfgdGy5HKaHMK3ejGSQ';
+const vk='https://vk.me/andrey_spoet';
+---
+<dialog class="contact-sheet" id="contact-sheet" aria-labelledby="sheet-title">
+  <div class="sheet-head">
+    <div>
+      <h3 id="sheet-title">Написать Андрею</h3>
+      <p id="sheet-copy">Выберите удобный способ связи.</p>
+    </div>
+    <button class="sheet-close" type="button" aria-label="Закрыть"><Icon name="close" size={20}/></button>
+  </div>
+  <a class="sheet-repertoire" id="sheet-repertoire" href="/podborka/" target="_blank" rel="noopener noreferrer" hidden>
+    <Icon name="music" size={20}/>
+    <span><strong>Выбрать песню из репертуара</strong><small>Откроется список песен</small></span>
+    <Icon name="arrow" size={18}/>
+  </a>
+  <div class="sheet-messengers">
+    <a data-messenger="telegram" data-chat-base-app={telegramApp} data-chat-base-web={telegramWeb} href={telegramApp} data-social-destination data-social-web={telegramWeb} data-social-platform="telegram" data-social-name="написать в Telegram" target="_blank" rel="noopener noreferrer"><BrandIcon name="telegram" size={23}/><span>Telegram</span></a>
+    <a data-messenger="whatsapp" data-chat-base-web={whatsapp} href={whatsapp} data-social-destination data-social-web={whatsapp} data-social-platform="whatsapp" data-social-name="написать в WhatsApp" target="_blank" rel="noopener noreferrer"><BrandIcon name="whatsapp" size={23}/><span>WhatsApp</span></a>
+    <a data-messenger="max" href={max} data-social-destination data-social-web={max} data-social-platform="max" data-social-name="написать в MAX" target="_blank" rel="noopener noreferrer" aria-label="Написать в MAX"><BrandIcon name="max" size={23}/><span>MAX</span></a>
+    <a data-messenger="vk" href={vk} data-social-destination data-social-web={vk} data-social-platform="vk" data-social-name="написать ВКонтакте" target="_blank" rel="noopener noreferrer"><BrandIcon name="vk" size={23}/><span>ВКонтакте</span></a>
+  </div>
+</dialog>
+<script is:inline>
+(()=>{
+ const sheet=document.getElementById('contact-sheet');
+ if(!sheet)return;
+ const title=sheet.querySelector('#sheet-title'),copy=sheet.querySelector('#sheet-copy');
+ const repertoire=sheet.querySelector('#sheet-repertoire');
+ document.querySelectorAll('.js-contact-sheet').forEach(trigger=>{
+  trigger.addEventListener('click',()=>{
+   title.textContent=trigger.dataset.title||'Написать Андрею';
+   copy.textContent=trigger.dataset.copy||'Выберите удобный способ связи.';
+   repertoire.hidden=trigger.dataset.repertoire!=='true';
+   const message=trigger.dataset.template||'';
+   const encoded=message?encodeURIComponent(message):'';
+   const wa=sheet.querySelector('[data-messenger="whatsapp"]');
+   wa.href=wa.dataset.chatBaseWeb+(encoded?'?text='+encoded:'');wa.dataset.socialWeb=wa.href;
+   const tg=sheet.querySelector('[data-messenger="telegram"]');
+   tg.href=tg.dataset.chatBaseApp+(encoded?'&text='+encoded:'');
+   tg.dataset.socialWeb=tg.dataset.chatBaseWeb+(encoded?'?text='+encoded:'');
+   sheet.showModal();
+  });
+ });
+ if(new URLSearchParams(location.search).get('guest')==='video'&&location.hash==='#live'){
+  window.addEventListener('load',()=>{
+   document.getElementById('live')?.scrollIntoView({block:'start'});
+   document.getElementById('guest-video-action')?.click();
+  },{once:true});
+ }
+ sheet.querySelector('.sheet-close')?.addEventListener('click',()=>sheet.close());
+ sheet.addEventListener('click',event=>{if(event.target===sheet)sheet.close()});
+})();
+</script>

@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'apps-script/**'
+      - 'src/components/ContactSheet.astro'
       - 'src/pages/vote/**'
       - 'src/pages/reviews/**'
       - 'src/data/reviews.ts'
