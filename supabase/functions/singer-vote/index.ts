@@ -95,34 +95,39 @@ async function ensureCalendarSessions(db:any){
 // Explicitly private Google Sheet controls manual sessions. The web app exposes
 // only dates and a boolean, never the spreadsheet itself or the admin secret.
 const VOTE_CONFIG_URL="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec?kind=vote-config";
-let scheduleCache:{until:number;config:{enabled:boolean;start?:string;end?:string}}|null=null;
+let scheduleCache:{until:number;config:{enabled:boolean;start?:string;end?:string;test_mode?:boolean;run_id?:string}}|null=null;
 async function manualSchedule(){
  if(scheduleCache&&scheduleCache.until>Date.now())return scheduleCache.config;
  const response=await fetch(VOTE_CONFIG_URL,{redirect:"follow",cache:"no-store",signal:AbortSignal.timeout(3500)});
  if(!response.ok)throw new Error("vote_sheet_unavailable");
  const data=await response.json();
- const config:{enabled:boolean;start?:string;end?:string}={enabled:false};
+ const config:{enabled:boolean;start?:string;end?:string;test_mode?:boolean;run_id?:string}={enabled:false};
  if(data?.enabled===true){
   const start=Date.parse(data.start),end=Date.parse(data.end);
   if(Number.isFinite(start)&&Number.isFinite(end)&&end>start&&end-start<=12*3600000&&
    end>Date.now()&&start<Date.now()+60*86400000){
     config.enabled=true;config.start=new Date(start).toISOString();config.end=new Date(end).toISOString();
+    config.test_mode=data.test_mode===true;
+    config.run_id=typeof data.run_id==="string"?data.run_id:"";
   }
  }
  scheduleCache={until:Date.now()+30000,config};
  return config;
 }
 async function ensureManualSheetSession(db:any){
- let config:{enabled:boolean;start?:string;end?:string};
+ let config:{enabled:boolean;start?:string;end?:string;test_mode?:boolean;run_id?:string};
  try{config=await manualSchedule();}
  catch(e){
   // A temporary Sheet outage must not cancel an explicitly enabled live event.
   console.warn("Voting Sheet settings unavailable",e instanceof Error?e.message:"unknown");
   return;
  }
- const source=config.enabled?"sheet:"+config.start:null;
+ const runId=config.run_id;
+ const validRunId=typeof runId==="string" && (runId==="legacy" || /^[0-9a-f-]{36}$/i.test(runId));
+ // Invalid/untrusted settings fail closed rather than reusing an old voting session.
+ const source=config.enabled&&validRunId?(runId==="legacy"?"sheet:"+config.start:"sheet:"+runId):null;
  const {data,error}=await db.from("singer_vote_sessions")
-  .select("id,source_key,enabled,starts_at,ends_at").like("source_key","sheet:%").eq("enabled",true).limit(100);
+  .select("id,source_key,enabled,starts_at,ends_at,test_mode").like("source_key","sheet:%").eq("enabled",true).limit(100);
  if(error)throw error;
  for(const old of data||[]){
   if(old.source_key!==source){
@@ -132,10 +137,10 @@ async function ensureManualSheetSession(db:any){
  }
  if(!config.enabled||!source)return;
  const current=(data||[]).find((x:any)=>x.source_key===source);
- if(current&&current.starts_at===config.start&&current.ends_at===config.end)return;
+ if(current&&current.starts_at===config.start&&current.ends_at===config.end&&current.test_mode===Boolean(config.test_mode))return;
  const {error:upsertError}=await db.from("singer_vote_sessions").upsert({
   title:"Голосование вечера",source_key:source,starts_at:config.start,
-  ends_at:config.end,enabled:true
+  ends_at:config.end,enabled:true,test_mode:Boolean(config.test_mode)
  },{onConflict:"source_key"});
  if(upsertError)throw upsertError;
 }
@@ -165,17 +170,17 @@ Deno.serve(async req=>{
    for(const check of [calendarCheck,sheetCheck]){
     if(check.status==="rejected")console.warn("Voting schedule source temporarily unavailable");
    }
-   const {data,error}=await db.from("singer_vote_sessions").select("id,starts_at,ends_at")
+   const {data,error}=await db.from("singer_vote_sessions").select("id,starts_at,ends_at,test_mode")
     .eq("enabled",true).lte("starts_at",new Date().toISOString()).gt("ends_at",new Date().toISOString())
     .order("starts_at",{ascending:false}).limit(1).maybeSingle();
    if(error)throw error;
    // The public catalogue is always available for preview even outside an event.
    // Only active sessions expose vote counts or accept ballots.
    if(!data){
-    return json({active:false,songs:songs.map(song=>({...song,votes:0})),voters:0,catalogue_ready:songs.length>=3},200,origin);
+    return json({active:false,test_mode:false,songs:songs.map(song=>({...song,votes:0})),voters:0,catalogue_ready:songs.length>=3},200,origin);
    }
    const tally=await getTally(db,data.id);
-   return json({active:true,session:{id:data.id,ends_at:data.ends_at},songs:songs.map(song=>({...song,votes:tally.counts[song.id]||0}))
+   return json({active:true,test_mode:Boolean(data.test_mode),session:{id:data.id,ends_at:data.ends_at},songs:songs.map(song=>({...song,votes:tally.counts[song.id]||0}))
     .sort((a,b)=>b.votes-a.votes||(a.artist+" "+a.name).localeCompare(b.artist+" "+b.name,"ru")),
     voters:tally.voters, catalogue_ready:songs.length>=3},200,origin);
   }
@@ -207,7 +212,7 @@ Deno.serve(async req=>{
     if(typeof payload.id!=="string")return json({error:"invalid_id"},400,origin);
     const {error}=await db.from("singer_vote_sessions").update({enabled:false}).eq("id",payload.id);
     if(error)throw error;
-    return json({ok:true},200,origin);
+    return json({ok:true,test_mode:Boolean(voteSession.test_mode)},200,origin);
    }
    if(op==="open"){
     const start=Date.parse(payload.starts_at),end=Date.parse(payload.ends_at);
@@ -232,12 +237,15 @@ Deno.serve(async req=>{
      ids.length<1||ids.length>3||new Set(ids).size!==ids.length||ids.some((x:unknown)=>typeof x!=="string"||!/^[a-f0-9]{16}$/.test(x))){
     return json({error:"invalid_vote"},400,origin);
   }
+  const {data:voteSession,error:sessionError}=await db.from("singer_vote_sessions")
+   .select("test_mode").eq("id",id).maybeSingle();
+  if(sessionError||!voteSession)return json({error:"closed"},409,origin);
   const eligible=new Set((await finalists()).map(s=>s.id));
   if(ids.some((x:string)=>!eligible.has(x)))return json({error:"ineligible_song"},400,origin);
   const ip=req.headers.get("cf-connecting-ip")||req.headers.get("x-real-ip")||"voter:"+voter;
   const pepper=Deno.env.get("SINGER_VOTE_IP_PEPPER")||Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
   if(pepper.length<32)return json({error:"not_configured"},503,origin);
-  const result=await db.rpc("singer_cast_vote",{p_session:id,p_voter_hash:await sha(id+":"+voter),
+  const result=await db.rpc("singer_cast_vote",{p_session:id,p_voter_hash:await sha(id+":"+voter+(voteSession.test_mode?":"+crypto.randomUUID():"")),
    p_ip_hash:await sha(pepper+":"+ip),p_song_ids:ids});
   if(result.error)throw result.error;
   if(result.data!=="ok")return json({error:result.data},result.data==="rate_limited"?429:409,origin);

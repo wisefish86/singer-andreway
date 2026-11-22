@@ -76,7 +76,7 @@ const repertoireUrl = '/podborka/';
       <nav class="nav" aria-label="Навигация">
         <a href="#repertoire">Репертуар</a>
         <a href="#events">Афиша</a>
-        <a href="/reviews/">Отзывы</a>
+        <a href="#reviews">Отзывы</a>
         <a href="#video">Видео</a>
         <a href="#contact">Контакты</a>
       </nav>
@@ -129,7 +129,7 @@ const repertoireUrl = '/podborka/';
       <a class="quick-card" href="#photos"><div class="quick-icon"><Icon name="image" size={28} /></div><div class="quick-title">Фото</div><div class="quick-sub">с выступлений</div></a>
       <a class="quick-card" href="#events"><div class="quick-icon"><Icon name="calendar" size={28} /></div><div class="quick-title">Афиша</div><div class="quick-sub">ближайшие даты</div></a>
       <a class="quick-card" href="#live"><div class="quick-icon"><Icon name="mic" size={28} /></div><div class="quick-title">Во время выступления</div><div class="quick-sub">песня, сообщение, благодарность</div></a>
-      <a class="quick-card" href="/reviews/"><div class="quick-icon"><Icon name="message" size={28} /></div><div class="quick-title">Отзывы</div><div class="quick-sub">впечатления гостей</div></a>
+      <a class="quick-card" href="#reviews"><div class="quick-icon"><Icon name="message" size={28} /></div><div class="quick-title">Отзывы</div><div class="quick-sub">впечатления гостей</div></a>
     </div>
   </section>
 
@@ -227,10 +227,12 @@ const repertoireUrl = '/podborka/';
       </div>
     </section>
 
-    <section class="section home-reviews" id="reviews" hidden aria-label="Отзывы гостей">
+    <section class="section home-reviews" id="reviews" aria-label="Отзывы гостей">
 <div class="container"><div class="section-head"><div><h2>Отзывы о выступлениях</h2><p class="lead">Впечатления гостей</p></div><a class="link" href="/reviews/">Все отзывы →</a></div>
 <div class="home-reviews-controls"><button id="reviews-back" type="button" aria-label="Предыдущие отзывы">←</button><button id="reviews-forward" type="button" aria-label="Следующие отзывы">→</button></div>
-<div class="home-reviews-track" id="reviews-track" tabindex="0" aria-label="Отзывы гостей"></div></div></section>
+<div class="home-reviews-track" id="reviews-track" tabindex="0" aria-label="Отзывы гостей">
+<article class="home-review" aria-label="Пример карточки отзыва"><div class="home-review-head"><img src="/reviews/placeholder-cat.svg" width="54" height="54" alt="Иллюстрация кота — тестовый аватар" loading="lazy"/><div><strong>Пример оформления</strong><small>Не настоящий отзыв</small></div></div><p>Здесь появятся настоящие впечатления гостей после выступлений. Пока это демонстрация карточки.</p></article>
+</div></div></section>
 <section class="section" id="contact">
       <div class="container">
         <div class="contact">
@@ -540,7 +542,7 @@ const repertoireUrl = '/podborka/';
  const append=(p,tag,cls,value)=>{const n=document.createElement(tag);n.className=cls||'';n.textContent=String(value||'');p.append(n);return n};
  const controls=()=>{back.disabled=track.scrollLeft<2;forward.disabled=track.scrollLeft>=track.scrollWidth-track.clientWidth-2};
  window.singerReviewsLoaded=payload=>{
-  const reviews=Array.isArray(payload?.reviews)?payload.reviews:[];if(reviews.length<2)return;
+  const reviews=Array.isArray(payload?.reviews)?payload.reviews:[];if(!reviews.length)return;
   track.replaceChildren();
   for(const r of reviews.slice(0,10)){
    const card=document.createElement('article');card.className='home-review';
@@ -551,7 +553,7 @@ const repertoireUrl = '/podborka/';
    const who=document.createElement('div');append(who,'strong','',r.author);append(who,'small','',[r.event,r.city,r.dateLabel].filter(Boolean).join(' · '));
    head.append(img,who);card.append(head);append(card,'p','',r.text);track.append(card);
   }
-  section.hidden=false;requestAnimationFrame(controls);
+  requestAnimationFrame(controls);
  };
  back.addEventListener('click',()=>track.scrollBy({left:-Math.max(260,track.clientWidth*.8),behavior:'smooth'}));
  forward.addEventListener('click',()=>track.scrollBy({left:Math.max(260,track.clientWidth*.8),behavior:'smooth'}));
