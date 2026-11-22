@@ -19,15 +19,35 @@ async function finalists():Promise<Song[]>{
  const songs:Song[]=[];
  for(const song of data.songs){
   if(!/^[a-f0-9]{16}$/.test(String(song.id))||!Array.isArray(song.playlist_variants))continue;
-  const eligible = song.playlist_variants.some((variant:{relative_path?:string}) => {
-   const name=String(variant?.relative_path||"").split(/[\\/]/).pop()||"";
-   return name.includes("@");
-  });
-  if(eligible)songs.push({id:song.id,name:String(song.name||""),artist:String(song.artist||"")});
+  const eligible = song.playlist_variants.some((variant:{relative_path?:string;title?:string;filename?:string}) => {
+   // The MusicBee @ suffix can survive in a filename or the exported variant title.
+   const filename=String(variant?.relative_path||variant?.filename||"").split(/[\\/]/).pop()||"";
+   return filename.includes("@") || String(variant?.title||"").includes("@");
+  }) || String(song.name||"").includes("@");
+  if(eligible)songs.push({id:song.id,name:String(song.name||"").replace(/@/g,"").trim(),artist:String(song.artist||"")});
  }
  songs.sort((a,b)=>(a.artist+" "+a.name).localeCompare(b.artist+" "+b.name,"ru"));
  songCache={until:Date.now()+120000,songs};
  return songs;
+}
+type VoteTally={counts:Record<string,number>;voters:number};
+let tallyCache:{sessionId:string;expires:number;value:VoteTally}|null=null;
+async function getTally(db:any, sessionId:string):Promise<VoteTally>{
+ if(tallyCache?.sessionId===sessionId && tallyCache.expires>Date.now())return tallyCache.value;
+ const counts:Record<string,number>=Object.create(null);
+ let voters=0;
+ // Supabase limits queries to 1000 rows; paginate rather than dropping late votes.
+ for(let offset=0;offset<10000;offset+=1000){
+  const {data,error}=await db.from("singer_vote_ballots").select("song_ids").eq("session_id",sessionId).range(offset,offset+999);
+  if(error)throw error;
+  const rows=data||[];
+  voters+=rows.length;
+  for(const row of rows)for(const id of row.song_ids||[])counts[id]=(counts[id]||0)+1;
+  if(rows.length<1000)break;
+ }
+ const value={counts,voters};
+ tallyCache={sessionId,expires:Date.now()+5000,value};
+ return value;
 }
 function dbClient(){
  return createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,{auth:{persistSession:false}});
@@ -88,7 +108,11 @@ Deno.serve(async req=>{
     .order("starts_at",{ascending:false}).limit(1).maybeSingle();
    if(error)throw error;
    if(!data)return json({active:false},200,origin);
-   return json({active:true,session:{id:data.id,ends_at:data.ends_at},songs:await finalists()},200,origin);
+   const songs=await finalists();
+   const tally=await getTally(db,data.id);
+   return json({active:true,session:{id:data.id,ends_at:data.ends_at},songs:songs.map(song=>({...song,votes:tally.counts[song.id]||0}))
+    .sort((a,b)=>b.votes-a.votes||(a.artist+" "+a.name).localeCompare(b.artist+" "+b.name,"ru")),
+    voters:tally.voters, catalogue_ready:songs.length>=3},200,origin);
   }
   if(req.method!=="POST")return json({error:"method_not_allowed"},405,origin);
   if(Number(req.headers.get("content-length")||0)>5000)return json({error:"too_large"},413,origin);
@@ -96,6 +120,10 @@ Deno.serve(async req=>{
   if(payload?.action==="admin"){
    if(!(await authorized(req,db)))return json({error:"unauthorized"},401,origin);
    const op=payload.operation;
+   if(op==="catalogue"){
+    const songs=await finalists();
+    return json({eligible_count:songs.length,preview:songs.slice(0,12)},200,origin);
+   }
    if(op==="status"){
     const {data,error}=await db.from("singer_vote_sessions").select("id,starts_at,ends_at,enabled,created_at")
      .order("created_at",{ascending:false}).limit(20);
@@ -107,7 +135,8 @@ Deno.serve(async req=>{
     if(ballotError)throw ballotError;
     const counts=new Map<string,number>();
     for(const b of ballots||[])for(const id of b.song_ids)counts.set(id,(counts.get(id)||0)+1);
-    return json({session:latest,ballots:ballots?.length||0,results:[...counts].map(([id,votes])=>({id,votes})).sort((a,b)=>b.votes-a.votes)},200,origin);
+    const songNames=await finalists().catch(()=>[]);
+    return json({session:latest,ballots:ballots?.length||0,songs:songNames,results:[...counts].map(([id,votes])=>({id,votes})).sort((a,b)=>b.votes-a.votes)},200,origin);
    }
    if(op==="close"){
     if(typeof payload.id!=="string")return json({error:"invalid_id"},400,origin);
@@ -147,6 +176,7 @@ Deno.serve(async req=>{
    p_ip_hash:await sha(pepper+":"+ip),p_song_ids:ids});
   if(result.error)throw result.error;
   if(result.data!=="ok")return json({error:result.data},result.data==="rate_limited"?429:409,origin);
+  tallyCache=null;
   return json({ok:true},200,origin);
  }catch(err){
   console.error("Voting request failed",err instanceof Error?err.message:"unknown");

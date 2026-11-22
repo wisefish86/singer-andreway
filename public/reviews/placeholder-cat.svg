@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180" role="img" aria-labelledby="title desc">
+<title id="title">Нарисованный кот</title><desc id="desc">Декоративная заглушка для тестовой карточки отзыва</desc>
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#244052"/><stop offset="1" stop-color="#0d1a2a"/></linearGradient></defs>
+<circle cx="90" cy="90" r="88" fill="url(#bg)"/><path d="M43 79 38 35l34 24Q90 51 108 59l34-24-5 44q15 16 15 37c0 35-28 54-62 54s-62-19-62-54q0-21 15-37Z" fill="#e5c99c" stroke="#af895a" stroke-width="3" stroke-linejoin="round"/>
+<path d="m49 67-3-21 18 14M131 67l3-21-18 14" fill="#b57b78"/><ellipse cx="68" cy="108" rx="6" ry="8" fill="#203047"/><ellipse cx="112" cy="108" rx="6" ry="8" fill="#203047"/>
+<path d="m84 126 6 5 6-5Z" fill="#b97779"/><path d="M90 131v7m0 0q-8 9-16 0m16 0q8 9 16 0" fill="none" stroke="#73564f" stroke-width="3" stroke-linecap="round"/>
+<path d="M49 130 24 126m25 12-24 3m106-11 25-4m-25 12 24 3" stroke="#f4e0c2" stroke-width="2.6" stroke-linecap="round"/></svg>

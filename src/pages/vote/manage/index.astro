@@ -1,0 +1,163 @@
+---
+import '../../../styles/global.css';
+import SiteFavicons from '../../../components/SiteFavicons.astro';
+const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-vote';
+---
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<SiteFavicons />
+<title>Управление голосованием — ANDREY-SPOET</title>
+<meta name="robots" content="noindex,nofollow,noarchive"/>
+<meta name="referrer" content="no-referrer"/>
+<style>
+.vote-manage{max-width:770px;margin:auto;padding:40px 20px 90px;min-height:78vh}
+.vote-manage h1{font-size:clamp(2rem,6vw,3.7rem);letter-spacing:-.045em;line-height:1.1;margin:12px 0}
+.vm-intro{color:var(--muted);line-height:1.6}
+.vm-panel{background:linear-gradient(145deg,var(--surface2),var(--surface));border:1px solid var(--line);border-radius:20px;padding:clamp(17px,4vw,26px);margin:20px 0}
+.vm-panel h2{font-size:1.3rem;margin:0 0 14px}
+.vm-panel label{display:block;color:var(--text);font-size:.9rem;font-weight:600;margin:14px 0}
+.vm-panel input{box-sizing:border-box;display:block;width:100%;background:#0a1a29;color:var(--text);font:inherit;padding:12px;border-radius:11px;border:1px solid var(--line);min-height:47px;margin-top:7px}
+.vm-panel input:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
+.vm-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.vm-actions .btn{min-height:44px}
+.vm-note{color:var(--muted);font-size:.86rem;line-height:1.65}
+.vm-status{padding:12px 14px;background:#112637;border-radius:10px;color:var(--text);min-height:22px;white-space:pre-wrap;overflow-wrap:anywhere}
+.vm-tally{padding:0;margin:14px 0;list-style:none}
+.vm-tally li{padding:10px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px}
+.vm-tally li span:last-child{color:var(--accent2);font-weight:700;white-space:nowrap}
+.vm-hidden{display:none}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="container topbar-inner"><a class="brand" href="/">ANDREY-SPOET</a><a class="media-back" href="/vote/">← Страница гостей</a></div></header>
+<main class="vote-manage">
+ <p class="vm-intro">Личный раздел · не показывается в поисковой выдаче</p>
+ <h1>Управление голосованием</h1>
+ <p class="vm-intro">Здесь можно открыть голосование для закрытого мероприятия, указать время по Москве, посмотреть текущих лидеров и закрыть приём голосов. Публичные выступления из календаря открываются автоматически.</p>
+ <section class="vm-panel">
+  <h2>Доступ владельца</h2>
+  <label for="vm-key">Ключ администратора
+   <input id="vm-key" type="password" autocomplete="off" spellcheck="false" placeholder="Вставьте личный ключ"/>
+  </label>
+  <div class="vm-actions">
+   <button class="btn primary" type="button" id="vm-connect">Войти и показать результаты</button>
+   <button class="btn" type="button" id="vm-catalogue">Проверить песни с @</button>
+  </div>
+  <p class="vm-note">Ссылка сама по себе не предоставляет доступ: для любых операций сервер проверяет ключ. Ключ не сохраняется в браузере.</p>
+  <div id="vm-status" class="vm-status" role="status" aria-live="polite">Не подключено</div>
+ </section>
+ <section id="vm-control" class="vm-panel vm-hidden">
+  <h2>Время голосования</h2>
+  <p class="vm-note">Для закрытого мероприятия укажите начало и окончание. Если выступление идёт с 20:00 до 22:00, установите 20:00–23:00. Новый опрос получает собственные пустые результаты.</p>
+  <label for="vm-start">Открыть (Москва)
+   <input id="vm-start" type="datetime-local"/>
+  </label>
+  <label for="vm-end">Закрыть (Москва)
+   <input id="vm-end" type="datetime-local"/>
+  </label>
+  <div class="vm-actions">
+   <button class="btn primary" type="button" id="vm-open">Создать голосование</button>
+   <button class="btn" type="button" id="vm-close">Закрыть текущее</button>
+  </div>
+ </section>
+ <section id="vm-results" class="vm-panel vm-hidden">
+  <h2>Результаты в реальном времени</h2>
+  <p class="vm-note" id="vm-participants">Голосование пока не началось.</p>
+  <ol class="vm-tally" id="vm-ranking"></ol>
+  <p class="vm-note">Обновление каждые 5 секунд, пока эта страница открыта. Гости тоже видят рейтинг, но не видят этот раздел управления.</p>
+ </section>
+</main>
+<footer class="footer"><div class="container">© {new Date().getFullYear()} Андрей Шевцов · <a href="/">На главную</a></div></footer>
+<script define:vars={{endpoint}}>
+(()=>{
+ const $=id=>document.getElementById(id);
+ let authenticated=false,loading=false,sessionId=null;
+ let names=new Map();
+ async function api(body){
+  const key=$('vm-key').value.trim();
+  if(!key)throw new Error('Укажите ключ администратора');
+  const response=await fetch(endpoint,{method:'POST',cache:'no-store',
+   headers:{'content-type':'application/json','authorization':'Bearer '+key},body:JSON.stringify({action:'admin',...body})});
+  const data=await response.json().catch(()=>({error:'server_unavailable'}));
+  if(!response.ok){
+   const messages={unauthorized:'Неверный ключ',not_enough_finalists:'Недостаточно песен с @ в опубликованном репертуаре. Нажмите «Проверить песни с @».',
+    invalid_schedule:'Проверьте дату и время окончания',catalogue_unavailable:'Не удалось загрузить репертуар с сайта',
+    server_unavailable:'Сервер временно недоступен'};
+   throw new Error(messages[data.error]||data.error||'Ошибка сервера');
+  }
+  return data;
+ }
+ const pad=n=>String(n).padStart(2,'0');
+ function moscow(date){
+  const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(date)).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+  return parts.year+'-'+parts.month+'-'+parts.day+'T'+parts.hour+':'+parts.minute;
+ }
+ $('vm-start').value=moscow(Date.now());
+ $('vm-end').value=moscow(Date.now()+3*3600000);
+ function showTally(data){
+  if(Array.isArray(data.songs))names=new Map(data.songs.map(song=>[song.id,song.artist+' — '+song.name]));
+  const session=data.session;
+  sessionId=session?.id||null;
+  const currentlyOpen=session?.enabled&&Date.parse(session.starts_at)<=Date.now()&&Date.parse(session.ends_at)>Date.now();
+  const status=!session?'Сессий ещё нет':currentlyOpen?'● Голосование открыто':session.enabled?'Голосование запланировано':'Голосование закрыто';
+  const till=session?' · до '+new Date(session.ends_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' МСК':'';
+  $('vm-status').textContent=status+till;
+  $('vm-participants').textContent='Участников: '+(data.ballots||0)+' · Голосов: '+(data.results||[]).reduce((sum,row)=>sum+row.votes,0);
+  const list=$('vm-ranking');list.replaceChildren();
+  for(const [i,row] of (data.results||[]).entries()){
+   const li=document.createElement('li'),name=document.createElement('span'),count=document.createElement('span');
+   name.textContent=(i+1)+'. '+(names.get(row.id)||row.id);count.textContent=row.votes+' голосов';
+   li.append(name,count);list.append(li);
+  }
+  if(!data.results?.length)list.textContent='Голосов пока нет.';
+ }
+ async function refreshStatus(silent=false){
+  if(!authenticated||loading||document.hidden)return;
+  loading=true;
+  try{
+   const data=await api({operation:'status'});
+   showTally(data);
+   $('vm-control').classList.remove('vm-hidden');$('vm-results').classList.remove('vm-hidden');
+  }catch(e){if(!silent)$('vm-status').textContent='Ошибка: '+e.message;authenticated=false;}
+  finally{loading=false}
+ }
+ async function catalogue(){
+  try{
+   $('vm-status').textContent='Проверяем опубликованный репертуар…';
+   const d=await api({operation:'catalogue'});
+   names=new Map((d.preview||[]).map(s=>[s.id,s.artist+' — '+s.name]));
+   $('vm-status').textContent='Песен для голосования: '+d.eligible_count+
+     (d.eligible_count<3?' — голосование нельзя открыть до исправления каталога.':' — достаточно для открытия.')+
+     '\nПримеры: '+(d.preview||[]).map(s=>s.artist+' — '+s.name).join('; ');
+  }catch(e){$('vm-status').textContent='Ошибка: '+e.message}
+ }
+ $('vm-catalogue').addEventListener('click',catalogue);
+ $('vm-connect').addEventListener('click',async()=>{
+  authenticated=true;
+  await refreshStatus();
+  if(authenticated)await catalogue();
+ });
+ async function change(operation,extra){
+  if(!authenticated){$('vm-status').textContent='Сначала войдите с ключом';return}
+  try{
+   const data=await api({operation,...extra});
+   $('vm-status').textContent=operation==='open'?'Новое голосование создано.':'Голосование закрыто.';
+   await refreshStatus();
+  }catch(e){$('vm-status').textContent='Ошибка: '+e.message}
+ }
+ $('vm-open').addEventListener('click',()=>{
+  const start=$('vm-start').value,end=$('vm-end').value;
+  if(!start||!end){$('vm-status').textContent='Укажите обе даты';return}
+  if(!confirm('Создать новое голосование? Предыдущая активная сессия будет закрыта.'))return;
+  change('open',{starts_at:new Date(start+':00+03:00').toISOString(),ends_at:new Date(end+':00+03:00').toISOString()});
+ });
+ $('vm-close').addEventListener('click',()=>{
+  if(!sessionId){$('vm-status').textContent='Нет открытой сессии';return}
+  if(confirm('Закрыть голосование?'))change('close',{id:sessionId});
+ });
+ setInterval(()=>refreshStatus(true),5000);
+})();
+</script>
+</body></html>
