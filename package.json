@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "prebuild": "node .github/scripts/install-hls-client.mjs"
   },
   "dependencies": {
     "astro": "^5.14.1",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "hls.js": "^1.6.0"
   }
 }
