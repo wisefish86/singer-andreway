@@ -240,6 +240,41 @@
     if(next<0||next>=videos.length)return;
     videoIndex=next;renderVideo();
   }
+  function addMobileSeekControls(stage,player){
+    // Native Android double-tap seeking can issue several HLS seeks while fragments
+    // are still switching. Coalesce taps into one seek after a short quiet period.
+    if(!window.matchMedia?.('(pointer: coarse)').matches)return;
+    let desired=null, timer=null, lastTapAt=0;
+    const jump=(direction)=>{
+      if(!Number.isFinite(player.duration)||player.duration<=0)return;
+      const now=Date.now();
+      if(desired===null||now-lastTapAt>550)desired=player.currentTime;
+      desired=Math.min(Math.max(desired+direction*10,0),Math.max(0,player.duration-.1));
+      lastTapAt=now;
+      clearTimeout(timer);
+      timer=setTimeout(()=>{
+        const position=desired;
+        desired=null;
+        if(!player.isConnected||position===null)return;
+        // One actual seek for a burst of taps. Native slider remains untouched.
+        player.currentTime=position;
+        if(player.paused)player.play().catch(()=>{});
+      },240);
+    };
+    for(const [direction,label,klass] of [
+      [-1,'Назад на 10 секунд','back'],
+      [1,'Вперёд на 10 секунд','forward']
+    ]){
+      const control=elt('button','showcase-touch-seek showcase-touch-seek-'+klass);
+      control.type='button';
+      control.setAttribute('aria-label',label);
+      control.textContent=direction<0?'↶ 10':'10 ↷';
+      control.addEventListener('click',()=>jump(direction));
+      control.addEventListener('dblclick',event=>event.preventDefault());
+      stage.append(control);
+    }
+    player.addEventListener('emptied',()=>{clearTimeout(timer);desired=null;},{once:true});
+  }
   function renderVideo(){
     const item=videos[videoIndex];if(!item)return;
     const dialog=getModal();
@@ -284,6 +319,7 @@
       feedback.hidden=false;
     });
     stage.append(player,feedback);
+    addMobileSeekControls(stage,player);
     resolveCover(item,url=>{if(url&&player.isConnected)player.poster=url;});
     if(videos.length>1)stage.append(navButton(-1,()=>changeVideo(-1),videoIndex===0),
       navButton(1,()=>changeVideo(1),videoIndex===videos.length-1));
