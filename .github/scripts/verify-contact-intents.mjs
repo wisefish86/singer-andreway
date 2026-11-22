@@ -20,6 +20,13 @@ for (const [kind, message] of Object.entries(expected)) {
 }
 const contact = home.match(/<div class="contact-socials"[^>]*>([\s\S]*?)<\/div>/)?.[1];
 assert.ok(contact, 'Booking contact area not found');
+const bookingSection=home.match(/<section class="section" id="contact">([\s\S]*?)<\/section>/)?.[1];
+const finalStay=home.match(/<section class="section stay-connected-section"[^>]*>([\s\S]*?)<\/section>/)?.[1];
+assert.ok(bookingSection && finalStay, 'Contact and standalone final subscription sections must exist');
+assert.ok(!bookingSection.includes('Останемся на связи'), 'Subscription must not be nested inside booking card');
+assert.ok(finalStay.includes('Останемся на связи') && finalStay.includes('Telegram-канал'), 'Telegram subscription must be at the end of the homepage');
+assert.ok(home.indexOf('id="contact"') < home.indexOf('stay-connected-section'), 'Subscription must follow contacts');
+
 assert.deepEqual([...contact.matchAll(/data-social-platform="([^"]+)"/g)].map(m=>m[1]), ['telegram','whatsapp','max'], 'Booking must offer only responsive messaging channels');
 assert.ok(!home.includes('data-social-platform="instagram"') && !home.includes('data-social-platform="vk"'), 'Do not promote unused social networks');
 assert.ok(!shared.includes('data-messenger="vk"') && !shared.includes('data-messenger="instagram"'), 'Popup must not include unused social networks');
