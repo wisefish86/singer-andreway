@@ -66,7 +66,7 @@ const repertoireUrl = '/podborka/';
     .guest-evening-link:focus-visible{outline:3px solid #fff;outline-offset:3px}
     #live{scroll-margin-top:92px}
     @media(max-width:600px){.guest-evening-inner{gap:9px}.guest-evening-label{font-size:.86rem;text-align:center}.guest-evening-link{width:100%}}
-  .home-reviews[hidden]{display:none!important}.home-reviews-controls{display:flex;gap:10px;justify-content:flex-end;margin:-9px 0 12px}.home-reviews-controls button{border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--text);width:38px;height:38px;cursor:pointer}.home-reviews-controls button:disabled{opacity:.35}.home-reviews-track{display:flex;gap:16px;overflow:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;padding:4px 0 16px}.home-review{box-sizing:border-box;flex:0 0 min(375px,calc(100% - 16px));scroll-snap-align:start;padding:23px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#152737,#0e1d29)}.home-review-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}.home-review-head img{height:54px;width:54px;border-radius:50%;object-fit:cover}.home-review-head strong{display:block}.home-review-head small{display:block;color:var(--muted);font-size:.79rem;margin-top:4px}.home-review p{font-size:.98rem;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}@media(min-width:800px){.home-review{flex-basis:calc((100% - 32px)/3)}}
+  .home-reviews[hidden]{display:none!important}.home-reviews-carousel{position:relative}.home-reviews-controls{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;pointer-events:none;z-index:2;padding:0 8px}.home-reviews-controls[hidden]{display:none!important}.home-reviews-controls button{pointer-events:auto;display:grid;place-items:center;border:1px solid rgba(255,255,255,.36);border-radius:50%;background:rgba(8,20,32,.88);color:var(--text);width:43px;height:43px;box-shadow:0 4px 16px #0007;cursor:pointer;transition:opacity .2s}.home-reviews-controls button:disabled{opacity:0;pointer-events:none}@media(hover:hover){.home-reviews-controls button:not(:focus-visible){opacity:0}.home-reviews-carousel:hover .home-reviews-controls button:not(:disabled){opacity:1}}.home-reviews-track{display:flex;gap:16px;overflow:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;padding:4px 0 16px}.home-review{box-sizing:border-box;flex:0 0 min(375px,calc(100% - 16px));scroll-snap-align:start;padding:23px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,#152737,#0e1d29)}.home-review-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}.home-review-head img{height:54px;width:54px;border-radius:50%;object-fit:cover}.home-review-head strong{display:block}.home-review-head small{display:block;color:var(--muted);font-size:.79rem;margin-top:4px}.home-review p{font-size:.98rem;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere}@media(min-width:800px){.home-review{flex-basis:calc((100% - 32px)/3)}}
 </style>
 </head>
 <body>
@@ -76,7 +76,7 @@ const repertoireUrl = '/podborka/';
       <nav class="nav" aria-label="Навигация">
         <a href="#repertoire">Репертуар</a>
         <a href="#events">Афиша</a>
-        <a href="#reviews">Отзывы</a>
+        <a href="/reviews/">Отзывы</a>
         <a href="#video">Видео</a>
         <a href="#contact">Контакты</a>
       </nav>
@@ -129,7 +129,7 @@ const repertoireUrl = '/podborka/';
       <a class="quick-card" href="#photos"><div class="quick-icon"><Icon name="image" size={28} /></div><div class="quick-title">Фото</div><div class="quick-sub">с выступлений</div></a>
       <a class="quick-card" href="#events"><div class="quick-icon"><Icon name="calendar" size={28} /></div><div class="quick-title">Афиша</div><div class="quick-sub">ближайшие даты</div></a>
       <a class="quick-card" href="#live"><div class="quick-icon"><Icon name="mic" size={28} /></div><div class="quick-title">Во время выступления</div><div class="quick-sub">песня, сообщение, благодарность</div></a>
-      <a class="quick-card" href="#reviews"><div class="quick-icon"><Icon name="message" size={28} /></div><div class="quick-title">Отзывы</div><div class="quick-sub">впечатления гостей</div></a>
+      <a class="quick-card" href="/reviews/"><div class="quick-icon"><Icon name="message" size={28} /></div><div class="quick-title">Отзывы</div><div class="quick-sub">впечатления гостей</div></a>
     </div>
   </section>
 
@@ -227,12 +227,10 @@ const repertoireUrl = '/podborka/';
       </div>
     </section>
 
-    <section class="section home-reviews" id="reviews" aria-label="Отзывы гостей">
+    <section class="section home-reviews" id="reviews" aria-label="Отзывы гостей" hidden>
 <div class="container"><div class="section-head"><div><h2>Отзывы о выступлениях</h2><p class="lead">Впечатления гостей</p></div><a class="link" href="/reviews/">Все отзывы →</a></div>
-<div class="home-reviews-controls"><button id="reviews-back" type="button" aria-label="Предыдущие отзывы">←</button><button id="reviews-forward" type="button" aria-label="Следующие отзывы">→</button></div>
-<div class="home-reviews-track" id="reviews-track" tabindex="0" aria-label="Отзывы гостей">
-<article class="home-review" aria-label="Пример карточки отзыва"><div class="home-review-head"><img src="/reviews/placeholder-cat.svg" width="54" height="54" alt="Иллюстрация кота — тестовый аватар" loading="lazy"/><div><strong>Пример оформления</strong><small>Не настоящий отзыв</small></div></div><p>Здесь появятся настоящие впечатления гостей после выступлений. Пока это демонстрация карточки.</p></article>
-</div></div></section>
+<div class="home-reviews-carousel"><div class="home-reviews-controls" id="reviews-controls" hidden><button id="reviews-back" type="button" aria-label="Предыдущие отзывы">←</button><button id="reviews-forward" type="button" aria-label="Следующие отзывы">→</button></div>
+ <div class="home-reviews-track" id="reviews-track" tabindex="0" aria-label="Отзывы гостей"></div></div></div></section>
 <section class="section" id="contact">
       <div class="container">
         <div class="contact">
@@ -540,7 +538,7 @@ const repertoireUrl = '/podborka/';
  const back=document.getElementById('reviews-back'),forward=document.getElementById('reviews-forward');
  const fallback=r=>r.avatarType==='female'?'/reviews/avatars/female.svg':r.avatarType==='male'?'/reviews/avatars/male.svg':'/reviews/placeholder-cat.svg';
  const append=(p,tag,cls,value)=>{const n=document.createElement(tag);n.className=cls||'';n.textContent=String(value||'');p.append(n);return n};
- const controls=()=>{back.disabled=track.scrollLeft<2;forward.disabled=track.scrollLeft>=track.scrollWidth-track.clientWidth-2};
+ const controls=()=>{const overflow=track.scrollWidth>track.clientWidth+2;document.getElementById('reviews-controls').hidden=!overflow;back.disabled=track.scrollLeft<2;forward.disabled=track.scrollLeft>=track.scrollWidth-track.clientWidth-2};
  window.singerReviewsLoaded=payload=>{
   const reviews=Array.isArray(payload?.reviews)?payload.reviews:[];if(!reviews.length)return;
   track.replaceChildren();
@@ -553,7 +551,7 @@ const repertoireUrl = '/podborka/';
    const who=document.createElement('div');append(who,'strong','',r.author);append(who,'small','',[r.event,r.city,r.dateLabel].filter(Boolean).join(' · '));
    head.append(img,who);card.append(head);append(card,'p','',r.text);track.append(card);
   }
-  requestAnimationFrame(controls);
+  section.hidden=false;requestAnimationFrame(controls);
  };
  back.addEventListener('click',()=>track.scrollBy({left:-Math.max(260,track.clientWidth*.8),behavior:'smooth'}));
  forward.addEventListener('click',()=>track.scrollBy({left:Math.max(260,track.clientWidth*.8),behavior:'smooth'}));
