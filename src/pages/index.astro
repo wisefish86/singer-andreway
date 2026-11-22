@@ -12,6 +12,7 @@ import { telegramWeb, telegramApp, whatsapp, contactMessages, directChatLinks } 
 const phoneDisplay = '+7 918 114-26-93';
 const phoneLink = 'tel:+79181142693';
 const eventChat = directChatLinks(contactMessages.event);
+const instagram = 'https://www.instagram.com/andrey_spoet/';
 const telegramChannelWeb = 'https://t.me/andrey_spoet';
 const reminderBotUrl = 'tg://resolve?domain=andrey_spoet_bot&start=reminders';
 const reminderBotWeb = 'https://t.me/andrey_spoet_bot?start=reminders';
@@ -49,7 +50,7 @@ const repertoireUrl = '/podborka/';
     "url":canonical,
     "telephone":"+79181142693",
     "areaServed":["Краснодар","Краснодарский край"],
-    "sameAs":[telegramWeb,telegramChannelWeb,max]
+    "sameAs":[telegramWeb,telegramChannelWeb,instagram,max]
   })}></script>
 
   <style is:global>
@@ -246,7 +247,6 @@ const repertoireUrl = '/podborka/';
                 </div>
               </div>
 
-              <a class="contact-save" href="/andrey-shevtsov.vcf" type="text/vcard"><Icon name="contact" size={22} /><span>Сохранить контакт</span></a>
             </div>
 
           </div>
@@ -259,10 +259,12 @@ const repertoireUrl = '/podborka/';
         <div class="stay-connected">
           <div class="stay-connected-copy">
             <h2 id="stay-connected-title" class="stay-title">Останемся на связи</h2>
-            <p class="stay-copy">Афиши, новые видео и новости — в моём Telegram-канале.</p>
+            <p class="stay-copy">Афиши, новые видео и новости — подписывайтесь в Telegram и Instagram.</p>
           </div>
           <div class="stay-links">
-            <a href={telegramChannelApp} data-social-destination data-social-web={telegramChannelWeb} data-social-platform="telegram" data-social-name="Telegram-канал с афишей"><BrandIcon name="telegram" size={22} /><span><strong>Telegram-канал</strong><small>Подписаться на афишу и новости</small></span></a>
+            <a href={telegramChannelApp} data-social-destination data-social-web={telegramChannelWeb} data-social-platform="telegram" data-social-name="Telegram-канал с афишей"><BrandIcon name="telegram" size={22} /><span><strong>Telegram-канал</strong><small>Афиша и новости</small></span></a>
+            <a href={instagram} data-social-destination data-social-web={instagram} data-social-platform="instagram" data-social-name="Instagram — подписаться"><BrandIcon name="instagram" size={22} /><span><strong>Instagram</strong><small>Подписаться</small></span></a>
+            <a class="contact-save" href="/andrey-shevtsov.vcf" type="text/vcard"><Icon name="contact" size={22} /><span><strong>Сохранить контакт</strong><small>Добавить в телефон</small></span></a>
           </div>
         </div>
       </div>
@@ -378,8 +380,8 @@ const repertoireUrl = '/podborka/';
         event.preventDefault();
 
         const platform = link.dataset.socialPlatform;
-        const serviceNames = { whatsapp: 'WhatsApp', telegram: 'Telegram', max: 'MAX' };
-        const qrColors = { whatsapp: '#12683e', telegram: '#075778', max: '#244c81' };
+        const serviceNames = { whatsapp: 'WhatsApp', telegram: 'Telegram', max: 'MAX', instagram: 'Instagram' };
+        const qrColors = { whatsapp: '#12683e', telegram: '#075778', max: '#244c81', instagram: '#642c86' };
         const service = serviceNames[platform] || 'соцсеть';
         lastSocialTrigger = link;
         socialTitle.textContent = 'Открыть ' + service;
