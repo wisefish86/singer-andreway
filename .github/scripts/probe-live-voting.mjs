@@ -4,6 +4,13 @@ const endpoint='https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-vot
 const controller=new AbortController();
 const timer=setTimeout(()=>controller.abort(),12000);
 try{
+ const configUrl='https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec?kind=vote-config';
+ const settingsResponse=await fetch(configUrl,{signal:controller.signal,redirect:'follow'});
+ if(!settingsResponse.ok)throw Error('Sheet voting settings API unavailable: HTTP '+settingsResponse.status);
+ const settings=await settingsResponse.json();
+ if(typeof settings.enabled!=='boolean')throw Error('Sheet voting settings missing enabled flag');
+ if(settings.enabled&&(!settings.start||!settings.end))throw Error('Invalid active Sheet schedule');
+ console.log('Google Sheet vote settings: HTTP '+settingsResponse.status+'; enabled='+settings.enabled);
  const response=await fetch(endpoint,{headers:{origin},signal:controller.signal});
  const body=await response.json().catch(()=>({}));
  console.log('Voting API: HTTP '+response.status+'; active='+String(body.active)+'; song_count='+(body.songs?.length??'not open'));
