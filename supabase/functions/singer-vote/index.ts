@@ -95,18 +95,20 @@ async function ensureCalendarSessions(db:any){
 // Explicitly private Google Sheet controls manual sessions. The web app exposes
 // only dates and a boolean, never the spreadsheet itself or the admin secret.
 const VOTE_CONFIG_URL="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec?kind=vote-config";
-let scheduleCache:{until:number;config:{enabled:boolean;start?:string;end?:string}}|null=null;
+let scheduleCache:{until:number;config:{enabled:boolean;start?:string;end?:string;test_mode?:boolean;run_id?:string}}|null=null;
 async function manualSchedule(){
  if(scheduleCache&&scheduleCache.until>Date.now())return scheduleCache.config;
  const response=await fetch(VOTE_CONFIG_URL,{redirect:"follow",cache:"no-store",signal:AbortSignal.timeout(3500)});
  if(!response.ok)throw new Error("vote_sheet_unavailable");
  const data=await response.json();
- const config:{enabled:boolean;start?:string;end?:string}={enabled:false};
+ const config:{enabled:boolean;start?:string;end?:string;test_mode?:boolean;run_id?:string}={enabled:false};
  if(data?.enabled===true){
   const start=Date.parse(data.start),end=Date.parse(data.end);
   if(Number.isFinite(start)&&Number.isFinite(end)&&end>start&&end-start<=12*3600000&&
    end>Date.now()&&start<Date.now()+60*86400000){
     config.enabled=true;config.start=new Date(start).toISOString();config.end=new Date(end).toISOString();
+    config.test_mode=data.test_mode===true;
+    config.run_id=typeof data.run_id==="string"?data.run_id:"";
   }
  }
  scheduleCache={until:Date.now()+30000,config};
