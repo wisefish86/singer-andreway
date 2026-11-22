@@ -254,11 +254,13 @@ dialog::backdrop{touch-action:none}
 .hero-channel-link:hover,.hero-channel-link:focus-visible{text-decoration:underline}
 .hero-actions a:focus-visible{outline:3px solid var(--cyan);outline-offset:3px}
 @media(max-width:759px){
-  .hero-content{padding-top:56px}
+  /* Give the portrait more space to the right of the name, without replacing the photo. */
+  .hero{background-position:61% center!important;padding-bottom:18px}
+  .hero-content{padding-top:36px}
+  .hero h1{margin-top:22px;margin-bottom:10px}
   .hero .chips{display:none}
-  .hero-role{margin-bottom:10px}
-  .hero-copy{font-size:.9rem;line-height:1.35;margin-bottom:14px}
-  .hero{padding-bottom:22px}
+  .hero-role{margin-bottom:7px}
+  .hero-copy{font-size:.9rem;line-height:1.35;margin-bottom:12px}
   /* Mobile: two full-width primary actions, then two equal half-width utility actions. */
   .hero-actions{grid-template-columns:minmax(0,1fr);width:100%;gap:9px}
   .hero-actions .hero-booking,
