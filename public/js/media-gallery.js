@@ -1,8 +1,8 @@
 /* ANDREY-SPOET public galleries: cached catalog, swipeable carousel and media viewer. */
 (() => {
   'use strict';
-  const API=document.querySelector('script[data-media-api]')?.dataset.mediaApi||'';
-  const CACHE_KEY='andrey-spoet-media-v2';
+  // Public catalog is a pre-published snapshot on our own server. No Google calls from visitors.
+  const CACHE_KEY='andrey-spoet-media-v3';
   const EMPTY={videos:[],photos:[]};
   let collection=EMPTY, signature='', modal=null, mode='', photoIndex=0, videoIndex=0;
   let photos=[],videos=[];
@@ -429,41 +429,27 @@
     render();
     warmImages(clean);
   }
-  window.singerMediaLoaded=data=>{update(data);};
   let hasSaved=false;
-  // Embedded at build time: no network request to Google or even JSON required
-  // to display the first set of gallery cards.
+  // Fast offline/fallback state; updated snapshots are fetched from the same origin only.
   try{
+    const saved=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
+    if(saved?.data&&Array.isArray(saved.data.videos)&&Array.isArray(saved.data.photos)){
+      update(saved.data);hasSaved=true;
+    }
+  }catch(e){}
+  // Initial static seed is a fallback if the live public snapshot is unavailable.
+  if(!hasSaved)try{
     const seed=document.getElementById('media-snapshot');
     if(seed){
       const data=JSON.parse(seed.textContent);
       if(Array.isArray(data.photos)&&Array.isArray(data.videos)){
-        update(data);
-        hasSaved=true;
+        update(data);hasSaved=true;
       }
     }
   }catch(e){}
-  if(!hasSaved)try{
-    const saved=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');
-    if(saved?.data&&Date.now()-saved.time<7*86400000){
-      update(saved.data);hasSaved=true;
-    }
-  }catch(e){}
-  if(!hasSaved)fetch('/media-catalog.json',{cache:'force-cache'})
-    .then(response=>response.ok?response.json():null)
-    .then(data=>{if(!signature&&data)update(data);})
+  if(!hasSaved)render();
+  fetch('/data/media.json',{cache:'no-cache'})
+    .then(response=>{if(!response.ok)throw Error('media snapshot unavailable');return response.json();})
+    .then(update)
     .catch(()=>{});
-  function refresh(){
-    if(!API)return;
-    const script=document.createElement('script');
-    script.async=true;
-    script.src=API+(API.includes('?')?'&':'?')+'kind=media&callback=singerMediaLoaded&v='+Math.floor(Date.now()/300000);
-    script.onload=()=>script.remove();
-    script.onerror=()=>script.remove();
-    document.head.append(script);
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{if(!signature)render();refresh();},{once:true});
-  else {if(!signature)render();refresh();}
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
-  setInterval(refresh,300000);
 })();
