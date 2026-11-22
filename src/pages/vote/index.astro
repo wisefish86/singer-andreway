@@ -30,6 +30,11 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
 .vote-option strong{display:block;color:var(--text);font-size:1rem;line-height:1.35;font-weight:720;overflow-wrap:anywhere}
 .vote-option small{display:block;color:var(--muted);margin-top:4px;font-size:.84rem;line-height:1.35}
 .vote-option .vote-count[hidden]{display:none}
+.vote-option{position:relative;flex-wrap:wrap}
+.vote-progress{width:100%;height:5px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin:0 0 1px 35px}
+.vote-progress[hidden]{display:none}
+.vote-progress-fill{height:100%;width:0;background:linear-gradient(90deg,#d7a955,#f0cc7f);border-radius:99px;transition:width .4s ease}
+.vote-progress-text{font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .vote-option .vote-count{font-size:.76rem;color:var(--accent2);white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:700}
 .vote-track-list{display:grid;gap:8px}
 .vote-select{appearance:none;background:none;border:0;color:inherit;text-align:left;display:flex;gap:12px;align-items:center;flex:1;min-width:0;cursor:pointer;font:inherit;padding:0;min-height:42px}
@@ -60,7 +65,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
 <header class="topbar"><div class="container topbar-inner"><a class="brand" href="/">ANDREY-SPOET</a><a class="media-back" href="/#live">← Для гостей</a></div></header>
 <main class="vote-main">
  <header class="vote-hero">
-  <span class="vote-status" id="vote-status">Проверяем голосование…</span>
+  <span class="vote-status" id="vote-status">Подборка финальных песен</span>
   <h1>🔥 Выбираем хиты вечера!</h1>
   <p>Проголосуйте за три песни, которые хотите услышать в финалах музыкальных блоков. Главный фаворит завершит вечер!</p>
  </header>
@@ -103,6 +108,39 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  }
  const storageKey='singer-vote-guest-v1';
  let state=null,selected=new Set(),songs=[],saved=false;
+ const CATALOGUE_CACHE_KEY='singer-voting-finalists-v2';
+ const cacheSongs=list=>{
+  try{localStorage.setItem(CATALOGUE_CACHE_KEY,JSON.stringify({at:Date.now(),songs:list.map(({id,name,artist,preview_url})=>({id,name,artist,preview_url}))}));}catch{}
+ };
+ const usePreview=list=>{
+  if(!Array.isArray(list)||list.length<3)return;
+  songs=list.map(song=>({...song,votes:0}));
+  state={active:false,songs,voters:0};
+  $('vote-open').hidden=false;$('vote-closed').hidden=false;
+  $('vote-status').textContent='Подборка финальных песен';
+  $('vote-voters').textContent='Загружено '+songs.length+' песен · ожидаем состояние голосования…';
+  render();
+ };
+ try{
+  const cached=JSON.parse(localStorage.getItem(CATALOGUE_CACHE_KEY)||'null');
+  if(cached&&Date.now()-cached.at<7*86400000)usePreview(cached.songs);
+ }catch{}
+ async function loadPublicCatalogue(){
+  if(songs.length>=3)return;
+  try{
+   const response=await fetch('/data/repertoire.public.json',{cache:'force-cache'});
+   if(!response.ok)throw Error('catalogue unavailable');
+   const catalogue=await response.json();
+   const candidates=(catalogue.songs||[]).filter(song=>Array.isArray(song.playlist_variants)&&
+    song.playlist_variants.some(v=>String(v.relative_path||v.filename||'').includes('@')||String(v.title||'').includes('@'))||
+    String(song.name||'').includes('@')).map(song=>({
+     id:song.id,name:String(song.name||'').replace(/@/g,'').trim(),
+     artist:String(song.artist||''),preview_url:String(song.preview_url||'')
+    })).sort((a,b)=>(a.artist+' '+a.name).localeCompare(b.artist+' '+b.name,'ru'));
+   cacheSongs(candidates);usePreview(candidates);
+  }catch{}
+ }
+ 
  function setMessage(text){$('vote-message').textContent=text;$('vote-message').classList.remove('vote-hidden')}
  function voterId(){
   try{
@@ -195,6 +233,14 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    listen.setAttribute('aria-label',hasPreview?'Прослушать: '+song.name:'Аудиофрагмент недоступен: '+song.name);
    listen.setAttribute('aria-pressed','false');
    listen.addEventListener('click',()=>playPreview(song));row.append(listen);
+   const bar=document.createElement('div');bar.className='vote-progress';bar.hidden=!state?.active;
+   const fill=document.createElement('div');fill.className='vote-progress-fill';
+   const total=Math.max(0,Number(state?.voters)||0);
+   const percent=total>0?Math.min(100,Math.round((Number(song.votes)||0)/total*100)):0;
+   fill.style.width=percent+'%';bar.append(fill);
+   const pct=document.createElement('span');pct.className='vote-progress-text';pct.textContent=percent+'%';
+   if(state?.active)row.append(pct);
+   row.append(bar);
    $('vote-songs').append(row);
   }
   synchronizeAudio();updateButton();
@@ -210,6 +256,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    if(changedSession){selected.clear();saved=false;}
    window.__voteSessionId=newId;
    state=result;
+   cacheSongs(incoming);
    $('vote-open').hidden=false;
    $('vote-closed').hidden=active;
    $('vote-status').textContent=active?'● Голосование открыто':'Голосование пока закрыто';
@@ -223,7 +270,11 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    if(changedSession||orderedIds.join('|')!==DOMids.join('|'))render();
    else for(const song of songs){
     const item=[...$('vote-songs').children].find(node=>node.dataset.voteId===song.id);
-    if(item){const count=item.querySelector('.vote-count');if(count){count.hidden=!active;count.textContent=(Number(song.votes)||0)+' голосов';}}
+    if(item){const count=item.querySelector('.vote-count');if(count){count.hidden=!active;count.textContent=(Number(song.votes)||0)+' голосов';}
+     const bar=item.querySelector('.vote-progress'),fill=item.querySelector('.vote-progress-fill'),pct=item.querySelector('.vote-progress-text');
+     const total=Number(result.voters)||0;
+     const percent=total>0?Math.min(100,Math.round((Number(song.votes)||0)/total*100)):0;
+     if(bar)bar.hidden=!active;if(fill)fill.style.width=percent+'%';if(pct)pct.textContent=percent+'%';}
    }
    $('vote-voters').textContent=incoming.length<3?'Список финальных песен пока недоступен.':
     active?'Проголосовали: '+(Number(result.voters)||0)+' · Песни с большинством голосов — сверху.':
@@ -231,10 +282,12 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    $('vote-deadline').textContent=active?'Приём голосов до '+new Date(result.session.ends_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (МСК)':'';
    updateButton();
   }catch(e){
-   $('vote-status').textContent='Не удалось загрузить песни';
-   $('vote-open').hidden=true;
+   state={active:false};
+   $('vote-status').textContent='Связь с голосованием временно недоступна';
    $('vote-closed').hidden=false;
-   $('vote-closed').textContent='Не удалось связаться с сервером голосования. Попробуйте обновить страницу.';
+   $('vote-closed').textContent='Не удалось проверить приём голосов. Подборку песен можно посмотреть, но отправка временно недоступна.';
+   if(songs.length>=3){$('vote-open').hidden=false;updateButton();}
+   else await loadPublicCatalogue();
   }
  }
  $('vote-search').addEventListener('input',render);
@@ -249,8 +302,9 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   }catch(e){setMessage('Не удалось отправить голос: '+e.message)}
   updateButton();
  });
+ loadPublicCatalogue();
  refresh();
- setInterval(refresh,10000);
+ setInterval(refresh,12000);
 })();
 </script>
 </body></html>
