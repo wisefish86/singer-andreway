@@ -14,7 +14,7 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          url="https://singer.andreway.ru/videos/-%20%D0%90%D0%BD%D0%B4%D1%80%D0%B5%D0%B9%20%D0%A8%D0%B5%D0%B2%D1%86%D0%BE%D0%B2%20-%20%D0%92%D0%B8%D0%B4%D0%B5%D0%BE%20%D0%B2%D1%8B%D1%81%D1%82%D1%83%D0%BF%D0%BB%D0%B5%D0%BD%D0%B8%D0%B9.mp4"
+          url="https://singer.andreway.ru/videos/-%20%D0%90%D0%BD%D0%B4%D1%80%D0%B5%D0%B9%20%D0%A8%D0%B5%D0%B2%D1%86%D0%BE%D0%B2%20-%20%D0%92%D0%B8%D0%B4%D0%B5%D0%BE%20%D0%B2%D1%8B%D1%81%D1%82%D1%83%D0%BF%D0%BB%D0%B5%D0%BD%D0%B8%D0%B9%20-%20web.mp4"
           echo '=== HEAD metadata ==='
           curl -sSIL --connect-timeout 10 --max-time 25 "$url" | grep -Ei '^(HTTP/|content-type:|content-length:|accept-ranges:|content-range:|cache-control:|server:|location:)' || true
           echo '=== First 1024 bytes ==='
@@ -28,3 +28,17 @@ jobs:
           wc -c /tmp/range-mid || true
           echo '=== 4MB download timing ==='
           curl -sSL -o /dev/null -H 'Range: bytes=0-4194303' --connect-timeout 10 --max-time 35 --max-filesize 5000000 -w 'http=%{http_code} bytes=%{size_download} time=%{time_total}s avg_bytes_s=%{speed_download}\n' "$url" || true
+
+      - name: Require optimized MP4 to be reachable with byte ranges
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://singer.andreway.ru/videos/-%20%D0%90%D0%BD%D0%B4%D1%80%D0%B5%D0%B9%20%D0%A8%D0%B5%D0%B2%D1%86%D0%BE%D0%B2%20-%20%D0%92%D0%B8%D0%B4%D0%B5%D0%BE%20%D0%B2%D1%8B%D1%81%D1%82%D1%83%D0%BF%D0%BB%D0%B5%D0%BD%D0%B8%D0%B9%20-%20web.mp4"
+          response=$(curl -fsSI --connect-timeout 10 --max-time 25 "$url")
+          echo "$response" | grep -qi 'content-type: video/mp4'
+          echo "$response" | grep -qi 'content-length: 62172472'
+          curl -fsS -D /tmp/check-headers -o /tmp/check-range -H 'Range: bytes=0-1023' --connect-timeout 10 --max-time 25 "$url"
+          grep -q '206' /tmp/check-headers
+          grep -qi 'content-range: bytes 0-1023/62172472' /tmp/check-headers
+          test "$(wc -c < /tmp/check-range)" -eq 1024
+          echo 'Optimized MP4 is reachable and supports 206 Partial Content.'
