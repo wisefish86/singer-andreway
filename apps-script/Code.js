@@ -428,7 +428,10 @@ function publicVotingSchedule_() {
   let runId=props.getProperty(runKey);
   const previous=props.getProperty(signatureKey);
   if (!previous){
-    runId=testMode?Utilities.getUuid():'legacy';
+    // Preserve the pre-migration session only once, never on later restarts.
+    const legacyUsed=props.getProperty('SINGER_VOTE_LEGACY_SEEDED')==='1';
+    runId=(!testMode&&!legacyUsed)?'legacy':Utilities.getUuid();
+    props.setProperty('SINGER_VOTE_LEGACY_SEEDED','1');
     props.setProperty(signatureKey,signature);
     props.setProperty(runKey,runId);
   }else if(previous!==signature){
