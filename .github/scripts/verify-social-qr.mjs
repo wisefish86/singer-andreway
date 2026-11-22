@@ -5,7 +5,7 @@ import QRCode from 'qrcode';
 const source = readFileSync(new URL('../../src/pages/index.astro', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../../dist/index.html', import.meta.url), 'utf8');
 
-const platforms = ['telegram', 'whatsapp', 'max', 'vk', 'instagram'];
+const platforms = ['telegram', 'whatsapp', 'max'];
 for (const platform of platforms) {
   assert.ok(html.includes('data-social-platform="' + platform + '"'),
     'No desktop QR chooser trigger for ' + platform);
@@ -15,7 +15,6 @@ for (const platform of platforms) {
 for (const selector of [
   'id="telegram-sheet"', 'id="telegram-qr"', 'id="telegram-open-app"',
   'id="telegram-mobile-url"', 'data-messenger="max"',
-  'data-messenger="vk"',
 ]) {
   assert.ok(html.includes(selector), 'Missing shared contact/QR element: ' + selector);
 }
@@ -30,7 +29,8 @@ assert.ok(source.includes('drawRoundedQr(socialQr, webUrl'),
   'QR must encode the actual public profile URL');
 assert.ok(source.includes("if (isMobileDevice()"),
   'Mobile should follow the normal link without forcing a desktop QR');
-console.log('Shared desktop QR checked for Telegram, WhatsApp, MAX, VK and Instagram');
+assert.ok(!html.includes('data-social-platform="instagram"') && !html.includes('data-social-platform="vk"'), 'Inactive networks must not appear as visitor contact choices');
+console.log('Shared desktop QR checked for Telegram, WhatsApp and MAX');
 
 // Mobile media reliability and sticky-header anchor regressions.
 const media = readFileSync(new URL('../../public/js/media-gallery.js', import.meta.url), 'utf8');
