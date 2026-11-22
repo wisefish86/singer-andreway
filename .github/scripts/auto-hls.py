@@ -20,6 +20,7 @@ SITE = "https://singer.andreway.ru"
 ROOT = "/www/singer.andreway.ru"
 MAX_VIDEOS = 20
 MAX_BYTES = 500_000_000
+ENCODE_VERSION = 2  # bump when codec metadata or encoding parameters change
 
 
 def request_json(url):
@@ -67,7 +68,7 @@ def encode(src, directory):
             "-vf", f"scale=-2:{height}:flags=bicubic,fps=30",
             "-c:v", "libx264", "-preset", "veryfast", "-b:v", bitrate,
             "-maxrate", maxrate, "-bufsize", bufsize, "-pix_fmt", "yuv420p",
-            "-profile:v", "main", "-g", "180", "-keyint_min", "180", "-sc_threshold", "0",
+            "-profile:v", "main", "-level:v", "3.1", "-g", "180", "-keyint_min", "180", "-sc_threshold", "0",
             "-c:a", "aac", "-b:a", audio, "-ac", "2", "-ar", "48000",
             "-f", "hls", "-hls_time", "6", "-hls_list_size", "0",
             "-hls_playlist_type", "vod", "-hls_flags", "independent_segments",
@@ -81,7 +82,7 @@ def encode(src, directory):
         '#EXTM3U\n#EXT-X-VERSION:3\n'
         '#EXT-X-STREAM-INF:BANDWIDTH=2450000,RESOLUTION=720x1280,FRAME-RATE=30.000,CODECS="avc1.4d401f,mp4a.40.2"\n'
         '720p/index.m3u8\n'
-        '#EXT-X-STREAM-INF:BANDWIDTH=1100000,RESOLUTION=480x854,FRAME-RATE=30.000,CODECS="avc1.4d401e,mp4a.40.2"\n'
+        '#EXT-X-STREAM-INF:BANDWIDTH=1100000,RESOLUTION=480x854,FRAME-RATE=30.000,CODECS="avc1.4d401f,mp4a.40.2"\n'
         '480p/index.m3u8\n', encoding="utf-8")
 
 
@@ -140,18 +141,18 @@ def main():
                     source = base / "input.mp4"
                     digest = download(name, source)
                     prev = existing.get(name)
-                    if prev and prev.get("sha256") == digest and str(prev.get("url", "")).startswith("/videos/hls/"):
+                    if prev and prev.get("sha256") == digest and prev.get("encode_version") == ENCODE_VERSION and str(prev.get("url", "")).startswith("/videos/hls/"):
                         result.append(prev)
                         print("Unchanged:", name)
                         continue
                     # Distinct immutable directory per file and content version; no in-place overwrite.
-                    prefix = hashlib.sha256(name.encode()).hexdigest()[:16] + "-" + digest[:12]
+                    prefix = hashlib.sha256(name.encode()).hexdigest()[:16] + "-" + digest[:12] + "-v" + str(ENCODE_VERSION)
                     output = base / "output"
                     output.mkdir()
                     encode(source, output)
                     upload_stream(ftp, output, prefix)
                     validate_stream(prefix)
-                    result.append({"file": name, "sha256": digest, "url": "/videos/hls/" + prefix + "/master.m3u8"})
+                    result.append({"file": name, "sha256": digest, "encode_version": ENCODE_VERSION, "url": "/videos/hls/" + prefix + "/master.m3u8"})
                     print("Prepared:", name, prefix)
             except Exception as exc:
                 print("Failed:", repr(name), type(exc).__name__, str(exc)[:150])
