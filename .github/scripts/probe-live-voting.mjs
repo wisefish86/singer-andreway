@@ -8,6 +8,8 @@ try{
  const body=await response.json().catch(()=>({}));
  console.log('Voting API: HTTP '+response.status+'; active='+String(body.active)+'; song_count='+(body.songs?.length??'not open'));
  if(!response.ok||typeof body.active!=='boolean')throw Error('Voting API unavailable or invalid payload');
+ if(!Array.isArray(body.songs)||body.songs.length<3)throw Error('Finale catalogue missing from API: voting page would appear blank');
+ if(!body.active && body.songs.some(song=>(song.votes||0)!==0))throw Error('Closed session should not expose stale vote counts');
  const catalogue=await fetch(origin+'/data/repertoire.public.json',{signal:controller.signal,cache:'no-store'});
  console.log('Published repertoire: HTTP '+catalogue.status);
  if(catalogue.ok){
