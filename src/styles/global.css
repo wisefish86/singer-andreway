@@ -412,6 +412,7 @@ dialog::backdrop{touch-action:none}
   .showcase-touch-seek-back{left:2%}
   .showcase-touch-seek-forward{right:2%}
 }
+.showcase-video-diagnostics{position:absolute;z-index:5;top:12px;left:12px;max-width:calc(100% - 24px);padding:6px 10px;border-radius:9px;background:rgba(0,0,0,.82);border:1px solid rgba(255,255,255,.25);color:#fff;font:600 12px/1.4 ui-monospace,monospace;pointer-events:none;overflow-wrap:anywhere}
 .showcase-video-feedback{position:absolute;z-index:3;bottom:20px;left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100% - 32px);padding:10px 16px;border-radius:12px;background:rgba(6,16,26,.9);border:1px solid rgba(255,255,255,.18);color:#fff;font-size:.86rem;text-align:center;pointer-events:none}
 .showcase-video-feedback[hidden]{display:none!important}
 .showcase-video-dialog .showcase-player{display:block;flex:none;width:auto;max-width:100%;height:auto;max-height:calc(100dvh - 115px);aspect-ratio:auto;object-fit:contain;border-radius:8px;background:#000}
