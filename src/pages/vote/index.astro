@@ -110,7 +110,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   return;
  }
  const storageKey='singer-vote-guest-v1';
- let state=null,selected=new Set(),songs=[],saved=false,editing=false,sending=false,refreshBusy=false;
+ let state=null,selected=new Set(),songs=[],saved=false,editing=false,sending=false,refreshBusy=false,statusBusy=false,statusKnown=false;
  let testSubmissions=0;
  const STATUS_CACHE_KEY='singer-vote-live-snapshot-v1';
  const CATALOGUE_CACHE_KEY='singer-voting-finalists-v2';
@@ -120,9 +120,9 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  const usePreview=list=>{
   if(!Array.isArray(list)||list.length<3)return;
   songs=list.map(song=>({...song,votes:0}));
-  state={active:false,songs,voters:0};
-  $('vote-open').hidden=false;$('vote-closed').hidden=false;
-  $('vote-status').textContent='Подборка финальных песен';
+  state={...state,songs,voters:Number(state?.voters)||0};
+  $('vote-open').hidden=false;$('vote-closed').hidden=!statusKnown||Boolean(state?.active);
+  if(!statusKnown)$('vote-status').textContent='Проверяем доступность голосования…';
   $('vote-voters').textContent='Загружено '+songs.length+' песен · ожидаем состояние голосования…';
   render();
  };
@@ -138,7 +138,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
      id:song.id,name:String(song.name||'').replace(/@/g,'').trim(),
      artist:String(song.artist||''),preview_url:String(song.preview_url||'')
     })).sort((a,b)=>(a.artist+' '+a.name).localeCompare(b.artist+' '+b.name,'ru'));
-   cacheSongs(candidates);if(!state?.active)usePreview(candidates);
+   cacheSongs(candidates);if(songs.length<3)usePreview(candidates);
   }catch{}
  }
  
@@ -163,9 +163,39 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   const n=selected.size,active=Boolean(state?.active);
   $('vote-actions').hidden=n===0;
   const hint=n===1?'Можно выбрать ещё 2 песни':n===2?'Можно выбрать ещё 1 песню':n===3?'Вы выбрали все 3 песни':'';
-  $('vote-choice-hint').textContent=active?hint:hint+' · Голосование пока закрыто';
+  $('vote-choice-hint').textContent=active?hint:hint+(statusKnown?' · Голосование пока закрыто':' · Проверяем голосование…');
   $('vote-send').disabled=sending||n<1||n>3||songs.length<1||!active;
-  $('vote-send').textContent=sending?'Отправляем…':!active?'Голосование пока закрыто':state?.test_mode?'Отправить пробный голос':saved&&!editing?'Изменить голос':saved&&editing?'Сохранить изменения':'Отправить голос';
+  $('vote-send').textContent=sending?'Отправляем…':!active?(statusKnown?'Голосование пока закрыто':'Проверяем голосование…'):state?.test_mode?'Отправить пробный голос':saved&&!editing?'Изменить голос':saved&&editing?'Сохранить изменения':'Отправить голос';
+ }
+ // Lightweight status endpoint: do not wait for catalogue or Google services.
+ async function checkStatus(){
+  if(statusBusy||sending||document.hidden)return;
+  statusBusy=true;
+  try{
+   const response=await fetch(endpoint+'?status=1',{cache:'no-store',signal:AbortSignal.timeout(6500)});
+   if(!response.ok)throw Error('status_unavailable');
+   const next=await response.json();
+   if(typeof next.active!=='boolean')throw Error('invalid_status');
+   const oldId=state?.session?.id||null,nextId=next.active?next.session?.id:null;
+   if(next.active&&!nextId)throw Error('invalid_session');
+   if(state?.active&&oldId!==nextId&&refreshBusy)return;
+   if(nextId!==oldId&&oldId!==null){selected.clear();saved=false;editing=false;clearMessage()}
+   state={...state,active:next.active,test_mode:Boolean(next.test_mode),session:next.session||null};
+   statusKnown=true;window.__voteSessionId=nextId;
+   if(nextId&&!state.test_mode&&!saved)try{
+    const ids=JSON.parse(localStorage.getItem('singer-vote-choice:'+nextId)||'[]');
+    if(Array.isArray(ids)&&ids.length>=1&&ids.length<=3&&new Set(ids).size===ids.length){
+     selected=new Set(ids);saved=true;
+    }
+   }catch{}
+   $('vote-closed').hidden=next.active;
+   $('vote-test-note').hidden=!(next.active&&next.test_mode);
+   $('vote-status').textContent=next.active?(next.test_mode?'● Тестовое голосование — голоса пробные':'● Голосование открыто'):'Голосование пока закрыто';
+   $('vote-deadline').textContent=next.active?'Приём голосов до '+new Date(next.session.ends_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (МСК)':'';
+   render();
+  }catch{
+   if(!statusKnown)$('vote-status').textContent='Проверяем голосование — сервер отвечает медленно…';
+  }finally{statusBusy=false}
  }
  const voteLabel=(song,total)=>{
   const votes=Math.max(0,Number(song.votes)||0);
@@ -267,7 +297,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    const oldId=window.__voteSessionId||null;
    const changedSession=newId!==null&&newId!==oldId;
    if(changedSession){
-    selected.clear();saved=false;editing=false;
+    if(oldId!==null){selected.clear();saved=false;editing=false;}
     if(!result.test_mode){
      try{
       const ids=JSON.parse(localStorage.getItem('singer-vote-choice:'+newId)||'[]');
@@ -279,7 +309,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
     }
    }
    window.__voteSessionId=newId;
-   state=result;
+   state=result;statusKnown=true;
    try{localStorage.setItem(STATUS_CACHE_KEY,JSON.stringify({at:Date.now(),value:result}));}catch{}
    cacheSongs(incoming);
    $('vote-open').hidden=false;
@@ -308,13 +338,10 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    $('vote-deadline').textContent=active?'Приём голосов до '+new Date(result.session.ends_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (МСК)':'';
    updateButton();
   }catch(e){
-   if(state?.active){$('vote-voters').textContent='Не удалось обновить результаты. Повторим попытку автоматически.';return}
-   state={active:false};
-   $('vote-status').textContent='Связь с голосованием временно недоступна';
-   $('vote-closed').hidden=false;
-   $('vote-closed').textContent='Не удалось проверить приём голосов. Подборку песен можно посмотреть, но отправка временно недоступна.';
-   if(songs.length>=3){$('vote-open').hidden=false;render();$('vote-voters').textContent='Подборка доступна, состояние голосования временно не проверено.';}
-   else await loadPublicCatalogue();
+   $('vote-voters').textContent=state?.active?'Результаты обновляются с задержкой. Голосование доступно.':'Свежие результаты пока недоступны.';
+   if(!statusKnown)$('vote-status').textContent='Проверяем доступность голосования…';
+   if(songs.length<3)await loadPublicCatalogue();
+   updateButton();
   }finally{refreshBusy=false}
  }
  $('vote-search').addEventListener('input',render);
@@ -357,8 +384,8 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  let restored=false;
  try{
   const snapshot=JSON.parse(localStorage.getItem(STATUS_CACHE_KEY)||'null');
-  if(snapshot&&Date.now()-snapshot.at<30000&&snapshot.value?.session?.id&&Date.parse(snapshot.value.session.ends_at)>Date.now()&&Array.isArray(snapshot.value.songs)){
-   state=snapshot.value;songs=state.songs;restored=true;
+  if(snapshot&&Date.now()-snapshot.at<60000&&snapshot.value?.session?.id&&Date.parse(snapshot.value.session.ends_at)>Date.now()&&Array.isArray(snapshot.value.songs)){
+   state=snapshot.value;songs=state.songs;restored=true;statusKnown=true;
    window.__voteSessionId=state.session.id;
    if(!state.test_mode)try{
     const ids=JSON.parse(localStorage.getItem('singer-vote-choice:'+state.session.id)||'[]');
@@ -377,9 +404,11 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   if(cached&&Date.now()-cached.at<7*86400000)usePreview(cached.songs);
  }catch{}
  loadPublicCatalogue();
+ checkStatus();
  refresh();
- setInterval(refresh,6000);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});
+ setInterval(checkStatus,6000);
+ setInterval(refresh,18000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden){checkStatus();refresh()}});
 })();
 </script>
 </body></html>
