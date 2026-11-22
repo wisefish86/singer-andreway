@@ -8,7 +8,7 @@ const config = readFileSync(new URL('../../src/config/contact-links.ts', import.
 
 const expected = {
   event: 'Здравствуйте, Андрей! Хочу обсудить выступление на моём мероприятии.',
-  video: 'Здравствуйте, Андрей! Хочу отправить видео с Вашего выступления.',
+  video: 'Здравствуйте, Андрей! Хочу отправить видео с вашего выступления.',
   feedback: 'Здравствуйте, Андрей! Хочу поделиться впечатлениями о Вашем выступлении.',
   song: 'Здравствуйте, Андрей! Хочу заказать песню во время выступления.'
 };
@@ -87,6 +87,9 @@ for (const trigger of triggers) {
 assert.ok(sheet.opened, 'Guest sheet never opened');
 const selected = [...home.matchAll(/data-title="(Отправить видео|Сказать пару слов|Заказать песню)"/g)];
 assert.equal(selected.length, 3, 'Guest action buttons missing');
+assert.deepEqual(selected.map(match => match[1]), ['Заказать песню', 'Отправить видео', 'Сказать пару слов'], 'Guest button order');
+assert.ok(home.includes('id="guest-video-action"'), 'Missing video shortcut target');
+assert.ok(astro.includes("get('guest') === 'video'"), 'Missing video QR shortcut');
 for (const message of [expected.video, expected.feedback, expected.song]) {
   assert.ok(home.includes('data-template="' + message + '"'), 'Guest template missing: ' + message);
 }
