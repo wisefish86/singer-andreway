@@ -156,8 +156,15 @@ Deno.serve(async req=>{
  try{
   const db=dbClient();
   if(req.method==="GET"){
-   // Check both schedule sources concurrently; never serially wait for Google twice.
-   await Promise.allSettled([ensureCalendarSessions(db),ensureManualSheetSession(db)]);
+   // Fetch songs alongside calendar and Sheet settings to minimize cold-start delay.
+   const [calendarCheck,sheetCheck,catalogueCheck]=await Promise.allSettled([
+    ensureCalendarSessions(db),ensureManualSheetSession(db),finalists()
+   ]);
+   if(catalogueCheck.status!=="fulfilled")throw new Error("catalogue_unavailable");
+   const songs=catalogueCheck.value;
+   for(const check of [calendarCheck,sheetCheck]){
+    if(check.status==="rejected")console.warn("Voting schedule source temporarily unavailable");
+   }
    const {data,error}=await db.from("singer_vote_sessions").select("id,starts_at,ends_at")
     .eq("enabled",true).lte("starts_at",new Date().toISOString()).gt("ends_at",new Date().toISOString())
     .order("starts_at",{ascending:false}).limit(1).maybeSingle();
@@ -165,10 +172,8 @@ Deno.serve(async req=>{
    // The public catalogue is always available for preview even outside an event.
    // Only active sessions expose vote counts or accept ballots.
    if(!data){
-    const songs=await finalists();
     return json({active:false,songs:songs.map(song=>({...song,votes:0})),voters:0,catalogue_ready:songs.length>=3},200,origin);
    }
-   const songs=await finalists();
    const tally=await getTally(db,data.id);
    return json({active:true,session:{id:data.id,ends_at:data.ends_at},songs:songs.map(song=>({...song,votes:tally.counts[song.id]||0}))
     .sort((a,b)=>b.votes-a.votes||(a.artist+" "+a.name).localeCompare(b.artist+" "+b.name,"ru")),
