@@ -133,7 +133,9 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    if(active){
     const previous=songs.map(s=>s.id).join(',');
     songs=result.songs;
-    if(previous!==songs.map(s=>s.id).join(','))render();
+    const changedSession = window.__voteSessionId !== result.session.id;
+    if(changedSession){selected.clear();saved=false;window.__voteSessionId=result.session.id;}
+    if(changedSession||previous!==songs.map(s=>s.id).join(','))render();
     $('vote-deadline').textContent='Приём голосов до '+new Date(result.session.ends_at).toLocaleString('ru-RU',{timeZone:'Europe/Moscow',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'})+' (МСК)';
    }
   }catch{
