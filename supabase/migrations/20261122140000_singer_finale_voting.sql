@@ -6,6 +6,7 @@ create table if not exists public.singer_vote_sessions (
  starts_at timestamptz not null,
  ends_at timestamptz not null,
  enabled boolean not null default false,
+ source_key text unique,
  created_at timestamptz not null default now(),
  constraint singer_vote_session_times check (ends_at > starts_at and ends_at <= starts_at + interval '12 hours')
 );
@@ -54,3 +55,11 @@ begin
 end $$;
 revoke all on function public.singer_cast_vote(uuid,text,text,text[]) from public, anon, authenticated;
 grant execute on function public.singer_cast_vote(uuid,text,text,text[]) to service_role;
+
+-- A single SHA-256 admin verifier. Plain-text key is never stored in GitHub or database.
+create table if not exists public.singer_vote_admin (
+ id integer primary key default 1 check (id = 1),
+ token_hash text not null check (length(token_hash) = 64)
+);
+alter table public.singer_vote_admin enable row level security;
+revoke all on public.singer_vote_admin from anon, authenticated;
