@@ -19,7 +19,7 @@ const vk='https://vk.me/andrey_spoet';
     <Icon name="arrow" size={18}/>
   </a>
   <div class="sheet-messengers">
-    <a data-messenger="telegram" data-chat-base-app={telegramApp} data-chat-base-web={telegramWeb} href={telegramApp} data-social-destination data-social-web={telegramWeb} data-social-platform="telegram" data-social-name="написать в Telegram" target="_blank" rel="noopener noreferrer"><BrandIcon name="telegram" size={23}/><span>Telegram</span></a>
+    <a data-messenger="telegram" href={telegramApp} data-social-destination data-social-web={telegramWeb} data-social-platform="telegram" data-social-name="отправить сообщение через Telegram" aria-label="Отправить сообщение через Telegram — потребуется выбрать получателя" target="_blank" rel="noopener noreferrer"><BrandIcon name="telegram" size={23}/><span>Telegram</span></a>
     <a data-messenger="whatsapp" data-direct-messenger="true" data-chat-base-web={whatsapp} href={whatsapp} data-social-destination data-social-web={whatsapp} data-social-platform="whatsapp" data-social-name="написать в WhatsApp" target="_blank" rel="noopener noreferrer"><BrandIcon name="whatsapp" size={23}/><span>WhatsApp</span></a>
     <a data-messenger="max" href={max} data-social-destination data-social-web={max} data-social-platform="max" data-social-name="написать в MAX" target="_blank" rel="noopener noreferrer" aria-label="Написать в MAX"><BrandIcon name="max" size={23}/><span>MAX</span></a>
     <a data-messenger="vk" href={vk} data-social-destination data-social-web={vk} data-social-platform="vk" data-social-name="написать ВКонтакте" target="_blank" rel="noopener noreferrer"><BrandIcon name="vk" size={23}/><span>ВКонтакте</span></a>
@@ -44,8 +44,12 @@ const vk='https://vk.me/andrey_spoet';
    wa.href=directUrl;
    wa.dataset.socialWeb=webUrl;
    const tg=sheet.querySelector('[data-messenger="telegram"]');
-   tg.href=tg.dataset.chatBaseApp+(encoded?'&text='+encoded:'');
-   tg.dataset.socialWeb=tg.dataset.chatBaseWeb+(encoded?'?text='+encoded:'');
+   // Build a new share draft for each intent; direct tg://resolve chat links
+   // may reopen an unrelated draft stored by Telegram (for example, feedback).
+   const page=encodeURIComponent('https://singer.andreway.ru/');
+   tg.href='tg://msg_url?url='+page+'&text='+encoded;
+   tg.dataset.socialWeb='https://t.me/share/url?url='+page+'&text='+encoded;
+   if(copy.textContent)copy.textContent+=' В Telegram выберите чат Андрея Шевцова для отправки подготовленного сообщения.';
    sheet.showModal();
   });
  });
