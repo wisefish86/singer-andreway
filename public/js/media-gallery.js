@@ -100,6 +100,12 @@
         if(generation!==playerGeneration)return;
         recordVideoEvent(player,data.fatal?'hls-fatal':'hls-error',String(data.details||data.type||'unknown'));
         if(!data.fatal)return;
+        // An incompatible manifest/codec is not a decoding glitch: recovery cannot
+        // make it playable. Fall back immediately rather than displaying a spinner.
+        if(data.details==='manifestIncompatibleCodecsError' || data.details==='bufferIncompatibleCodecsError'){
+          fallback(String(data.details));
+          return;
+        }
         if(!recoveryAttempted){
           recoveryAttempted=true;
           reportVideoSource(player,'HLS · восстановление · '+String(data.details||data.type));
