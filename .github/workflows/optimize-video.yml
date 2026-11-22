@@ -1,0 +1,55 @@
+name: Optimize performance video
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/optimize-video.yml']
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Download original and inspect stream
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://singer.andreway.ru/videos/-%20%D0%90%D0%BD%D0%B4%D1%80%D0%B5%D0%B9%20%D0%A8%D0%B5%D0%B2%D1%86%D0%BE%D0%B2%20-%20%D0%92%D0%B8%D0%B4%D0%B5%D0%BE%20%D0%B2%D1%8B%D1%81%D1%82%D1%83%D0%BF%D0%BB%D0%B5%D0%BD%D0%B8%D0%B9.mp4"
+          curl -fSL --retry 3 --connect-timeout 15 --max-time 900 "$url" -o /tmp/original.mp4
+          test "$(stat -c %s /tmp/original.mp4)" -eq 309465646
+          echo '=== Source stream ==='
+          ffprobe -v error -show_entries format=duration,size,bit_rate:stream=codec_name,width,height,avg_frame_rate,bit_rate -of json /tmp/original.mp4
+          echo '=== Faststart atom placement ==='
+          python3 - <<'PY'
+          with open('/tmp/original.mp4','rb') as f:
+              head=f.read(8192)
+              f.seek(-8192,2)
+              tail=f.read(8192)
+          print('start moov:',head.find(b'moov'),'start mdat:',head.find(b'mdat'),'tail moov:',tail.find(b'moov'))
+          PY
+      - name: Produce mobile-friendly H264 AAC progressive MP4
+        shell: bash
+        run: |
+          set -euo pipefail
+          ffmpeg -nostdin -hide_banner -loglevel warning -stats -y -i /tmp/original.mp4 \
+            -map 0:v:0 -map 0:a:0? -vf 'scale=1280:1280:force_original_aspect_ratio=decrease:force_divisible_by=2,fps=30' \
+            -c:v libx264 -preset veryfast -crf 24 -maxrate 2600k -bufsize 5200k \
+            -pix_fmt yuv420p -c:a aac -b:a 128k -ac 2 \
+            -movflags +faststart /tmp/performance-web.mp4
+          ffprobe -v error -show_entries format=duration,size,bit_rate:stream=codec_name,width,height -of json /tmp/performance-web.mp4
+          test "$(stat -c %s /tmp/performance-web.mp4)" -lt "$(stat -c %s /tmp/original.mp4)"
+          python3 - <<'PY'
+          with open('/tmp/performance-web.mp4','rb') as f: head=f.read(1024*1024)
+          assert head.find(b'moov')>0 and head.find(b'moov')<head.find(b'mdat'), 'Not faststart'
+          print('Validated front-loaded MP4 metadata')
+          PY
+      - name: Upload as separate non-destructive file
+        shell: bash
+        env:
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+          remote="ftp://andreway.ru//www/singer.andreway.ru/videos/- Андрей Шевцов - Видео выступлений - web.mp4"
+          curl --fail --show-error --silent --retry 2 --user "andreway:${FTP_PASSWORD}" --ftp-create-dirs --upload-file /tmp/performance-web.mp4 "$remote"
+          echo 'Optimized MP4 uploaded separately; original remains untouched'
