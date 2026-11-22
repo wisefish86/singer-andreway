@@ -1,13 +1,9 @@
 name: Refresh public reviews snapshot
 
+# Reviews are refreshed only when the owner explicitly requests publication.
+# Visitors always read the last successfully published static JSON snapshot.
 on:
-  schedule:
-    - cron: '*/30 * * * *'
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/sync-reviews.yml'
 
 concurrency:
   group: singer-public-reviews
