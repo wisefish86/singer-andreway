@@ -79,7 +79,7 @@ const publishWorkflow=readFileSync(new URL('../workflows/sync-media.yml',import.
 const mainDeploy=readFileSync(new URL('../workflows/deploy.yml',import.meta.url),'utf8');
 assert.ok(publishWorkflow.includes('*/15 * * * *') && mainDeploy.includes('**/data/media.json'),'Media snapshot must refresh independently and survive deployment');
 
-assert.ok(media.includes("player.addEventListener('waiting',showBuffering)") && media.includes("player.addEventListener('error',"), 'Video must explain buffering and network errors');
+assert.ok(media.includes("player.addEventListener('waiting',()=>{showBuffering();reportBuffer('waiting');})") && media.includes("player.addEventListener('error',"), 'Video must explain buffering and network errors');
 assert.ok(styles.includes('.section[id]{scroll-margin-top:26px}'), 'Anchor offset must account for sticky header and section padding exactly once');
 assert.ok(!styles.includes('scroll-padding-top:82px') && !styles.includes('scroll-padding-top:80px'), 'Do not stack page scroll padding and section scroll margins');
 assert.ok(!source.includes('#live{scroll-margin-top:92px}'), 'Guest section must share the same anchor alignment');
