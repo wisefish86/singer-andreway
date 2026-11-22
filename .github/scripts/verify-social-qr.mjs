@@ -54,9 +54,12 @@ const autoHlsWorkflow=readFileSync(new URL('../workflows/prepare-hls.yml',import
 const autoHlsScript=readFileSync(new URL('../scripts/auto-hls.py',import.meta.url),'utf8');
 assert.ok(autoHlsWorkflow.includes("cron: '17,47 * * * *'") && autoHlsWorkflow.includes('auto-hls.py'), 'New or replaced video must be processed on an automatic schedule');
 assert.ok(autoHlsScript.includes('hashlib.sha256') && autoHlsScript.includes('sha256') && autoHlsScript.includes('ftp.rename'), 'Automated HLS must detect changed content and publish registry atomically');
+assert.ok(autoHlsScript.includes('ENCODE_VERSION = 2') && autoHlsScript.includes('"-level:v", "3.1"') && autoHlsScript.includes('avc1.4d401f'), 'HLS codec compatibility changes must cause a new transcoded asset version');
 
 assert.ok(media.includes("reportVideoSource(player,'HLS · hls.js'") && media.includes("reportVideoSource(player,'MP4 · '"), 'Playback source must be diagnosable without guessing');
 assert.ok(media.includes('hls.recoverMediaError()') && media.includes('hls.startLoad(Math.max(0,player.currentTime))'), 'HLS should attempt recovery before falling back');
+assert.ok(media.includes("data.details==='manifestIncompatibleCodecsError'") && media.includes("fallback(String(data.details))"), 'Unrecoverable HLS codec mismatch must fall back to MP4 immediately');
+
 assert.ok(styles.includes('.showcase-video-diagnostics'), 'Opt-in stream diagnostics must be readable');
 
 assert.ok(media.includes('function addMobileSeekControls(') && media.includes('addMobileSeekControls(stage,player)'), 'Touch seeking controls must be attached to actual video player');
@@ -71,7 +74,7 @@ assert.ok(media.includes("player.src=fileURL('videos',item.file)") && media.incl
 assert.ok(media.includes("fetch('/data/media.json',{cache:'no-cache'})"), 'Media must load its public snapshot from the same origin');
 assert.ok(!media.includes('kind=media&callback=') && !media.includes('setInterval(refresh,300000)') && !media.includes('data-media-api'), 'Visitors must not poll Google for media');
 assert.ok(!media.includes('dialog.requestFullscreen()'), 'Opening a video must not trigger a disruptive fullscreen transition');
-assert.ok(html.includes('media-gallery.js?v=20261122-autohls4') && !html.includes('data-media-api='), 'Home must use cached media script without Google endpoint');
+assert.ok(html.includes('media-gallery.js?v=20261122-codecfallback5') && !html.includes('data-media-api='), 'Home must use cached media script without Google endpoint');
 const videoPage=readFileSync(new URL('../../src/pages/all-videos/index.astro',import.meta.url),'utf8');
 const photosPage=readFileSync(new URL('../../src/pages/all-photos/index.astro',import.meta.url),'utf8');
 assert.ok(!videoPage.includes('data-media-api=')&&!photosPage.includes('data-media-api='),'Gallery pages must not poll Google');
