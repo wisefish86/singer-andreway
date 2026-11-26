@@ -417,8 +417,19 @@ function publicVotingSchedule_() {
   const automatic=sheet.getRange('B3:B4').getFormulas().some(row=>Boolean(row[0]));
   if(automatic){
     const saved=Number(props.getProperty(frozenKey));
-    if(Number.isFinite(saved)&&saved>0)start=saved;
-    else props.setProperty(frozenKey,String(start));
+    if(Number.isFinite(saved)&&saved>0){
+      // A live NOW() formula changes constantly. Freeze it only for one event.
+      // When the event ends, reset B6, so the next explicit check starts fresh
+      // without accidentally opening another poll every day.
+      if(Date.now()>saved+hours*3600000){
+        sheet.getRange('B6').setValue(false);
+        props.deleteProperty(frozenKey);
+        props.deleteProperty('SINGER_VOTE_SHEET_SIGNATURE');
+        props.deleteProperty('SINGER_VOTE_SHEET_RUN_ID');
+        return {enabled:false,available};
+      }
+      start=saved;
+    }else props.setProperty(frozenKey,String(start));
   }else{
     props.deleteProperty(frozenKey); // Manual dates remain editable while active.
   }
