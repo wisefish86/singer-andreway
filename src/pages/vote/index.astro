@@ -71,7 +71,8 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   <p>Выберите от одной до трёх песен, которые хотите услышать в финалах музыкальных блоков. Главный фаворит завершит вечер!</p>
  </header>
  <div id="vote-test-note" class="vote-test-note" hidden>Тестовый режим: каждое нажатие «Отправить» добавляет пробные голоса. После отключения режима они не попадут в настоящее голосование.</div>
- <div id="vote-closed" class="vote-alert" hidden role="status">
+ <div id="vote-disabled" class="vote-alert" hidden role="status">Голосование сейчас не проводится. Вы по-прежнему можете посмотреть репертуар и заказать песню.</div>
+  <div id="vote-closed" class="vote-alert" hidden role="status">
   Голосование пока закрыто. Список финальных песен можно посмотреть и выбрать до трёх любимых уже сейчас, а отправить голоса — во время выступления.
  </div>
  <section id="vote-open" class="vote-card" hidden>
@@ -110,7 +111,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   return;
  }
  const storageKey='singer-vote-guest-v1';
- let state=null,selected=new Set(),songs=[],saved=false,editing=false,sending=false,refreshBusy=false,statusBusy=false,statusKnown=false;
+ let state=null,selected=new Set(),songs=[],saved=false,editing=false,sending=false,refreshBusy=false,statusBusy=false,statusKnown=false,votingAvailable=true;
  let testSubmissions=0;
  const PENDING_VOTE_KEY='singer-vote-pending-v1';
  let pendingVote=null;
@@ -123,7 +124,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   if(!Array.isArray(list)||list.length<3)return;
   songs=list.map(song=>({...song,votes:0}));
   state={...state,songs,voters:Number(state?.voters)||0};
-  $('vote-open').hidden=false;$('vote-closed').hidden=!statusKnown||Boolean(state?.active);
+  $('vote-open').hidden=!votingAvailable;$('vote-closed').hidden=!votingAvailable||!statusKnown||Boolean(state?.active);
   if(!statusKnown)$('vote-status').textContent='Выберите любимые песни · приём голосов уточняется';
   $('vote-voters').textContent='Доступно '+songs.length+' песен для выбора';
   render();
@@ -164,11 +165,11 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   return result;
  }
  function updateButton(){
-  const n=selected.size,active=Boolean(state?.active);
+  const n=selected.size,active=votingAvailable&&Boolean(state?.active);
   $('vote-actions').hidden=n===0&&!pendingVote;
   const hint=n===1?'Можно выбрать ещё 2 песни':n===2?'Можно выбрать ещё 1 песню':n===3?'Вы выбрали все 3 песни':'';
   $('vote-choice-hint').textContent=active?hint:hint+(statusKnown?' · Голосование пока закрыто':' · Проверяем голосование…');
-  $('vote-send').disabled=sending||(!pendingVote&&(n<1||n>3||songs.length<1||!active));
+  $('vote-send').disabled=!votingAvailable||sending||(!pendingVote&&(n<1||n>3||songs.length<1||!active));
   $('vote-send').textContent=sending?'Проверяем отправку…':pendingVote?'Проверить отправку':!active?(statusKnown?'Голосование пока закрыто':'Проверяем голосование…'):state?.test_mode?'Отправить пробный голос':saved&&!editing?'Изменить голос':saved&&editing?'Сохранить изменения':'Отправить голос';
  }
  // Lightweight status endpoint: do not wait for catalogue or Google services.
@@ -180,6 +181,16 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    if(!response.ok)throw Error('status_unavailable');
    const next=await response.json();
    if(typeof next.active!=='boolean')throw Error('invalid_status');
+    votingAvailable=next.available===true;
+    $('vote-disabled').hidden=votingAvailable;
+    if(!votingAvailable){
+      state={active:false,available:false,songs:[],session:null};
+      statusKnown=true;window.__voteSessionId=null;
+      $('vote-open').hidden=true;$('vote-closed').hidden=true;
+      $('vote-test-note').hidden=true;$('vote-actions').hidden=true;
+      $('vote-status').textContent='Голосование отключено';
+      stopAudio();return;
+    }
    const oldId=state?.session?.id||null,nextId=next.active?next.session?.id:null;
    if(next.active&&!nextId)throw Error('invalid_session');
    if(state?.active&&oldId!==nextId&&refreshBusy)return;
@@ -295,6 +306,15 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
   refreshBusy=true;
   try{
    const result=await api();
+   votingAvailable=result.available===true;
+   $('vote-disabled').hidden=votingAvailable;
+   if(!votingAvailable){
+      state={active:false,available:false,songs:[],session:null};
+      statusKnown=true;$('vote-open').hidden=true;$('vote-closed').hidden=true;
+      $('vote-actions').hidden=true;$('vote-test-note').hidden=true;
+      $('vote-status').textContent='Голосование отключено';
+      stopAudio();return;
+   }
    const active=Boolean(result.active);
    const incoming=Array.isArray(result.songs)?result.songs:[];
    const newId=active?result.session.id:null;
@@ -316,8 +336,8 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
    state=result;statusKnown=true;
    try{localStorage.setItem(STATUS_CACHE_KEY,JSON.stringify({at:Date.now(),value:result}));}catch{}
    cacheSongs(incoming);
-   $('vote-open').hidden=false;
-   $('vote-closed').hidden=active;
+   $('vote-open').hidden=!votingAvailable;
+   $('vote-closed').hidden=active||!votingAvailable;
    $('vote-test-note').hidden=!(active&&result.test_mode);
    $('vote-status').textContent=active?(result.test_mode?'● Тестовое голосование — голоса пробные':'● Голосование открыто'):'Голосование пока закрыто';
    const incomingMap=new Map(incoming.map(song=>[song.id,song]));
