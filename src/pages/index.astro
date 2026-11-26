@@ -187,7 +187,7 @@ const repertoireUrl = '/podborka/';
         </div>
         <div class="live-actions">
           <a class="action-wide" href="/vote/" id="live-voting-link" hidden>
-            <div class="action-icon"><Icon name="flame" size={24} /></div><div class="action-copy"><strong>Выбрать финальные песни</strong><small id="live-voting-status">Посмотреть подборку · голосование во время выступления</small></div><Icon name="arrow" size={20} />
+            <div class="action-icon"><Icon name="flame" size={24} /></div><div class="action-copy"><strong>Выбрать песню для финала</strong><small id="live-voting-status">Выберите песню, которая завершит вечер</small></div><Icon name="arrow" size={20} />
           </a>
           <button class="action-wide js-contact-sheet" type="button"
             data-title="Заказать песню"
@@ -438,12 +438,12 @@ const repertoireUrl = '/podborka/';
           link.hidden = data.available !== true;
           const status = document.getElementById('live-voting-status');
           if (status) status.textContent = data.active
-            ? 'Голосование открыто · выберите три песни'
-            : 'Посмотреть подборку · голосование во время выступления';
+            ? 'Голосование открыто · выберите до трёх песен'
+            : 'Голосование за финальную песню вечера';
         } catch {
           link.hidden = true;
           const status = document.getElementById('live-voting-status');
-          if (status) status.textContent = 'Посмотреть подборку финальных песен';
+          if (status) status.textContent = 'Голосование за финальную песню';
         }
       }
       refreshVoting();
