@@ -166,7 +166,7 @@ const endpoint = 'https://jjaunlbglskpddslwegp.supabase.co/functions/v1/singer-v
  }
  function updateButton(){
   const n=selected.size,active=votingAvailable&&Boolean(state?.active);
-  $('vote-actions').hidden=n===0&&!pendingVote;
+  $('vote-actions').hidden=!votingAvailable||(n===0&&!pendingVote);
   const hint=n===1?'Можно выбрать ещё 2 песни':n===2?'Можно выбрать ещё 1 песню':n===3?'Вы выбрали все 3 песни':'';
   $('vote-choice-hint').textContent=active?hint:hint+(statusKnown?' · Голосование пока закрыто':' · Проверяем голосование…');
   $('vote-send').disabled=!votingAvailable||sending||(!pendingVote&&(n<1||n>3||songs.length<1||!active));
