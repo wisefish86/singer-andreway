@@ -121,11 +121,11 @@ assert.ok(vote.includes('checkStatus().finally(()=>{if(!document.hidden)refresh(
 assert.ok(!vote.includes('checkStatus();\n refresh();'), 'Avoid competing initial requests to the same Edge Function');
 assert.ok(vote.includes('testSubmissions++'), 'Test submissions should provide immediate feedback');
 assert.ok(vote.includes('PENDING_VOTE_KEY') && vote.includes('request_id:crypto.randomUUID()'), 'Failed votes must keep a durable request ID');
-assert.ok(vote.includes("$('vote-actions').hidden=n===0&&!pendingVote"), 'Pending vote must remain visible after reload');
+assert.ok(vote.includes("$('vote-actions').hidden=!votingAvailable||(n===0&&!pendingVote)"), 'Pending vote must remain visible after reload');
 assert.ok(vote.includes('if(pendingVote){await sendPendingVote();return}'), 'Manual retries must reuse pending request');
 assert.ok(vote.includes("key?'application/json':'text/plain;charset=UTF-8'"), 'Guest vote POST must avoid unnecessary CORS preflight');
 assert.ok(backend.includes('const [sessionResult,eligibleSongs]=await Promise.all(['), 'Server vote validation lookups must be concurrent');
-assert.ok(vote.includes("$('vote-actions').hidden=n===0") && !vote.includes("$('vote-actions').hidden=!active||n===0"), 'Selected songs must reveal the CTA even if poll is closed');
+assert.ok(vote.includes("$('vote-actions').hidden=!votingAvailable||(n===0") && !vote.includes("$('vote-actions').hidden=!active||n===0"), 'Selected songs must reveal the CTA even if poll is closed');
 assert.ok(vote.indexOf('id="vote-actions"')>vote.indexOf('</main>'), 'Fixed CTA must not be clipped by vote card overflow');
 assert.ok(vote.includes('voteLabel(song,total)') && vote.includes("if(!votes)return ''"), 'Zero votes must not display percentages');
 console.log('Finale voting, isolated test mode, editable ballots and reviews carousel checks passed.');
