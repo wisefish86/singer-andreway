@@ -114,6 +114,9 @@ for (const trigger of triggers) {
 assert.ok(sheet.opened, 'Guest sheet never opened');
 assert.ok(shared.includes('whatsapp://send?phone=79181142693'), 'Mobile WhatsApp deep link is required');
 assert.ok(shared.includes('отправьте видео как <strong>файл</strong> без сжатия'), 'Guests should be asked to send original quality video files');
+assert.ok(astro.includes('<strong>Сняли моё выступление?</strong><small>Пришлите видео — спою для вас песню в благодарность!</small>'), 'Video action must promise a thank-you song without adding another button');
+assert.ok(astro.includes('по согласованию и если позволит программа.'), 'Video thank-you must be subject to the evening programme');
+assert.equal((astro.match(/id="guest-video-action"/g)||[]).length,1,'Only one guest video action should exist');
 assert.ok(!shared.includes('tg://msg_url') && !shared.includes('/share/url'), 'Telegram guest dialog must never route to share picker');
 assert.ok(!config.includes('tg://msg_url') && !config.includes('/share/url'), 'Telegram event chat must never use share picker');
 const selected = [...home.matchAll(/data-title="(Отправить видео|Сказать пару слов|Заказать песню)"/g)];
