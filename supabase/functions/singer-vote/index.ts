@@ -96,7 +96,7 @@ async function ensureCalendarSessions(db:any){
 // Explicitly private Google Sheet controls manual sessions. The web app exposes
 // only dates and a boolean, never the spreadsheet itself or the admin secret.
 const VOTE_CONFIG_URL="https://script.google.com/macros/s/AKfycbzCtHUBRaC3c_Tovx6We58tVElMRn1w6FUkcLCdNZAVhDyLnVj8hut-_gKTXgov086tlg/exec?kind=vote-config";
-let scheduleCache:{until:number;config:{enabled:boolean;start?:string;end?:string;test_mode?:boolean;run_id?:string}}|null=null;
+let scheduleCache:{until:number;config:{enabled:boolean;available:boolean;start?:string;end?:string;test_mode?:boolean;run_id?:string}}|null=null;
 async function manualSchedule(){
  if(scheduleCache&&scheduleCache.until>Date.now())return scheduleCache.config;
  const response=await fetch(VOTE_CONFIG_URL,{redirect:"follow",cache:"no-store",signal:AbortSignal.timeout(3500)});
@@ -104,7 +104,7 @@ async function manualSchedule(){
  const data=await response.json();
  // Invalid enabled schedules must not cancel an existing active vote.
  if(data?.invalid===true)throw new Error("invalid_vote_sheet_schedule");
- const config:{enabled:boolean;start?:string;end?:string;test_mode?:boolean;run_id?:string}={enabled:false};
+ const config:{enabled:boolean;available:boolean;start?:string;end?:string;test_mode?:boolean;run_id?:string}={enabled:false,available:data?.available===true};
  if(data?.enabled===true){
   const start=Date.parse(data.start),end=Date.parse(data.end);
   if(Number.isFinite(start)&&Number.isFinite(end)&&end>start&&end-start<=12*3600000&&
@@ -118,7 +118,7 @@ async function manualSchedule(){
  return config;
 }
 async function ensureManualSheetSession(db:any){
- let config:{enabled:boolean;start?:string;end?:string;test_mode?:boolean;run_id?:string};
+ let config:{enabled:boolean;available:boolean;start?:string;end?:string;test_mode?:boolean;run_id?:string};
  try{config=await manualSchedule();}
  catch(e){
   // A temporary Sheet outage must not cancel an explicitly enabled live event.
@@ -164,6 +164,14 @@ Deno.serve(async req=>{
  try{
   const db=dbClient();
   if(req.method==="GET"){
+   // Global opt-in switch in the owner-only Sheet. Fail closed when availability
+   // cannot be checked, including during a temporary Google outage.
+   const publicConfig=await manualSchedule().catch(()=>({available:false,enabled:false}));
+   if(!publicConfig.available){
+    if(new URL(req.url).searchParams.get("status")==="1")
+     return json({active:false,available:false,test_mode:false,session:null},200,origin);
+    return json({active:false,available:false,test_mode:false,songs:[],voters:0,catalogue_ready:false},200,origin);
+   }
    // Read public status from Supabase without blocking on slow Google services.
    // Keep calendar and Sheet synchronization alive after the response.
    // Avoid starting several slow Google fetches for simultaneous visitors.
@@ -181,7 +189,7 @@ Deno.serve(async req=>{
      .eq("enabled",true).lte("starts_at",new Date().toISOString()).gt("ends_at",new Date().toISOString())
      .order("starts_at",{ascending:false}).limit(1).maybeSingle();
     if(error)throw error;
-    return json({active:Boolean(data),test_mode:Boolean(data?.test_mode),
+    return json({active:Boolean(data),available:true,test_mode:Boolean(data?.test_mode),
       session:data?{id:data.id,ends_at:data.ends_at}:null},200,origin);
    }
    const catalogue=finalists();
@@ -192,10 +200,10 @@ Deno.serve(async req=>{
    const {data,error}=sessionResult;
    if(error)throw error;
    if(!data){
-    return json({active:false,test_mode:false,songs:songs.map(song=>({...song,votes:0})),voters:0,catalogue_ready:songs.length>=3},200,origin);
+    return json({active:false,available:true,test_mode:false,songs:songs.map(song=>({...song,votes:0})),voters:0,catalogue_ready:songs.length>=3},200,origin);
    }
    const tally=await getTally(db,data.id);
-   return json({active:true,test_mode:Boolean(data.test_mode),session:{id:data.id,ends_at:data.ends_at},songs:songs.map(song=>({...song,votes:tally.counts[song.id]||0}))
+   return json({active:true,available:true,test_mode:Boolean(data.test_mode),session:{id:data.id,ends_at:data.ends_at},songs:songs.map(song=>({...song,votes:tally.counts[song.id]||0}))
     .sort((a,b)=>b.votes-a.votes||(a.artist+" "+a.name).localeCompare(b.artist+" "+b.name,"ru")),
     voters:tally.voters, catalogue_ready:songs.length>=3},200,origin);
   }
@@ -246,6 +254,10 @@ Deno.serve(async req=>{
    return json({error:"invalid_operation"},400,origin);
   }
   if(payload?.action!=="vote")return json({error:"invalid_action"},400,origin);
+  // Never accept votes while the globally controlled feature is disabled;
+  // hiding a frontend link alone is not an authorization boundary.
+  const submissionConfig=await manualSchedule().catch(()=>({available:false,enabled:false}));
+  if(!submissionConfig.available)return json({error:"voting_disabled"},409,origin);
   const id=String(payload.session_id||""),voter=String(payload.voter_id||""),requestId=String(payload.request_id||"");
   const ids=payload.song_ids;
   if(!/^[a-f0-9-]{36}$/.test(id)||!/^[a-f0-9-]{36}$/.test(voter)||
