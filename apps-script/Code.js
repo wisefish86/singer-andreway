@@ -388,28 +388,30 @@ function authorizeMediaGallery() {
  */
 function publicVotingSchedule_() {
   const sheet=SpreadsheetApp.openById('1BwmXTVFysgzZq_UbCvrk98seMtOuUYj34Lwym371-hU').getSheetByName('Голосование');
-  if (!sheet)return {enabled:false};
+  if (!sheet)return {enabled:false,available:false};
   const values=sheet.getRange('B3:B6').getDisplayValues().map(row=>String(row[0]||'').trim());
   const enabled=sheet.getRange('B6').getValue()===true;
   const testMode=sheet.getRange('B8').getValue()===true;
+  // B9 is the global visibility/acceptance gate, independent of event timing.
+  const available=sheet.getRange('B9').getValue()===true;
   const props=PropertiesService.getScriptProperties();
   const frozenKey='SINGER_VOTE_SHEET_START';
   if (!enabled){
     props.deleteProperty(frozenKey);
     props.deleteProperty('SINGER_VOTE_SHEET_SIGNATURE');
     props.deleteProperty('SINGER_VOTE_SHEET_RUN_ID');
-    return {enabled:false};
+    return {enabled:false,available};
   }
   const date=values[0].match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
   const clock=values[1].match(/^([01]?\d|2[0-3]):([0-5]\d)$/);
   const hours=Number(values[2].replace(',','.'));
-  if (!date||!clock||!Number.isFinite(hours)||hours<1||hours>12)return {enabled:false,invalid:true};
+  if (!date||!clock||!Number.isFinite(hours)||hours<1||hours>12)return {enabled:false,available,invalid:true};
   const startStr=date[3]+'-'+date[2]+'-'+date[1]+'T'+clock[1].padStart(2,'0')+':'+clock[2]+':00+03:00';
   let start=Date.parse(startStr);
-  if(!Number.isFinite(start))return {enabled:false,invalid:true};
+  if(!Number.isFinite(start))return {enabled:false,available,invalid:true};
   const actual=new Date(start);
   const moscow=Utilities.formatDate(actual,'Europe/Moscow','dd.MM.yyyy HH:mm');
-  if(moscow!==date[1]+'.'+date[2]+'.'+date[3]+' '+clock[1].padStart(2,'0')+':'+clock[2])return {enabled:false,invalid:true};
+  if(moscow!==date[1]+'.'+date[2]+'.'+date[3]+' '+clock[1].padStart(2,'0')+':'+clock[2])return {enabled:false,available,invalid:true};
   // NOW() formulas are useful defaults, but their changing minutes must never
   // restart a running poll. Freeze the first resolved start on activation.
   const automatic=sheet.getRange('B3:B4').getFormulas().some(row=>Boolean(row[0]));
@@ -439,7 +441,7 @@ function publicVotingSchedule_() {
     props.setProperty(signatureKey,signature);
     props.setProperty(runKey,runId);
   }
-  return {enabled:true,start:new Date(start).toISOString(),end:new Date(start+hours*3600000).toISOString(),
+  return {enabled:true,available,start:new Date(start).toISOString(),end:new Date(start+hours*3600000).toISOString(),
     test_mode:testMode,run_id:runId};
 }
 
