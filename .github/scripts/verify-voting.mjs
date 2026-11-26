@@ -29,7 +29,7 @@ assert.ok(vote.includes('Голосование пока закрыто'), 'Clos
 assert.ok(vote.includes('1 000 ₽'), 'Paid ordering information missing');
 assert.ok(vote.includes('song_ids:choices'), 'Selected 1–3 songs must be submitted');
 assert.ok(vote.includes('n<1||n>3'), 'Allow 1–3 songs and reject empty selection');
-assert.ok(backend.includes('return json({active:false,test_mode:false,songs:'), 'Inactive polls must return preview catalogue');
+assert.ok(backend.includes('return json({active:false,available:true,test_mode:false,songs:'), 'Inactive polls must return preview catalogue');
 assert.ok(vote.includes("const incoming=Array.isArray(result.songs)?result.songs:[]"), 'Closed catalogue must still populate song list');
 assert.ok(vote.includes("n<1||n>3||songs.length<1||!active"), 'Ballot requires at least one song and an active session');
 assert.ok(backend.includes('enabled:true'), 'Explicit admin activation missing');
