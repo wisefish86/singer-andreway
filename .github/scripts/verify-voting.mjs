@@ -14,11 +14,17 @@ const grants=readFileSync('supabase/migrations/20261122150000_singer_vote_servic
 const backend=readFileSync('supabase/functions/singer-vote/index.ts','utf8');
 const sql=readFileSync('supabase/migrations/20261122140000_singer_finale_voting.sql','utf8');
 assert.ok(home.includes('id="live-voting-link"'), 'Voting shortcut must be present');
-assert.ok(!home.includes('id="live-voting-link" style="display:none"'), 'Catalogue link must not be hidden between events');
+assert.ok(home.includes('id="live-voting-link" hidden'), 'Voting must not be advertised before server confirms the owner switch is on');
 assert.ok(home.includes('<a href="#reviews">Отзывы</a>'), 'Reviews must scroll to homepage section from main navigation');
 assert.ok(home.includes('class="quick-card" href="#reviews"'), 'Reviews shortcut must scroll to homepage section');
 assert.ok(!home.includes('aria-label="Посмотреть тестовую страницу отзывов"'), 'Remove duplicate guest-section reviews link');
 assert.ok(home.includes('data-voting-visibility'), 'Homepage must check server poll status');
+assert.ok(home.includes('link.hidden = data.available !== true') && home.includes('link.hidden = true'), 'Homepage voting link must obey global B9 switch and fail closed on errors');
+assert.ok(reviewApp.includes("sheet.getRange('B9').getValue()===true"), 'Google Sheet B9 should control global voting availability');
+assert.ok(reviewApp.includes('return {enabled:false,available}'), 'Owner visibility must work even when manual schedule B6 is off');
+assert.ok(backend.includes('submissionConfig.available') && backend.includes('voting_disabled'), 'Disabling voting must be enforced for public POST on server');
+assert.ok(backend.includes('available:false') && backend.includes('available:true'), 'Public status should expose global visibility state');
+assert.ok(vote.includes('id="vote-disabled"') && vote.includes('votingAvailable=next.available===true') && vote.includes('votingAvailable=result.available===true'), 'Direct voting page must show disabled state with song ordering still available');
 assert.ok(vote.includes('Голосование пока закрыто'), 'Closed state missing');
 assert.ok(vote.includes('1 000 ₽'), 'Paid ordering information missing');
 assert.ok(vote.includes('song_ids:choices'), 'Selected 1–3 songs must be submitted');
